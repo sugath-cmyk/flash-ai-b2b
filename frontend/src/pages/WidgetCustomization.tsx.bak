@@ -1,0 +1,1043 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from '../lib/axios';
+
+interface WidgetConfig {
+  // Appearance
+  primary_color: string;
+  secondary_color: string;
+  text_color: string;
+  background_color: string;
+  button_style: 'pill' | 'square' | 'circle';
+  widget_size: 'small' | 'medium' | 'large';
+  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+
+  // Branding
+  widget_name: string;
+  button_text: string;
+  powered_by_text: string;
+  show_branding: boolean;
+  logo_url?: string;
+  company_name?: string;
+
+  // Messages
+  greeting_message: string;
+  placeholder_text: string;
+  offline_message?: string;
+
+  // Behavior
+  auto_open: boolean;
+  auto_open_delay: number;
+  enable_sound: boolean;
+  enable_typing_indicator: boolean;
+  response_tone: 'professional' | 'friendly' | 'casual' | 'formal';
+
+  // Language
+  language: string;
+  supported_languages: string[];
+
+  // AI Personality
+  personality_traits: string[];
+  response_style: string;
+  custom_instructions?: string;
+
+  // Boundaries
+  allowed_topics: string[];
+  restricted_topics: string[];
+  max_message_length: number;
+
+  // Features
+  enable_product_search: boolean;
+  enable_recommendations: boolean;
+  enable_order_tracking: boolean;
+  quick_questions: string[];
+
+  // Advanced
+  custom_css?: string;
+  custom_js?: string;
+  allowed_domains: string[];
+}
+
+const LANGUAGES = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', flag: '🇫🇷' },
+  { code: 'de', name: 'German', flag: '🇩🇪' },
+  { code: 'it', name: 'Italian', flag: '🇮🇹' },
+  { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
+  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+  { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+];
+
+const PERSONALITY_TRAITS = [
+  'Helpful', 'Friendly', 'Professional', 'Enthusiastic', 'Empathetic',
+  'Patient', 'Knowledgeable', 'Concise', 'Detailed', 'Humorous'
+];
+
+const RESPONSE_TONES = [
+  { value: 'professional', label: 'Professional', description: 'Formal and business-like' },
+  { value: 'friendly', label: 'Friendly', description: 'Warm and approachable' },
+  { value: 'casual', label: 'Casual', description: 'Relaxed and conversational' },
+  { value: 'formal', label: 'Formal', description: 'Very professional and respectful' }
+];
+
+const BUTTON_STYLES = [
+  { value: 'pill', label: 'Pill', icon: '⚪' },
+  { value: 'square', label: 'Square', icon: '⬜' },
+  { value: 'circle', label: 'Circle', icon: '⭕' }
+];
+
+const WIDGET_SIZES = [
+  { value: 'small', label: 'Small', width: '320px', height: '400px' },
+  { value: 'medium', label: 'Medium', width: '384px', height: '500px' },
+  { value: 'large', label: 'Large', width: '448px', height: '600px' }
+];
+
+const POSITIONS = [
+  { value: 'bottom-right', label: 'Bottom Right', icon: '↘️' },
+  { value: 'bottom-left', label: 'Bottom Left', icon: '↙️' },
+  { value: 'top-right', label: 'Top Right', icon: '↗️' },
+  { value: 'top-left', label: 'Top Left', icon: '↖️' }
+];
+
+const DEFAULT_CONFIG: WidgetConfig = {
+  primary_color: '#10b981',
+  secondary_color: '#059669',
+  text_color: '#1f2937',
+  background_color: '#ffffff',
+  button_style: 'pill',
+  widget_size: 'medium',
+  position: 'bottom-right',
+  widget_name: 'AI Chat Assistant',
+  button_text: 'Ask Anything',
+  powered_by_text: 'Powered by Flash AI',
+  show_branding: true,
+  greeting_message: 'Hi! How can I help you today?',
+  placeholder_text: 'Ask me anything...',
+  auto_open: false,
+  auto_open_delay: 0,
+  enable_sound: true,
+  enable_typing_indicator: true,
+  response_tone: 'friendly',
+  language: 'en',
+  supported_languages: ['en'],
+  personality_traits: ['Helpful', 'Friendly', 'Knowledgeable'],
+  response_style: 'balanced',
+  allowed_topics: ['Products', 'Pricing', 'Shipping', 'Returns', 'Store Policies'],
+  restricted_topics: ['Personal Information', 'Medical Advice', 'Legal Advice'],
+  max_message_length: 500,
+  enable_product_search: true,
+  enable_recommendations: true,
+  enable_order_tracking: false,
+  quick_questions: [],
+  allowed_domains: []
+};
+
+const WidgetCustomization: React.FC = () => {
+  const { storeId } = useParams<{ storeId: string }>();
+  const navigate = useNavigate();
+
+  const [config, setConfig] = useState<WidgetConfig>(DEFAULT_CONFIG);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'appearance' | 'personality' | 'language' | 'boundaries' | 'features' | 'advanced'>('appearance');
+  const [showPreview, setShowPreview] = useState(true);
+  const [newQuickQuestion, setNewQuickQuestion] = useState('');
+  const [embedCode, setEmbedCode] = useState('');
+
+  useEffect(() => {
+    loadConfig();
+  }, [storeId]);
+
+  useEffect(() => {
+    // Generate embed code whenever config changes
+    generateEmbedCode();
+  }, [config]);
+
+  const loadConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `http://localhost:3000/api/brand/${storeId}/widget/config`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.data) {
+        setConfig({ ...DEFAULT_CONFIG, ...response.data.data });
+      }
+    } catch (err: any) {
+      console.error('Error loading config:', err);
+      if (err.response?.status !== 404) {
+        setError('Failed to load widget configuration');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      await axios.put(
+        `http://localhost:3000/api/brand/${storeId}/widget/config`,
+        config,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setSuccess('Widget configuration saved successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('Error saving config:', err);
+      setError(err.response?.data?.message || 'Failed to save configuration');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const generateEmbedCode = () => {
+    const code = `<!-- Flash AI Widget -->
+<script>
+  (function() {
+    window.FlashAIConfig = {
+      storeId: '${storeId}',
+      apiUrl: 'http://localhost:3000',
+      config: ${JSON.stringify(config, null, 2)}
+    };
+    var script = document.createElement('script');
+    script.src = 'http://localhost:3000/widget/flash-ai-widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+  })();
+</script>
+<!-- End Flash AI Widget -->`;
+    setEmbedCode(code);
+  };
+
+  const handleColorChange = (field: keyof WidgetConfig, value: string) => {
+    setConfig(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddQuickQuestion = () => {
+    if (newQuickQuestion.trim()) {
+      setConfig(prev => ({
+        ...prev,
+        quick_questions: [...(prev.quick_questions || []), newQuickQuestion.trim()]
+      }));
+      setNewQuickQuestion('');
+    }
+  };
+
+  const handleRemoveQuickQuestion = (index: number) => {
+    setConfig(prev => ({
+      ...prev,
+      quick_questions: prev.quick_questions.filter((_, i) => i !== index)
+    }));
+  };
+
+  const togglePersonalityTrait = (trait: string) => {
+    setConfig(prev => ({
+      ...prev,
+      personality_traits: prev.personality_traits.includes(trait)
+        ? prev.personality_traits.filter(t => t !== trait)
+        : [...prev.personality_traits, trait]
+    }));
+  };
+
+  const toggleLanguage = (langCode: string) => {
+    setConfig(prev => ({
+      ...prev,
+      supported_languages: prev.supported_languages.includes(langCode)
+        ? prev.supported_languages.filter(l => l !== langCode)
+        : [...prev.supported_languages, langCode]
+    }));
+  };
+
+  const copyEmbedCode = () => {
+    navigator.clipboard.writeText(embedCode);
+    setSuccess('Embed code copied to clipboard!');
+    setTimeout(() => setSuccess(null), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 text-emerald-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-600">Loading widget customization...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const sizeConfig = WIDGET_SIZES.find(s => s.value === config.widget_size) || WIDGET_SIZES[1];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <button
+                onClick={() => navigate(`/brand/${storeId}`)}
+                className="text-sm text-gray-600 hover:text-gray-900 mb-1 flex items-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Dashboard
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">Widget Customization</h1>
+              <p className="text-sm text-gray-600">Customize your AI chat widget appearance and behavior</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className="btn-outline text-sm py-2"
+              >
+                {showPreview ? 'Hide' : 'Show'} Preview
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="btn-primary"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      {success && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
+            <svg className="w-5 h-5 text-green-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="text-green-800 font-medium">{success}</span>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+            <svg className="w-5 h-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <span className="text-red-800 font-medium">{error}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex gap-6">
+          {/* Left Panel - Settings */}
+          <div className={`${showPreview ? 'w-2/3' : 'w-full'} transition-all`}>
+            {/* Tabs */}
+            <div className="bg-white rounded-t-xl border-b overflow-x-auto">
+              <nav className="flex">
+                {[
+                  { id: 'appearance', label: 'Appearance', icon: '🎨' },
+                  { id: 'personality', label: 'Personality', icon: '🤖' },
+                  { id: 'language', label: 'Language', icon: '🌍' },
+                  { id: 'boundaries', label: 'Boundaries', icon: '🛡️' },
+                  { id: 'features', label: 'Features', icon: '⚡' },
+                  { id: 'advanced', label: 'Advanced', icon: '⚙️' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-emerald-600 text-emerald-600'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="mr-2">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Tab Content */}
+            <div className="bg-white rounded-b-xl shadow-md p-6 max-h-[calc(100vh-250px)] overflow-y-auto">
+              {/* Appearance Tab */}
+              {activeTab === 'appearance' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Colors</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={config.primary_color}
+                            onChange={(e) => handleColorChange('primary_color', e.target.value)}
+                            className="w-12 h-12 rounded border border-gray-300 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={config.primary_color}
+                            onChange={(e) => handleColorChange('primary_color', e.target.value)}
+                            className="input-field text-sm"
+                            placeholder="#10b981"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Secondary Color</label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={config.secondary_color}
+                            onChange={(e) => handleColorChange('secondary_color', e.target.value)}
+                            className="w-12 h-12 rounded border border-gray-300 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={config.secondary_color}
+                            onChange={(e) => handleColorChange('secondary_color', e.target.value)}
+                            className="input-field text-sm"
+                            placeholder="#059669"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Text Color</label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={config.text_color}
+                            onChange={(e) => handleColorChange('text_color', e.target.value)}
+                            className="w-12 h-12 rounded border border-gray-300 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={config.text_color}
+                            onChange={(e) => handleColorChange('text_color', e.target.value)}
+                            className="input-field text-sm"
+                            placeholder="#1f2937"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={config.background_color}
+                            onChange={(e) => handleColorChange('background_color', e.target.value)}
+                            className="w-12 h-12 rounded border border-gray-300 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={config.background_color}
+                            onChange={(e) => handleColorChange('background_color', e.target.value)}
+                            className="input-field text-sm"
+                            placeholder="#ffffff"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Position & Size</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {POSITIONS.map((pos) => (
+                            <button
+                              key={pos.value}
+                              onClick={() => setConfig(prev => ({ ...prev, position: pos.value as any }))}
+                              className={`p-3 border-2 rounded-lg text-sm font-medium transition-all ${
+                                config.position === pos.value
+                                  ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <div className="text-2xl mb-1">{pos.icon}</div>
+                              {pos.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Widget Size</label>
+                        <div className="space-y-2">
+                          {WIDGET_SIZES.map((size) => (
+                            <button
+                              key={size.value}
+                              onClick={() => setConfig(prev => ({ ...prev, widget_size: size.value as any }))}
+                              className={`w-full p-3 border-2 rounded-lg text-left text-sm font-medium transition-all ${
+                                config.widget_size === size.value
+                                  ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <div className="font-semibold">{size.label}</div>
+                              <div className="text-xs text-gray-500">{size.width} × {size.height}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Button Style</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {BUTTON_STYLES.map((style) => (
+                        <button
+                          key={style.value}
+                          onClick={() => setConfig(prev => ({ ...prev, button_style: style.value as any }))}
+                          className={`p-4 border-2 rounded-lg text-center transition-all ${
+                            config.button_style === style.value
+                              ? 'border-emerald-600 bg-emerald-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="text-3xl mb-2">{style.icon}</div>
+                          <div className="text-sm font-medium">{style.label}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Text & Branding</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Widget Name</label>
+                        <input
+                          type="text"
+                          value={config.widget_name}
+                          onChange={(e) => setConfig(prev => ({ ...prev, widget_name: e.target.value }))}
+                          className="input-field"
+                          placeholder="AI Chat Assistant"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Button Text</label>
+                        <input
+                          type="text"
+                          value={config.button_text}
+                          onChange={(e) => setConfig(prev => ({ ...prev, button_text: e.target.value }))}
+                          className="input-field"
+                          placeholder="Ask Anything"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Greeting Message</label>
+                        <textarea
+                          value={config.greeting_message}
+                          onChange={(e) => setConfig(prev => ({ ...prev, greeting_message: e.target.value }))}
+                          className="input-field"
+                          rows={2}
+                          placeholder="Hi! How can I help you today?"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Input Placeholder</label>
+                        <input
+                          type="text"
+                          value={config.placeholder_text}
+                          onChange={(e) => setConfig(prev => ({ ...prev, placeholder_text: e.target.value }))}
+                          className="input-field"
+                          placeholder="Ask me anything..."
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Show "Powered by Flash AI"</p>
+                          <p className="text-xs text-gray-500">Display branding in widget footer</p>
+                        </div>
+                        <button
+                          onClick={() => setConfig(prev => ({ ...prev, show_branding: !prev.show_branding }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            config.show_branding ? 'bg-emerald-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              config.show_branding ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Personality Tab */}
+              {activeTab === 'personality' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Tone</h3>
+                    <div className="space-y-3">
+                      {RESPONSE_TONES.map((tone) => (
+                        <button
+                          key={tone.value}
+                          onClick={() => setConfig(prev => ({ ...prev, response_tone: tone.value as any }))}
+                          className={`w-full p-4 border-2 rounded-lg text-left transition-all ${
+                            config.response_tone === tone.value
+                              ? 'border-emerald-600 bg-emerald-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="font-semibold text-gray-900">{tone.label}</div>
+                          <div className="text-sm text-gray-600">{tone.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Personality Traits</h3>
+                    <p className="text-sm text-gray-600 mb-4">Select traits that define your AI assistant's personality</p>
+                    <div className="flex flex-wrap gap-2">
+                      {PERSONALITY_TRAITS.map((trait) => (
+                        <button
+                          key={trait}
+                          onClick={() => togglePersonalityTrait(trait)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                            config.personality_traits.includes(trait)
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {config.personality_traits.includes(trait) && '✓ '}
+                          {trait}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Custom Instructions</h3>
+                    <p className="text-sm text-gray-600 mb-4">Additional instructions for AI behavior</p>
+                    <textarea
+                      value={config.custom_instructions || ''}
+                      onChange={(e) => setConfig(prev => ({ ...prev, custom_instructions: e.target.value }))}
+                      className="input-field"
+                      rows={4}
+                      placeholder="E.g., Always mention our 30-day return policy when discussing returns..."
+                    />
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Questions</h3>
+                    <p className="text-sm text-gray-600 mb-4">Suggested questions shown to users</p>
+                    <div className="space-y-3">
+                      {config.quick_questions.map((question, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={question}
+                            readOnly
+                            className="input-field flex-1"
+                          />
+                          <button
+                            onClick={() => handleRemoveQuickQuestion(index)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newQuickQuestion}
+                          onChange={(e) => setNewQuickQuestion(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleAddQuickQuestion()}
+                          className="input-field flex-1"
+                          placeholder="Add a quick question..."
+                        />
+                        <button
+                          onClick={handleAddQuickQuestion}
+                          className="btn-primary whitespace-nowrap"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Language Tab */}
+              {activeTab === 'language' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Primary Language</h3>
+                    <select
+                      value={config.language}
+                      onChange={(e) => setConfig(prev => ({ ...prev, language: e.target.value }))}
+                      className="input-field"
+                    >
+                      {LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.flag} {lang.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Supported Languages</h3>
+                    <p className="text-sm text-gray-600 mb-4">Users can switch between these languages</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {LANGUAGES.map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => toggleLanguage(lang.code)}
+                          className={`p-3 border-2 rounded-lg text-left transition-all ${
+                            config.supported_languages.includes(lang.code)
+                              ? 'border-emerald-600 bg-emerald-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{lang.flag}</span>
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">{lang.name}</div>
+                              <div className="text-xs text-gray-500">{lang.code}</div>
+                            </div>
+                            {config.supported_languages.includes(lang.code) && (
+                              <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Boundaries Tab */}
+              {activeTab === 'boundaries' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Allowed Topics</h3>
+                    <p className="text-sm text-gray-600 mb-4">Topics the AI can discuss</p>
+                    <textarea
+                      value={config.allowed_topics.join(', ')}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        allowed_topics: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+                      }))}
+                      className="input-field"
+                      rows={3}
+                      placeholder="Products, Pricing, Shipping, Returns..."
+                    />
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Restricted Topics</h3>
+                    <p className="text-sm text-gray-600 mb-4">Topics the AI should avoid</p>
+                    <textarea
+                      value={config.restricted_topics.join(', ')}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        restricted_topics: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+                      }))}
+                      className="input-field"
+                      rows={3}
+                      placeholder="Personal Information, Medical Advice, Legal Advice..."
+                    />
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Message Limits</h3>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Max Message Length (characters)
+                      </label>
+                      <input
+                        type="number"
+                        value={config.max_message_length}
+                        onChange={(e) => setConfig(prev => ({ ...prev, max_message_length: parseInt(e.target.value) || 500 }))}
+                        className="input-field"
+                        min="100"
+                        max="2000"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Features Tab */}
+              {activeTab === 'features' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Feature Toggles</h3>
+                    <div className="space-y-4">
+                      {[
+                        { key: 'enable_product_search', label: 'Product Search', description: 'Allow users to search products' },
+                        { key: 'enable_recommendations', label: 'Product Recommendations', description: 'AI suggests relevant products' },
+                        { key: 'enable_order_tracking', label: 'Order Tracking', description: 'Users can track their orders' },
+                        { key: 'enable_typing_indicator', label: 'Typing Indicator', description: 'Show "AI is typing..." animation' },
+                        { key: 'enable_sound', label: 'Sound Notifications', description: 'Play sound on new messages' },
+                        { key: 'auto_open', label: 'Auto-open Widget', description: 'Automatically open widget on page load' }
+                      ].map((feature) => (
+                        <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <p className="font-medium text-gray-900">{feature.label}</p>
+                            <p className="text-sm text-gray-600">{feature.description}</p>
+                          </div>
+                          <button
+                            onClick={() => setConfig(prev => ({ ...prev, [feature.key]: !prev[feature.key as keyof WidgetConfig] }))}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              config[feature.key as keyof WidgetConfig] ? 'bg-emerald-600' : 'bg-gray-200'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                config[feature.key as keyof WidgetConfig] ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {config.auto_open && (
+                    <div className="border-t pt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Auto-open Delay (seconds)
+                      </label>
+                      <input
+                        type="number"
+                        value={config.auto_open_delay}
+                        onChange={(e) => setConfig(prev => ({ ...prev, auto_open_delay: parseInt(e.target.value) || 0 }))}
+                        className="input-field"
+                        min="0"
+                        max="60"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">0 = opens immediately</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Advanced Tab */}
+              {activeTab === 'advanced' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Embed Code</h3>
+                    <p className="text-sm text-gray-600 mb-4">Copy this code and paste it before the closing &lt;/body&gt; tag on your website</p>
+                    <div className="relative">
+                      <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs">
+                        <code>{embedCode}</code>
+                      </pre>
+                      <button
+                        onClick={copyEmbedCode}
+                        className="absolute top-2 right-2 btn-primary text-xs py-1.5 px-3"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Allowed Domains</h3>
+                    <p className="text-sm text-gray-600 mb-4">Widget will only work on these domains (leave empty for all)</p>
+                    <textarea
+                      value={config.allowed_domains.join('\n')}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        allowed_domains: e.target.value.split('\n').map(d => d.trim()).filter(Boolean)
+                      }))}
+                      className="input-field font-mono text-sm"
+                      rows={4}
+                      placeholder="example.com&#10;www.example.com&#10;shop.example.com"
+                    />
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Custom CSS</h3>
+                    <p className="text-sm text-gray-600 mb-4">Advanced styling (for developers)</p>
+                    <textarea
+                      value={config.custom_css || ''}
+                      onChange={(e) => setConfig(prev => ({ ...prev, custom_css: e.target.value }))}
+                      className="input-field font-mono text-sm"
+                      rows={6}
+                      placeholder=".flash-ai-widget { ... }"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Panel - Live Preview */}
+          {showPreview && (
+            <div className="w-1/3">
+              <div className="sticky top-24">
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Live Preview
+                  </h3>
+
+                  {/* Widget Preview */}
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded-xl p-8 relative bg-gray-50"
+                    style={{ minHeight: '600px' }}
+                  >
+                    {/* Floating Button Preview */}
+                    <div className="absolute" style={{
+                      [config.position.includes('bottom') ? 'bottom' : 'top']: '24px',
+                      [config.position.includes('right') ? 'right' : 'left']: '24px'
+                    }}>
+                      <button
+                        className="shadow-2xl transition-transform hover:scale-105"
+                        style={{
+                          backgroundColor: config.primary_color,
+                          color: 'white',
+                          padding: '12px 20px',
+                          borderRadius: config.button_style === 'pill' ? '24px' : config.button_style === 'circle' ? '50%' : '8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        {config.button_text}
+                      </button>
+                    </div>
+
+                    {/* Widget Window Preview */}
+                    <div
+                      className="absolute bg-white rounded-2xl shadow-2xl overflow-hidden"
+                      style={{
+                        [config.position.includes('bottom') ? 'bottom' : 'top']: '24px',
+                        [config.position.includes('right') ? 'right' : 'left']: '24px',
+                        width: sizeConfig.width,
+                        height: sizeConfig.height,
+                        maxWidth: '100%'
+                      }}
+                    >
+                      {/* Header */}
+                      <div
+                        className="p-4 text-white"
+                        style={{
+                          background: `linear-gradient(135deg, ${config.primary_color} 0%, ${config.secondary_color} 100%)`
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <div>
+                              <div className="font-semibold">{config.widget_name}</div>
+                              {config.show_branding && (
+                                <div className="text-xs opacity-80">{config.powered_by_text}</div>
+                              )}
+                            </div>
+                          </div>
+                          <button className="hover:bg-white/10 p-1 rounded">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Messages */}
+                      <div className="p-4 space-y-3 flex-1 overflow-y-auto" style={{ backgroundColor: config.background_color, color: config.text_color, height: 'calc(100% - 140px)' }}>
+                        <div className="flex gap-2">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: config.primary_color }}>
+                            AI
+                          </div>
+                          <div className="flex-1">
+                            <div className="bg-gray-100 rounded-lg p-3 text-sm">
+                              {config.greeting_message}
+                            </div>
+                          </div>
+                        </div>
+
+                        {config.quick_questions.length > 0 && (
+                          <div className="space-y-2">
+                            {config.quick_questions.slice(0, 3).map((q, i) => (
+                              <button
+                                key={i}
+                                className="w-full text-left text-sm p-2 rounded-lg border-2 hover:shadow-sm transition-all"
+                                style={{
+                                  borderColor: config.primary_color + '40',
+                                  color: config.primary_color
+                                }}
+                              >
+                                {q}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Input */}
+                      <div className="p-4 border-t">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder={config.placeholder_text}
+                            className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                            style={{ color: config.text_color }}
+                            readOnly
+                          />
+                          <button
+                            className="p-2 rounded-lg text-white"
+                            style={{ backgroundColor: config.primary_color }}
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WidgetCustomization;

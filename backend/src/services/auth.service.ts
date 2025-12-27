@@ -2,7 +2,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '../config/database';
 import { createError } from '../middleware/errorHandler';
-import crypto from 'crypto';
 
 interface RegisterData {
   email: string;
@@ -43,15 +42,12 @@ export class AuthService {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Generate email verification token
-    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
-
     // Create user
     const result = await pool.query(
-      `INSERT INTO users (email, password, first_name, last_name, email_verification_token, role)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO users (email, password, first_name, last_name, role)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id, email, first_name, last_name, role, team_id`,
-      [email.toLowerCase(), passwordHash, firstName, lastName, emailVerificationToken, 'user']
+      [email.toLowerCase(), passwordHash, firstName, lastName, 'user']
     );
 
     const user = result.rows[0];

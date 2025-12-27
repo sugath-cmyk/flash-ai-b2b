@@ -453,10 +453,73 @@ export class StoreExtractionService {
     return result.rows;
   }
 
+  async getAllStores(): Promise<any[]> {
+    const result = await pool.query(
+      `SELECT s.*,
+              u.email as owner_email,
+              u.first_name as owner_first_name,
+              u.last_name as owner_last_name,
+              (SELECT COUNT(*) FROM extracted_products WHERE store_id = s.id) as product_count,
+              (SELECT COUNT(*) FROM extracted_collections WHERE store_id = s.id) as collection_count,
+              (SELECT COUNT(*) FROM extracted_pages WHERE store_id = s.id) as page_count
+       FROM stores s
+       LEFT JOIN users u ON s.user_id = u.id
+       ORDER BY s.created_at DESC`
+    );
+
+    return result.rows;
+  }
+
   async getStoreDetails(storeId: string, userId: string): Promise<any> {
     const storeResult = await pool.query(
       `SELECT * FROM stores WHERE id = $1 AND user_id = $2`,
       [storeId, userId]
+    );
+
+    if (storeResult.rows.length === 0) {
+      throw createError('Store not found', 404);
+    }
+
+    const store = storeResult.rows[0];
+
+    // Get product count
+    const productCount = await pool.query(
+      'SELECT COUNT(*) as count FROM extracted_products WHERE store_id = $1',
+      [storeId]
+    );
+
+    // Get collection count
+    const collectionCount = await pool.query(
+      'SELECT COUNT(*) as count FROM extracted_collections WHERE store_id = $1',
+      [storeId]
+    );
+
+    // Get page count
+    const pageCount = await pool.query(
+      'SELECT COUNT(*) as count FROM extracted_pages WHERE store_id = $1',
+      [storeId]
+    );
+
+    // Get latest extraction job
+    const latestJob = await pool.query(
+      'SELECT * FROM extraction_jobs WHERE store_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [storeId]
+    );
+
+    return {
+      ...store,
+      productCount: parseInt(productCount.rows[0].count),
+      collectionCount: parseInt(collectionCount.rows[0].count),
+      pageCount: parseInt(pageCount.rows[0].count),
+      latestJob: latestJob.rows[0] || null,
+    };
+  }
+
+  async getStoreDetailsAdmin(storeId: string): Promise<any> {
+    // Admin version - no user_id check
+    const storeResult = await pool.query(
+      `SELECT * FROM stores WHERE id = $1`,
+      [storeId]
     );
 
     if (storeResult.rows.length === 0) {

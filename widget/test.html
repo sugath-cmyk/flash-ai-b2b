@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash AI Widget Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f9fafb;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .demo-content {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+        .product-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .product-card h3 {
+            margin: 0 0 8px 0;
+            color: #1f2937;
+        }
+        .product-card p {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0 0 12px 0;
+        }
+        .price {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3B82F6;
+        }
+        .badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-content">
+        <h1>🛍️ Demo E-commerce Store</h1>
+        <p style="color: #6b7280; font-size: 16px;">
+            This is a demo store page showing how the Flash AI chat widget integrates into your e-commerce site.
+            Click the chat button in the bottom-right corner to start chatting with the AI assistant!
+        </p>
+
+        <div class="product-grid">
+            <div class="product-card">
+                <h3>Premium Headphones</h3>
+                <p>High-quality wireless headphones with noise cancellation</p>
+                <div class="price">$299.99</div>
+                <span class="badge">In Stock</span>
+            </div>
+
+            <div class="product-card">
+                <h3>Smart Watch Pro</h3>
+                <p>Fitness tracking, heart rate monitor, and notifications</p>
+                <div class="price">$399.99</div>
+                <span class="badge">In Stock</span>
+            </div>
+
+            <div class="product-card">
+                <h3>Wireless Earbuds</h3>
+                <p>Compact design with premium sound quality</p>
+                <div class="price">$149.99</div>
+                <span class="badge">In Stock</span>
+            </div>
+
+            <div class="product-card">
+                <h3>Laptop Stand</h3>
+                <p>Ergonomic aluminum stand for better posture</p>
+                <div class="price">$79.99</div>
+                <span class="badge">In Stock</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash AI Chat Widget -->
+    <script>
+        // Replace these with your actual values from the Brand Console
+        window.flashAIConfig = {
+            apiKey: 'sk_ef08ceaef02c9c95de151f6c970e6a7d4966906169eaa063',  // Get this from Brand Console → API Keys
+            storeId: '9862d46d-4e6f-4a9c-8d46-43642355f9f4', // Get this from your store URL
+            apiUrl: 'http://localhost:3000/api/widget' // Use production URL in production
+        };
+    </script>
+    <script src="widget.js"></script>
+    <!-- End Flash AI Chat Widget -->
+</body>
+</html>

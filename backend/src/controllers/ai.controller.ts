@@ -6,8 +6,8 @@ import { createError } from '../middleware/errorHandler';
 
 export const chatValidation = [
   body('message').trim().notEmpty().withMessage('Message is required'),
-  body('conversationId').optional().isUUID().withMessage('Invalid conversation ID'),
-  body('model').optional().isString().withMessage('Model must be a string'),
+  body('conversationId').optional({ nullable: true }).isUUID().withMessage('Invalid conversation ID'),
+  body('model').optional({ nullable: true }).isString().withMessage('Model must be a string'),
 ];
 
 class AIController {
@@ -31,7 +31,7 @@ class AIController {
         conversationId,
         message,
         userId: req.user.id,
-        teamId: req.user.teamId || undefined,
+        teamId: undefined, // Team feature removed
         model,
       });
 
@@ -52,7 +52,7 @@ class AIController {
 
       const conversations = await aiService.getConversations(
         req.user.id,
-        req.user.teamId || undefined
+        undefined // Team feature removed
       );
 
       res.json({

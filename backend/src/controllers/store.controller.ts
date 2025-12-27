@@ -50,8 +50,12 @@ export class StoreController {
   async getUserStores(req: AuthRequest, res: Response) {
     try {
       const userId = req.user!.id;
+      const userRole = req.user!.role;
 
-      const stores = await storeExtractionService.getUserStores(userId);
+      // If admin, return all stores; otherwise return user's stores
+      const stores = userRole === 'admin'
+        ? await storeExtractionService.getAllStores()
+        : await storeExtractionService.getUserStores(userId);
 
       res.json({
         success: true,
@@ -66,8 +70,12 @@ export class StoreController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
 
-      const store = await storeExtractionService.getStoreDetails(storeId, userId);
+      // Admin can access any store, brand owners only their own
+      const store = userRole === 'admin'
+        ? await storeExtractionService.getStoreDetailsAdmin(storeId)
+        : await storeExtractionService.getStoreDetails(storeId, userId);
 
       res.json({
         success: true,

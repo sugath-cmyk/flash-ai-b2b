@@ -279,27 +279,37 @@ export default function Stores() {
                   </p>
                 )}
 
-                <div className="flex gap-2">
-                  <Link
-                    to={`/stores/${store.id}`}
-                    className="btn btn-secondary flex-1 text-center"
-                  >
-                    View Details
-                  </Link>
-                  {store.sync_status === 'failed' && (
-                    <button
-                      onClick={() => handleRetryExtraction(store.id)}
-                      className="btn btn-primary"
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <Link
+                      to={`/brand/${store.id}`}
+                      className="btn btn-primary flex-1 text-center"
                     >
-                      Retry
+                      Brand Console
+                    </Link>
+                    <Link
+                      to={`/stores/${store.id}`}
+                      className="btn btn-secondary flex-1 text-center"
+                    >
+                      Store Data
+                    </Link>
+                  </div>
+                  <div className="flex gap-2">
+                    {store.sync_status === 'failed' && (
+                      <button
+                        onClick={() => handleRetryExtraction(store.id)}
+                        className="btn btn-secondary flex-1"
+                      >
+                        Retry Sync
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteStore(store.id)}
+                      className="btn btn-secondary text-red-600 hover:bg-red-50 flex-1"
+                    >
+                      Delete
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleDeleteStore(store.id)}
-                    className="btn btn-secondary text-red-600 hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
+                  </div>
                 </div>
               </div>
             ))}
