@@ -43,7 +43,7 @@ export default function BrandOnboarding() {
     setError('');
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+      const API_URL = import.meta.env.VITE_API_URL || 'https://flash-ai-backend-rld7.onrender.com/api';
       const response = await axios.post(`${API_URL}/onboarding/submit`, formData);
       setResponseData(response.data.data);
       setSuccess(true);
