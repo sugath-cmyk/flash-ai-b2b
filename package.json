@@ -1,27 +1,12 @@
 {
   "name": "flash-ai-b2b",
-  "version": "0.1.0",
-  "description": "Enterprise AI Platform for Business Intelligence & Automation",
+  "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
   "scripts": {
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+    "start": "cd backend && node dist/index.js",
+    "build": "cd backend && npm install && npm run build"
   },
   "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=10.0.0"
-  },
-  "author": "Flash AI Team",
-  "license": "UNLICENSED"
+    "node": ">=20.0.0"
+  }
 }
