@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://flash-ai-backend-rld7.onrender.com/api';
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
