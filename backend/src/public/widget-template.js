@@ -50,9 +50,9 @@
   widgetContainer.id = 'flash-ai-widget';
   widgetContainer.style.cssText = `
     position: fixed;
-    bottom: 20px;
+    bottom: 100px;
     right: 20px;
-    z-index: 9999;
+    z-index: 2147483647;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   `;
   document.body.appendChild(widgetContainer);
@@ -99,13 +99,15 @@
     chatWindow.style.cssText = `
       display: none;
       position: fixed;
-      bottom: 100px;
+      bottom: 180px;
       right: 20px;
       width: 380px;
       height: 600px;
+      max-height: calc(100vh - 200px);
       background: white;
       border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      z-index: 2147483647;
       display: flex;
       flex-direction: column;
       overflow: hidden;
