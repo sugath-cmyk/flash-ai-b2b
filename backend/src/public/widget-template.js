@@ -1,10 +1,14 @@
 (function() {
   'use strict';
 
+  console.log('Flash AI: Widget script loaded!');
+  console.log('Flash AI: Config available:', window.flashAIConfig);
+
   // Get store ID from config
   const storeId = window.flashAIConfig?.storeId;
   if (!storeId) {
-    console.error('Flash AI: Store ID not configured');
+    console.error('Flash AI: Store ID not configured in window.flashAIConfig');
+    console.error('Flash AI: window.flashAIConfig =', window.flashAIConfig);
     return;
   }
 
@@ -46,6 +50,8 @@
 
   // Find the best location to inject the widget (below quantity/add to cart)
   function findInsertionPoint() {
+    console.log('Flash AI: Finding insertion point...');
+
     // Try multiple selectors to find the product form
     const selectors = [
       'input[type="number"][name*="quantity"]',
@@ -55,12 +61,16 @@
       'form[action*="/cart/add"]',
       '.product-form',
       '.product-info',
-      '.product__info-container'
+      '.product__info-container',
+      'button[name="add"]',
+      '.product-single',
+      '[data-product-form]'
     ];
 
     for (const selector of selectors) {
       const element = document.querySelector(selector);
       if (element) {
+        console.log('Flash AI: Found element with selector:', selector);
         // Find the parent container to insert after
         let container = element;
         // Go up a few levels to find a good container
@@ -69,10 +79,12 @@
             container = container.parentElement;
           }
         }
+        console.log('Flash AI: Using container:', container);
         return container;
       }
     }
 
+    console.log('Flash AI: No specific selector found, using fallback');
     // Fallback: insert at the end of main content
     return document.querySelector('main') || document.body;
   }
@@ -285,7 +297,12 @@
 
   // Initialize widget
   async function init() {
+    console.log('Flash AI: Initializing widget...');
+    console.log('Flash AI: Store ID:', storeId);
+    console.log('Flash AI: Current URL:', window.location.href);
+
     await loadConfig();
+    console.log('Flash AI: Config loaded:', config);
 
     // Find where to insert the widget
     const insertionPoint = findInsertionPoint();
@@ -295,15 +312,20 @@
       return;
     }
 
+    console.log('Flash AI: Creating widget...');
     // Create and insert the widget
     const widget = createInlineChatWidget();
 
     // Insert after the found element
     if (insertionPoint.nextSibling) {
       insertionPoint.parentNode.insertBefore(widget, insertionPoint.nextSibling);
+      console.log('Flash AI: Widget inserted before next sibling');
     } else {
       insertionPoint.parentNode.appendChild(widget);
+      console.log('Flash AI: Widget appended to parent');
     }
+
+    console.log('Flash AI: Widget successfully inserted into page!');
 
     // Track widget load
     try {
@@ -325,6 +347,7 @@
           }
         })
       });
+      console.log('Flash AI: Widget load tracked successfully');
     } catch (error) {
       console.error('Flash AI: Error tracking event', error);
     }
