@@ -45,78 +45,97 @@
   }
 
   // Widget state
-  let isFloatingOpen = false;
+  let isTopBannerOpen = false;
   let conversationId = null;
   let config = {};
 
   // Detect if we're on a product page
   function isProductPage() {
-    // Check URL patterns
-    if (window.location.pathname.includes('/products/')) return true;
-    // Check for product-specific elements
-    const productIndicators = [
-      'form[action*="/cart/add"]',
-      '.product-form',
-      '[data-product-form]',
-      '.product-single',
-      'input[name="id"][type="hidden"]' // Shopify product variant input
-    ];
-    return productIndicators.some(selector => document.querySelector(selector));
+    return window.location.pathname.includes('/products/');
   }
 
-  // Find insertion point for inline widget on product pages
-  function findInsertionPoint() {
-    console.log('Flash AI: Finding insertion point for inline widget...');
+  // Find "Buy it now" button to insert widget below it
+  function findBuyNowButton() {
+    console.log('Flash AI: Looking for Buy it now button...');
 
+    // Try multiple approaches to find the Buy it now button
     const selectors = [
-      'form[action*="/cart/add"]',
-      '.product-form',
-      '[data-product-form]',
-      'button[name="add"]',
-      '.product-single',
-      '.product-info',
-      '.product__info-container',
-      'input[type="number"][name*="quantity"]',
-      'input[name="quantity"]',
-      '.quantity'
+      'button:contains("Buy it now")',
+      'button:contains("Buy now")',
+      'button:contains("buy")',
+      '.shopify-payment-button',
+      '[class*="buy-now"]',
+      '[class*="buy_now"]',
+      '[id*="buy-now"]',
+      'button[name="checkout"]'
     ];
 
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      if (element) {
-        console.log('Flash AI: Found element with selector:', selector);
-        return element;
+    // First try text-based search
+    const buttons = document.querySelectorAll('button');
+    for (const button of buttons) {
+      const text = button.textContent.toLowerCase().trim();
+      if (text.includes('buy it now') || text.includes('buy now')) {
+        console.log('Flash AI: Found Buy it now button by text');
+        return button;
       }
     }
 
-    console.log('Flash AI: No specific selector found for inline widget');
+    // Then try class-based selectors
+    for (const selector of selectors) {
+      try {
+        const element = document.querySelector(selector);
+        if (element) {
+          console.log('Flash AI: Found button with selector:', selector);
+          return element;
+        }
+      } catch (e) {
+        // Skip invalid selectors
+      }
+    }
+
+    // Fallback: find "Add to cart" button and use its parent
+    const addToCartButtons = document.querySelectorAll('button');
+    for (const button of addToCartButtons) {
+      const text = button.textContent.toLowerCase().trim();
+      if (text.includes('add to cart')) {
+        console.log('Flash AI: Found Add to cart button, using as fallback');
+        return button.parentElement;
+      }
+    }
+
+    console.log('Flash AI: Could not find Buy it now button');
     return null;
   }
 
-  // Create floating chat button
-  function createFloatingButton() {
-    const container = document.createElement('div');
-    container.id = 'flash-ai-floating-container';
-    container.style.cssText = `
+  // Create top banner chat button
+  function createTopBannerButton() {
+    const banner = document.createElement('div');
+    banner.id = 'flash-ai-top-banner';
+    banner.style.cssText = `
       position: fixed;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2147483647;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2147483646;
+      padding: 8px 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     `;
 
     const button = document.createElement('button');
-    button.id = 'flash-ai-floating-button';
+    button.id = 'flash-ai-top-button';
     button.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 8px;">
         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="currentColor"/>
       </svg>
+      <span>Ask anything</span>
     `;
     button.style.cssText = `
-      width: 60px;
-      height: 60px;
-      border-radius: 30px;
+      padding: 10px 24px;
+      border-radius: 25px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border: none;
       color: white;
@@ -124,40 +143,42 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       display: flex;
       align-items: center;
-      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
       transition: transform 0.2s, box-shadow 0.2s;
+      pointer-events: auto;
     `;
 
     button.onmouseenter = () => {
-      button.style.transform = 'scale(1.1)';
+      button.style.transform = 'scale(1.05)';
       button.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
     };
     button.onmouseleave = () => {
       button.style.transform = 'scale(1)';
       button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
     };
-    button.onclick = toggleFloatingChat;
+    button.onclick = toggleTopBanner;
 
-    container.appendChild(button);
-    return container;
+    banner.appendChild(button);
+    return banner;
   }
 
-  // Create floating chat window
-  function createFloatingChatWindow() {
+  // Create top banner chat window
+  function createTopBannerWindow() {
     const chatWindow = document.createElement('div');
-    chatWindow.id = 'flash-ai-floating-window';
+    chatWindow.id = 'flash-ai-top-window';
     chatWindow.style.cssText = `
       display: none;
       position: fixed;
-      right: 90px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 380px;
-      height: 600px;
-      max-height: 90vh;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      height: 500px;
       background: white;
       border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       z-index: 2147483647;
       flex-direction: column;
       overflow: hidden;
@@ -178,12 +199,12 @@
         <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Ask anything</h3>
         <p style="margin: 2px 0 0 0; font-size: 10px; opacity: 0.7;">powered by Flash AI</p>
       </div>
-      <button id="flash-ai-floating-close" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; padding: 0; width: 30px; height: 30px;">&times;</button>
+      <button id="flash-ai-top-close" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; padding: 0; width: 30px; height: 30px;">&times;</button>
     `;
 
     // Messages container
     const messagesContainer = document.createElement('div');
-    messagesContainer.id = 'flash-ai-floating-messages';
+    messagesContainer.id = 'flash-ai-top-messages';
     messagesContainer.style.cssText = `
       flex: 1;
       overflow-y: auto;
@@ -203,12 +224,12 @@
     inputContainer.innerHTML = `
       <input
         type="text"
-        id="flash-ai-floating-input"
+        id="flash-ai-top-input"
         placeholder="Type your message..."
         style="flex: 1; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none;"
       />
       <button
-        id="flash-ai-floating-send"
+        id="flash-ai-top-send"
         style="padding: 12px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: opacity 0.2s;"
       >Send</button>
     `;
@@ -219,13 +240,13 @@
 
     // Event listeners
     setTimeout(() => {
-      const closeBtn = document.getElementById('flash-ai-floating-close');
-      const sendBtn = document.getElementById('flash-ai-floating-send');
-      const input = document.getElementById('flash-ai-floating-input');
+      const closeBtn = document.getElementById('flash-ai-top-close');
+      const sendBtn = document.getElementById('flash-ai-top-send');
+      const input = document.getElementById('flash-ai-top-input');
 
-      if (closeBtn) closeBtn.onclick = toggleFloatingChat;
-      if (sendBtn) sendBtn.onclick = () => sendMessage('floating');
-      if (input) input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage('floating'); };
+      if (closeBtn) closeBtn.onclick = toggleTopBanner;
+      if (sendBtn) sendBtn.onclick = () => sendMessage('top');
+      if (input) input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage('top'); };
     }, 0);
 
     return chatWindow;
@@ -238,7 +259,6 @@
     widgetContainer.style.cssText = `
       margin: 30px 0;
       width: 100%;
-      max-width: 600px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     `;
 
@@ -267,8 +287,8 @@
     const messagesContainer = document.createElement('div');
     messagesContainer.id = 'flash-ai-inline-messages';
     messagesContainer.style.cssText = `
-      min-height: 300px;
-      max-height: 450px;
+      min-height: 250px;
+      max-height: 400px;
       overflow-y: auto;
       padding: 20px;
       background: #f7f7f7;
@@ -291,7 +311,7 @@
       <input
         type="text"
         id="flash-ai-inline-input"
-        placeholder="Ask anything about product..."
+        placeholder="Ask anything about this product..."
         style="flex: 1; padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit;"
       />
       <button
@@ -319,20 +339,20 @@
     return widgetContainer;
   }
 
-  // Toggle floating chat
-  function toggleFloatingChat() {
-    isFloatingOpen = !isFloatingOpen;
-    const chatWindow = document.getElementById('flash-ai-floating-window');
-    const chatButton = document.getElementById('flash-ai-floating-button');
+  // Toggle top banner
+  function toggleTopBanner() {
+    isTopBannerOpen = !isTopBannerOpen;
+    const chatWindow = document.getElementById('flash-ai-top-window');
+    const chatButton = document.getElementById('flash-ai-top-button');
 
-    if (isFloatingOpen) {
+    if (isTopBannerOpen) {
       chatWindow.style.display = 'flex';
       chatButton.style.display = 'none';
 
       // Show welcome message if first time
-      const messagesContainer = document.getElementById('flash-ai-floating-messages');
+      const messagesContainer = document.getElementById('flash-ai-top-messages');
       if (messagesContainer && messagesContainer.children.length === 0) {
-        addMessage('Hello! How can I help you today?', 'bot', 'floating');
+        addMessage('Hello! How can I help you today?', 'bot', 'top');
       }
     } else {
       chatWindow.style.display = 'none';
@@ -342,7 +362,7 @@
 
   // Add message to chat
   function addMessage(text, sender, type) {
-    const containerId = type === 'floating' ? 'flash-ai-floating-messages' : 'flash-ai-inline-messages';
+    const containerId = type === 'top' ? 'flash-ai-top-messages' : 'flash-ai-inline-messages';
     const messagesContainer = document.getElementById(containerId);
     if (!messagesContainer) return;
 
@@ -374,8 +394,8 @@
 
   // Send message
   async function sendMessage(type) {
-    const inputId = type === 'floating' ? 'flash-ai-floating-input' : 'flash-ai-inline-input';
-    const containerId = type === 'floating' ? 'flash-ai-floating-messages' : 'flash-ai-inline-messages';
+    const inputId = type === 'top' ? 'flash-ai-top-input' : 'flash-ai-inline-input';
+    const containerId = type === 'top' ? 'flash-ai-top-messages' : 'flash-ai-inline-messages';
 
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -463,32 +483,36 @@
     await loadConfig();
     console.log('Flash AI: Config loaded:', config);
 
-    // Always show floating button (site-wide)
-    console.log('Flash AI: Creating floating button...');
-    const floatingButton = createFloatingButton();
-    const floatingWindow = createFloatingChatWindow();
-    document.body.appendChild(floatingButton);
-    document.body.appendChild(floatingWindow);
-    console.log('Flash AI: Floating widget added!');
+    // Always show top banner (site-wide)
+    console.log('Flash AI: Creating top banner...');
+    const topBanner = createTopBannerButton();
+    const topWindow = createTopBannerWindow();
+    document.body.appendChild(topBanner);
+    document.body.appendChild(topWindow);
+    console.log('Flash AI: Top banner added!');
 
-    // Add inline widget on product pages
+    // Add inline widget on product pages (below Buy it now button)
     if (isProductPage()) {
       console.log('Flash AI: Product page detected, adding inline widget...');
-      const insertionPoint = findInsertionPoint();
 
-      if (insertionPoint) {
-        const inlineWidget = createInlineWidget();
+      // Wait a bit for page to fully load
+      setTimeout(() => {
+        const buyNowButton = findBuyNowButton();
 
-        // Insert after the found element
-        if (insertionPoint.nextSibling) {
-          insertionPoint.parentNode.insertBefore(inlineWidget, insertionPoint.nextSibling);
+        if (buyNowButton) {
+          const inlineWidget = createInlineWidget();
+
+          // Insert after the Buy it now button or its parent
+          if (buyNowButton.nextSibling) {
+            buyNowButton.parentNode.insertBefore(inlineWidget, buyNowButton.nextSibling);
+          } else {
+            buyNowButton.parentNode.appendChild(inlineWidget);
+          }
+          console.log('Flash AI: Inline widget added below Buy it now button!');
         } else {
-          insertionPoint.parentNode.appendChild(inlineWidget);
+          console.log('Flash AI: Could not find Buy it now button for inline widget');
         }
-        console.log('Flash AI: Inline widget added to product page!');
-      } else {
-        console.log('Flash AI: Could not find insertion point for inline widget');
-      }
+      }, 1000); // Wait 1 second for dynamic content to load
     } else {
       console.log('Flash AI: Not a product page, skipping inline widget');
     }
