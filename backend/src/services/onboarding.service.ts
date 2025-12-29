@@ -1,6 +1,7 @@
 import { pool } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 interface OnboardingData {
   brandName: string;
@@ -169,22 +170,18 @@ export class OnboardingService {
 
       const storeId = storeResult.rows[0].id;
 
-      // Use stored admin credentials from onboarding request
-      const adminUsername = request.admin_username;
-      const adminPasswordHash = request.admin_password_hash;
+      // Generate a temporary password for the brand owner
+      const tempPassword = this.generateTempPassword();
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-      if (!adminPasswordHash) {
-        throw createError('Admin credentials not found in onboarding request', 400);
-      }
-
-      // Create brand owner user with provided credentials
+      // Create brand owner user with generated temporary password
       const userResult = await client.query(
         `INSERT INTO users (email, password, first_name, last_name, role, store_id)
          VALUES ($1, $2, $3, $4, 'brand_owner', $5)
          RETURNING id`,
         [
           request.email,
-          adminPasswordHash,  // Use stored hashed password
+          hashedPassword,
           request.contact_name.split(' ')[0],
           request.contact_name.split(' ').slice(1).join(' ') || request.contact_name,
           storeId
@@ -227,8 +224,8 @@ export class OnboardingService {
         storeId,
         userId,
         email: request.email,
-        username: adminUsername,
-        message: 'Brand owner account created successfully. User can now login with their provided credentials.',
+        tempPassword: tempPassword,
+        message: 'Brand owner account created successfully. Share the temporary password with the brand owner.',
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -236,6 +233,19 @@ export class OnboardingService {
     } finally {
       client.release();
     }
+  }
+
+  // Generate a secure temporary password
+  private generateTempPassword(): string {
+    const length = 12;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+
+    for (let i = 0; i < length; i++) {
+      password += charset[crypto.randomInt(0, charset.length)];
+    }
+
+    return password;
   }
 
   // Reject onboarding request

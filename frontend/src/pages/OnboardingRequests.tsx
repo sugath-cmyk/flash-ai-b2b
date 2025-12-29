@@ -77,7 +77,7 @@ export default function OnboardingRequests() {
       loadRequests();
       setShowModal(false);
     } catch (error: any) {
-      alert('Failed to approve: ' + (error.response?.data?.message || 'Unknown error'));
+      alert('Failed to approve: ' + (error.response?.data?.error?.message || error.response?.data?.message || 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -95,7 +95,7 @@ export default function OnboardingRequests() {
       setShowModal(false);
       setRejectReason('');
     } catch (error: any) {
-      alert('Failed to reject: ' + (error.response?.data?.message || 'Unknown error'));
+      alert('Failed to reject: ' + (error.response?.data?.error?.message || error.response?.data?.message || 'Unknown error'));
     } finally {
       setActionLoading(false);
     }
@@ -112,7 +112,7 @@ export default function OnboardingRequests() {
       loadRequests();
       setShowModal(false);
     } catch (error: any) {
-      alert('Failed to delete: ' + (error.response?.data?.message || 'Unknown error'));
+      alert('Failed to delete: ' + (error.response?.data?.error?.message || error.response?.data?.message || 'Unknown error'));
     }
   };
 
