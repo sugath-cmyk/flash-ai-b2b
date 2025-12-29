@@ -135,21 +135,35 @@ export class WidgetChatService {
       context += `\n`;
     }
 
-    // Get top products with enhanced intelligence
-    const productsResult = await pool.query(
-      `SELECT
-         title, description, short_description, price, product_type, vendor,
-         ingredients, key_benefits, skin_types, concerns,
-         usage_instructions, usage_frequency, usage_time, results_timeline,
-         texture, product_category, product_subcategory,
-         is_vegan, is_cruelty_free, is_pregnancy_safe, is_fragrance_free,
-         allergens
-       FROM extracted_products
-       WHERE store_id = $1 AND status = 'active'
-       ORDER BY created_at DESC
-       LIMIT 20`,
-      [storeId]
-    );
+    // Get products - try enhanced query first, fallback to basic if Phase 2 not deployed
+    let productsResult;
+    try {
+      productsResult = await pool.query(
+        `SELECT
+           title, description, short_description, price, product_type, vendor,
+           ingredients, key_benefits, skin_types, concerns,
+           usage_instructions, usage_frequency, usage_time, results_timeline,
+           texture, product_category, product_subcategory,
+           is_vegan, is_cruelty_free, is_pregnancy_safe, is_fragrance_free,
+           allergens
+         FROM extracted_products
+         WHERE store_id = $1 AND status = 'active'
+         ORDER BY created_at DESC
+         LIMIT 20`,
+        [storeId]
+      );
+    } catch (error: any) {
+      // Fallback to basic query if Phase 2 columns don't exist yet
+      console.log('Using basic product query (Phase 2 columns not available)');
+      productsResult = await pool.query(
+        `SELECT title, description, short_description, price, product_type, vendor
+         FROM extracted_products
+         WHERE store_id = $1 AND status = 'active'
+         ORDER BY created_at DESC
+         LIMIT 20`,
+        [storeId]
+      );
+    }
 
     // Get collections
     const collectionsResult = await pool.query(
@@ -172,47 +186,44 @@ export class WidgetChatService {
     if (productsResult.rows.length > 0) {
       context += `Other Available Products:\n`;
       productsResult.rows.forEach((product, idx) => {
-        context += `\n${idx + 1}. ${product.title} - ₹${product.price}`;
+        context += `${idx + 1}. ${product.title} - ₹${product.price}`;
 
-        // Add short description or benefits
+        // Add short description or benefits (Phase 2 enhanced data)
         if (product.short_description) {
-          context += `\n   ${product.short_description}`;
+          context += ` - ${product.short_description}`;
         } else if (product.key_benefits && product.key_benefits.length > 0) {
-          context += `\n   Benefits: ${product.key_benefits.slice(0, 3).join(', ')}`;
+          context += ` - Benefits: ${product.key_benefits.slice(0, 3).join(', ')}`;
         }
 
-        // Add category and skin types
+        // Add category and skin types (Phase 2)
         if (product.product_category) {
           context += `\n   Category: ${product.product_category}`;
-        }
-        if (product.skin_types && product.skin_types.length > 0) {
-          context += ` | Skin Types: ${product.skin_types.join(', ')}`;
+          if (product.skin_types && product.skin_types.length > 0) {
+            context += ` | For: ${product.skin_types.join(', ')} skin`;
+          }
         }
 
-        // Add key concerns addressed
+        // Add key concerns addressed (Phase 2)
         if (product.concerns && product.concerns.length > 0) {
-          context += `\n   Addresses: ${product.concerns.slice(0, 3).join(', ')}`;
+          context += `\n   Targets: ${product.concerns.slice(0, 3).join(', ')}`;
         }
 
-        // Add key ingredients (first 3)
+        // Add key ingredients (Phase 2)
         if (product.ingredients && product.ingredients.length > 0) {
-          context += `\n   Key Ingredients: ${product.ingredients.slice(0, 3).join(', ')}`;
+          context += `\n   Key ingredients: ${product.ingredients.slice(0, 3).join(', ')}`;
         }
 
-        // Add usage info
-        if (product.usage_time && product.usage_frequency) {
-          context += `\n   Usage: ${product.usage_frequency} (${product.usage_time.join('/')})`;
-        }
-
-        // Add important flags
-        const flags = [];
-        if (product.is_vegan) flags.push('Vegan');
-        if (product.is_cruelty_free) flags.push('Cruelty-free');
-        if (product.is_pregnancy_safe === true) flags.push('Pregnancy-safe');
-        if (product.is_pregnancy_safe === false) flags.push('⚠️ NOT pregnancy-safe');
-        if (product.is_fragrance_free) flags.push('Fragrance-free');
-        if (flags.length > 0) {
-          context += `\n   ${flags.join(' • ')}`;
+        // Add important flags (Phase 2)
+        if (product.is_vegan || product.is_cruelty_free || product.is_pregnancy_safe !== undefined || product.is_fragrance_free) {
+          const flags = [];
+          if (product.is_vegan) flags.push('Vegan');
+          if (product.is_cruelty_free) flags.push('Cruelty-free');
+          if (product.is_pregnancy_safe === true) flags.push('Pregnancy-safe');
+          if (product.is_pregnancy_safe === false) flags.push('⚠️ NOT pregnancy-safe');
+          if (product.is_fragrance_free) flags.push('Fragrance-free');
+          if (flags.length > 0) {
+            context += `\n   ${flags.join(' • ')}`;
+          }
         }
 
         context += `\n`;
