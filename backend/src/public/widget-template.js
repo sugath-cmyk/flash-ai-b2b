@@ -42,60 +42,154 @@
   }
 
   let conversationId = null;
+  let isExpanded = false;
 
   // Detect product page
   function isProductPage() {
     return window.location.pathname.includes('/products/');
   }
 
-  // Create inline widget for product pages
-  function createInlineWidget() {
+  // Create subtle collapsible widget
+  function createSubtleWidget() {
     const widget = document.createElement('div');
-    widget.id = 'flash-ai-inline';
+    widget.id = 'flash-ai-widget';
     widget.style.cssText = `
-      margin: 40px 0;
+      margin: 30px 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: all 0.3s ease;
     `;
 
-    widget.innerHTML = `
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px 24px; border-radius: 16px 16px 0 0; display: flex; align-items: center; gap: 12px;">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
-        </svg>
-        <div style="flex: 1;">
-          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Ask anything</h3>
-          <p style="margin: 4px 0 0 0; font-size: 11px; opacity: 0.8;">powered by Flash AI</p>
+    // Collapsed state - subtle call to action
+    const collapsedView = document.createElement('div');
+    collapsedView.id = 'flash-ai-collapsed';
+    collapsedView.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: #f8f9fa;
+      border: 1px solid #e3e6e8;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    `;
+
+    collapsedView.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+          </svg>
         </div>
-      </div>
-      <div id="flash-ai-inline-messages" style="min-height: 280px; max-height: 400px; overflow-y: auto; padding: 20px; background: #f5f5f5; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"></div>
-      <div style="padding: 16px 20px; background: white; border: 1px solid #e0e0e0; border-radius: 0 0 16px 16px; display: flex; gap: 12px;">
-        <input type="text" id="flash-ai-inline-input" placeholder="Ask about this product..." style="flex: 1; padding: 14px 18px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; outline: none;" />
-        <button id="flash-ai-inline-send" style="padding: 14px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">Send</button>
+        <div style="flex: 1;">
+          <div style="font-size: 15px; font-weight: 600; color: #2c3e50; margin-bottom: 2px;">Have questions about this product?</div>
+          <div style="font-size: 12px; color: #6c757d;">Ask our AI assistant • <span style="opacity: 0.7;">powered by Flash AI</span></div>
+        </div>
+        <svg id="flash-ai-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" style="transition: transform 0.3s ease; flex-shrink: 0;">
+          <path d="M7 10l5 5 5-5" stroke="#6c757d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
     `;
+
+    // Hover effect for collapsed view
+    collapsedView.onmouseenter = () => {
+      collapsedView.style.background = '#f0f2f5';
+      collapsedView.style.borderColor = '#d0d4d8';
+    };
+    collapsedView.onmouseleave = () => {
+      collapsedView.style.background = '#f8f9fa';
+      collapsedView.style.borderColor = '#e3e6e8';
+    };
+
+    // Expanded state - chat interface
+    const expandedView = document.createElement('div');
+    expandedView.id = 'flash-ai-expanded';
+    expandedView.style.cssText = `
+      display: none;
+      border: 1px solid #e3e6e8;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    `;
+
+    expandedView.innerHTML = `
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+          </svg>
+          <div>
+            <div style="font-size: 15px; font-weight: 600;">AI Assistant</div>
+            <div style="font-size: 10px; opacity: 0.85;">powered by Flash AI</div>
+          </div>
+        </div>
+        <button id="flash-ai-collapse" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; padding: 0; width: 30px; height: 30px; opacity: 0.9; transition: opacity 0.2s;">×</button>
+      </div>
+      <div id="flash-ai-messages" style="min-height: 250px; max-height: 350px; overflow-y: auto; padding: 20px; background: #f8f9fa;"></div>
+      <div style="padding: 16px; background: white; border-top: 1px solid #e3e6e8; display: flex; gap: 10px;">
+        <input type="text" id="flash-ai-input" placeholder="Ask anything..." style="flex: 1; padding: 12px 16px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" />
+        <button id="flash-ai-send" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: opacity 0.2s;">Send</button>
+      </div>
+    `;
+
+    widget.appendChild(collapsedView);
+    widget.appendChild(expandedView);
+
+    // Click handlers
+    collapsedView.onclick = () => toggleWidget(true);
 
     setTimeout(() => {
-      const sendBtn = document.getElementById('flash-ai-inline-send');
-      const input = document.getElementById('flash-ai-inline-input');
+      const collapseBtn = document.getElementById('flash-ai-collapse');
+      const sendBtn = document.getElementById('flash-ai-send');
+      const input = document.getElementById('flash-ai-input');
 
+      if (collapseBtn) collapseBtn.onclick = () => toggleWidget(false);
       if (sendBtn) sendBtn.onclick = sendMessage;
       if (input) {
         input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+        input.onfocus = () => { input.style.borderColor = '#667eea'; };
+        input.onblur = () => { input.style.borderColor = '#dee2e6'; };
       }
-
-      addMessage('Ask anything about this product', 'bot');
     }, 0);
 
     return widget;
   }
 
+  function toggleWidget(expand) {
+    isExpanded = expand;
+    const collapsed = document.getElementById('flash-ai-collapsed');
+    const expanded = document.getElementById('flash-ai-expanded');
+    const chevron = document.getElementById('flash-ai-chevron');
+
+    if (expand) {
+      collapsed.style.display = 'none';
+      expanded.style.display = 'block';
+
+      // Add welcome message on first expand
+      const messages = document.getElementById('flash-ai-messages');
+      if (messages && messages.children.length === 0) {
+        addMessage('Hi! I\'m here to help answer any questions about this product. What would you like to know?', 'bot');
+      }
+
+      // Focus input
+      setTimeout(() => {
+        const input = document.getElementById('flash-ai-input');
+        if (input) input.focus();
+      }, 100);
+    } else {
+      collapsed.style.display = 'flex';
+      expanded.style.display = 'none';
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+  }
+
   function addMessage(text, sender) {
-    const container = document.getElementById('flash-ai-inline-messages');
+    const container = document.getElementById('flash-ai-messages');
     if (!container) return;
 
     const msgDiv = document.createElement('div');
     msgDiv.style.cssText = `
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
       ${sender === 'user' ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}
     `;
@@ -103,14 +197,14 @@
     const bubble = document.createElement('div');
     bubble.style.cssText = `
       max-width: 75%;
-      padding: 12px 18px;
-      border-radius: 18px;
+      padding: 10px 16px;
+      border-radius: 16px;
       font-size: 14px;
       line-height: 1.5;
       word-wrap: break-word;
       ${sender === 'user'
         ? 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px;'
-        : 'background: white; color: #333; border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);'
+        : 'background: white; color: #2c3e50; border-bottom-left-radius: 4px; border: 1px solid #e3e6e8;'
       }
     `;
     bubble.textContent = text;
@@ -120,7 +214,7 @@
   }
 
   async function sendMessage() {
-    const input = document.getElementById('flash-ai-inline-input');
+    const input = document.getElementById('flash-ai-input');
     if (!input) return;
 
     const message = input.value.trim();
@@ -129,10 +223,10 @@
     addMessage(message, 'user');
     input.value = '';
 
-    const container = document.getElementById('flash-ai-inline-messages');
+    const container = document.getElementById('flash-ai-messages');
     const typing = document.createElement('div');
     typing.id = 'flash-ai-typing';
-    typing.style.cssText = 'margin-bottom: 16px; font-size: 14px; color: #666; font-style: italic;';
+    typing.style.cssText = 'margin-bottom: 14px; font-size: 13px; color: #6c757d; font-style: italic; padding-left: 4px;';
     typing.textContent = 'Typing...';
     container.appendChild(typing);
     container.scrollTop = container.scrollHeight;
@@ -192,13 +286,13 @@
       }
 
       if (targetButton) {
-        const inline = createInlineWidget();
+        const widget = createSubtleWidget();
         if (targetButton.nextSibling) {
-          targetButton.parentNode.insertBefore(inline, targetButton.nextSibling);
+          targetButton.parentNode.insertBefore(widget, targetButton.nextSibling);
         } else {
-          targetButton.parentNode.appendChild(inline);
+          targetButton.parentNode.appendChild(widget);
         }
-        console.log('Flash AI: Widget added below Buy it now button!');
+        console.log('Flash AI: Subtle widget added!');
       } else {
         console.log('Flash AI: Buy it now button not found');
       }
