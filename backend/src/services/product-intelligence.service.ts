@@ -108,7 +108,7 @@ IMPORTANT RULES:
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-sonnet-20240620', // Using stable version
         max_tokens: 2000,
         temperature: 0.3, // Lower temperature for more consistent structured output
         messages: [
@@ -135,7 +135,7 @@ IMPORTANT RULES:
         [
           productId,
           'comprehensive_analysis',
-          'claude-3-5-sonnet-20241022',
+          'claude-3-5-sonnet-20240620',
           JSON.stringify({ title: product.title, description: product.description }),
           JSON.stringify(analysis),
           analysis.confidence,
@@ -150,7 +150,7 @@ IMPORTANT RULES:
         `INSERT INTO product_ai_analysis
          (product_id, analysis_type, model_used, status, error_message)
          VALUES ($1, $2, $3, $4, $5)`,
-        [productId, 'comprehensive_analysis', 'claude-3-5-sonnet-20241022', 'failed', error.message]
+        [productId, 'comprehensive_analysis', 'claude-3-5-sonnet-20240620', 'failed', error.message]
       );
 
       throw error;
