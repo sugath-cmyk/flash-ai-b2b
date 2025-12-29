@@ -135,9 +135,15 @@ export class WidgetChatService {
       context += `\n`;
     }
 
-    // Get top products
+    // Get top products with enhanced intelligence
     const productsResult = await pool.query(
-      `SELECT title, description, short_description, price, product_type, vendor
+      `SELECT
+         title, description, short_description, price, product_type, vendor,
+         ingredients, key_benefits, skin_types, concerns,
+         usage_instructions, usage_frequency, usage_time, results_timeline,
+         texture, product_category, product_subcategory,
+         is_vegan, is_cruelty_free, is_pregnancy_safe, is_fragrance_free,
+         allergens
        FROM extracted_products
        WHERE store_id = $1 AND status = 'active'
        ORDER BY created_at DESC
@@ -166,10 +172,49 @@ export class WidgetChatService {
     if (productsResult.rows.length > 0) {
       context += `Other Available Products:\n`;
       productsResult.rows.forEach((product, idx) => {
-        context += `${idx + 1}. ${product.title} - $${product.price}`;
+        context += `\n${idx + 1}. ${product.title} - ₹${product.price}`;
+
+        // Add short description or benefits
         if (product.short_description) {
-          context += ` - ${product.short_description}`;
+          context += `\n   ${product.short_description}`;
+        } else if (product.key_benefits && product.key_benefits.length > 0) {
+          context += `\n   Benefits: ${product.key_benefits.slice(0, 3).join(', ')}`;
         }
+
+        // Add category and skin types
+        if (product.product_category) {
+          context += `\n   Category: ${product.product_category}`;
+        }
+        if (product.skin_types && product.skin_types.length > 0) {
+          context += ` | Skin Types: ${product.skin_types.join(', ')}`;
+        }
+
+        // Add key concerns addressed
+        if (product.concerns && product.concerns.length > 0) {
+          context += `\n   Addresses: ${product.concerns.slice(0, 3).join(', ')}`;
+        }
+
+        // Add key ingredients (first 3)
+        if (product.ingredients && product.ingredients.length > 0) {
+          context += `\n   Key Ingredients: ${product.ingredients.slice(0, 3).join(', ')}`;
+        }
+
+        // Add usage info
+        if (product.usage_time && product.usage_frequency) {
+          context += `\n   Usage: ${product.usage_frequency} (${product.usage_time.join('/')})`;
+        }
+
+        // Add important flags
+        const flags = [];
+        if (product.is_vegan) flags.push('Vegan');
+        if (product.is_cruelty_free) flags.push('Cruelty-free');
+        if (product.is_pregnancy_safe === true) flags.push('Pregnancy-safe');
+        if (product.is_pregnancy_safe === false) flags.push('⚠️ NOT pregnancy-safe');
+        if (product.is_fragrance_free) flags.push('Fragrance-free');
+        if (flags.length > 0) {
+          context += `\n   ${flags.join(' • ')}`;
+        }
+
         context += `\n`;
       });
       context += `\n`;
