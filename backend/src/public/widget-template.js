@@ -123,7 +123,7 @@
     `;
 
     // Add welcome message
-    addMessage(config.welcomeMessage || 'Hello! How can I help you with this product?', 'bot');
+    addMessage(config.welcomeMessage || 'Ask anything about product', 'bot');
 
     // Input container
     const inputContainer = document.createElement('div');
