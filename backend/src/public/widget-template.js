@@ -44,10 +44,66 @@
 
   let conversationId = null;
   let isExpanded = false;
+  let productContext = null;
 
   // Detect product page
   function isProductPage() {
     return window.location.pathname.includes('/products/');
+  }
+
+  // Extract product information from the page
+  function extractProductContext() {
+    if (!isProductPage()) {
+      console.log('Flash AI: Not on product page, no product context');
+      return null;
+    }
+
+    try {
+      const context = {};
+
+      // Try to get product data from Shopify's JSON
+      if (window.meta && window.meta.product) {
+        context.productId = window.meta.product.id?.toString();
+        context.productTitle = window.meta.product.title;
+        context.price = window.meta.product.price;
+        context.vendor = window.meta.product.vendor;
+      }
+
+      // Fallback: Extract from page elements
+      if (!context.productTitle) {
+        const titleElement = document.querySelector('h1.product-title, h1[class*="product"], .product__title, h1');
+        if (titleElement) {
+          context.productTitle = titleElement.textContent.trim();
+        }
+      }
+
+      if (!context.price) {
+        const priceElement = document.querySelector('.price, .product-price, [class*="price"]');
+        if (priceElement) {
+          context.price = priceElement.textContent.trim();
+        }
+      }
+
+      // Try to get description
+      const descElement = document.querySelector('.product-description, .product__description, [class*="description"]');
+      if (descElement) {
+        context.productDescription = descElement.textContent.trim().substring(0, 500);
+      }
+
+      // Get vendor from meta tags
+      if (!context.vendor) {
+        const vendorMeta = document.querySelector('meta[property="product:brand"]');
+        if (vendorMeta) {
+          context.vendor = vendorMeta.getAttribute('content');
+        }
+      }
+
+      console.log('Flash AI: Extracted product context:', context);
+      return context;
+    } catch (error) {
+      console.error('Flash AI: Error extracting product context:', error);
+      return null;
+    }
   }
 
   // Create minimal collapsible widget
@@ -162,7 +218,14 @@
       // Add welcome message on first expand
       const messages = document.getElementById('flash-ai-messages');
       if (messages && messages.children.length === 0) {
-        addMessage('Hi! I\'m here to help answer any questions about this product. What would you like to know?', 'bot');
+        let welcomeMsg = 'Hi! I\'m here to help answer any questions about this product. What would you like to know?';
+
+        // Personalize if we have product context
+        if (productContext && productContext.productTitle) {
+          welcomeMsg = `Hi! I'm here to help answer questions about ${productContext.productTitle}. What would you like to know?`;
+        }
+
+        addMessage(welcomeMsg, 'bot');
       }
 
       // Focus input
@@ -237,18 +300,26 @@
       console.log('Flash AI: Making API request to:', `${API_BASE_URL}/api/widget/chat`);
       console.log('Flash AI: Using API Key:', API_KEY.substring(0, 10) + '...');
 
+      const requestBody = {
+        sessionId: getSessionId(),
+        visitorId: getVisitorId(),
+        message: message,
+        conversationId: conversationId
+      };
+
+      // Include product context if available
+      if (productContext) {
+        requestBody.productContext = productContext;
+        console.log('Flash AI: Including product context in request');
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/widget/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-API-Key': API_KEY
         },
-        body: JSON.stringify({
-          sessionId: getSessionId(),
-          visitorId: getVisitorId(),
-          message: message,
-          conversationId: conversationId
-        })
+        body: JSON.stringify(requestBody)
       });
 
       console.log('Flash AI: API response status:', response.status);
@@ -286,6 +357,9 @@
     }
 
     console.log('Flash AI: Product page detected, creating widget...');
+
+    // Extract product context for this page
+    productContext = extractProductContext();
 
     setTimeout(() => {
       console.log('Flash AI: Searching for insertion point...');
