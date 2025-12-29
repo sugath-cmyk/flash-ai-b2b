@@ -41,76 +41,51 @@
   }
 
   // Widget state
-  let isOpen = false;
   let conversationId = null;
   let config = {};
 
-  // Create widget container
-  const widgetContainer = document.createElement('div');
-  widgetContainer.id = 'flash-ai-widget';
-  widgetContainer.style.cssText = `
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    z-index: 2147483647;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  `;
-  document.body.appendChild(widgetContainer);
+  // Find the best location to inject the widget (below quantity/add to cart)
+  function findInsertionPoint() {
+    // Try multiple selectors to find the product form
+    const selectors = [
+      'input[type="number"][name*="quantity"]',
+      'input[name="quantity"]',
+      '.quantity',
+      '.product-form__quantity',
+      'form[action*="/cart/add"]',
+      '.product-form',
+      '.product-info',
+      '.product__info-container'
+    ];
 
-  // Create chat button
-  function createChatButton() {
-    const button = document.createElement('button');
-    button.id = 'flash-ai-chat-button';
-    button.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="currentColor"/>
-      </svg>
-    `;
-    button.style.cssText = `
-      width: 60px;
-      height: 60px;
-      border-radius: 30px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-    `;
-    button.onmouseenter = () => {
-      button.style.transform = 'scale(1.1)';
-      button.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
-    };
-    button.onmouseleave = () => {
-      button.style.transform = 'scale(1)';
-      button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-    };
-    button.onclick = toggleChat;
-    return button;
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        // Find the parent container to insert after
+        let container = element;
+        // Go up a few levels to find a good container
+        for (let i = 0; i < 3; i++) {
+          if (container.parentElement) {
+            container = container.parentElement;
+          }
+        }
+        return container;
+      }
+    }
+
+    // Fallback: insert at the end of main content
+    return document.querySelector('main') || document.body;
   }
 
-  // Create chat window
-  function createChatWindow() {
-    const chatWindow = document.createElement('div');
-    chatWindow.id = 'flash-ai-chat-window';
-    chatWindow.style.cssText = `
-      display: none;
-      position: fixed;
-      bottom: 180px;
-      right: 20px;
-      width: 380px;
-      height: 600px;
-      max-height: calc(100vh - 200px);
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-      z-index: 2147483647;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+  // Create inline chat widget
+  function createInlineChatWidget() {
+    const widgetContainer = document.createElement('div');
+    widgetContainer.id = 'flash-ai-widget';
+    widgetContainer.style.cssText = `
+      margin: 30px 0;
+      width: 100%;
+      max-width: 600px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     `;
 
     // Header
@@ -118,89 +93,91 @@
     header.style.cssText = `
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 20px;
+      padding: 16px 20px;
+      border-radius: 12px 12px 0 0;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 12px;
     `;
     header.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+      </svg>
       <div>
-        <h3 style="margin: 0; font-size: 18px; font-weight: 600;">${config.title || 'Chat with us'}</h3>
-        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">${config.subtitle || 'We typically reply in minutes'}</p>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600;">${config.title || 'Chat with us'}</h3>
+        <p style="margin: 2px 0 0 0; font-size: 12px; opacity: 0.9;">${config.subtitle || 'Ask us anything about this product'}</p>
       </div>
-      <button id="flash-ai-close" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; padding: 0; width: 30px; height: 30px;">&times;</button>
     `;
 
     // Messages container
     const messagesContainer = document.createElement('div');
     messagesContainer.id = 'flash-ai-messages';
     messagesContainer.style.cssText = `
-      flex: 1;
+      min-height: 300px;
+      max-height: 450px;
       overflow-y: auto;
       padding: 20px;
       background: #f7f7f7;
+      border-left: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
     `;
+
+    // Add welcome message
+    addMessage(config.welcomeMessage || 'Hello! How can I help you with this product?', 'bot');
 
     // Input container
     const inputContainer = document.createElement('div');
     inputContainer.style.cssText = `
-      padding: 15px;
+      padding: 15px 20px;
       background: white;
-      border-top: 1px solid #e0e0e0;
+      border: 1px solid #e0e0e0;
+      border-radius: 0 0 12px 12px;
       display: flex;
       gap: 10px;
+      align-items: center;
     `;
     inputContainer.innerHTML = `
       <input
         type="text"
         id="flash-ai-input"
         placeholder="Type your message..."
-        style="flex: 1; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none;"
+        style="flex: 1; padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit;"
       />
       <button
         id="flash-ai-send"
-        style="padding: 12px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: opacity 0.2s;"
+        style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; font-size: 14px;"
       >Send</button>
     `;
 
-    chatWindow.appendChild(header);
-    chatWindow.appendChild(messagesContainer);
-    chatWindow.appendChild(inputContainer);
+    widgetContainer.appendChild(header);
+    widgetContainer.appendChild(messagesContainer);
+    widgetContainer.appendChild(inputContainer);
 
     // Event listeners
-    document.getElementById('flash-ai-close').onclick = toggleChat;
-    document.getElementById('flash-ai-send').onclick = sendMessage;
-    document.getElementById('flash-ai-input').onkeypress = (e) => {
+    const sendButton = inputContainer.querySelector('#flash-ai-send');
+    const input = inputContainer.querySelector('#flash-ai-input');
+
+    sendButton.onclick = sendMessage;
+    input.onkeypress = (e) => {
       if (e.key === 'Enter') sendMessage();
     };
 
-    return chatWindow;
-  }
+    // Hover effect for send button
+    sendButton.onmouseenter = () => {
+      sendButton.style.opacity = '0.9';
+    };
+    sendButton.onmouseleave = () => {
+      sendButton.style.opacity = '1';
+    };
 
-  // Toggle chat window
-  function toggleChat() {
-    isOpen = !isOpen;
-    const chatWindow = document.getElementById('flash-ai-chat-window');
-    const chatButton = document.getElementById('flash-ai-chat-button');
-
-    if (isOpen) {
-      chatWindow.style.display = 'flex';
-      chatButton.style.display = 'none';
-
-      // Show welcome message if first time
-      const messagesContainer = document.getElementById('flash-ai-messages');
-      if (messagesContainer.children.length === 0) {
-        addMessage(config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
-      }
-    } else {
-      chatWindow.style.display = 'none';
-      chatButton.style.display = 'flex';
-    }
+    return widgetContainer;
   }
 
   // Add message to chat
   function addMessage(text, sender) {
     const messagesContainer = document.getElementById('flash-ai-messages');
+    if (!messagesContainer) return;
+
     const messageDiv = document.createElement('div');
     messageDiv.style.cssText = `
       margin-bottom: 15px;
@@ -210,11 +187,12 @@
 
     const bubble = document.createElement('div');
     bubble.style.cssText = `
-      max-width: 70%;
+      max-width: 75%;
       padding: 12px 16px;
       border-radius: 16px;
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.5;
+      word-wrap: break-word;
       ${sender === 'user'
         ? 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px;'
         : 'background: white; color: #333; border-bottom-left-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'
@@ -229,19 +207,27 @@
   // Send message
   async function sendMessage() {
     const input = document.getElementById('flash-ai-input');
-    const message = input.value.trim();
+    if (!input) return;
 
+    const message = input.value.trim();
     if (!message) return;
 
     addMessage(message, 'user');
     input.value = '';
 
     // Show typing indicator
+    const messagesContainer = document.getElementById('flash-ai-messages');
     const typingDiv = document.createElement('div');
     typingDiv.id = 'flash-ai-typing';
-    typingDiv.style.cssText = 'margin-bottom: 15px; font-size: 14px; color: #666;';
+    typingDiv.style.cssText = `
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #666;
+      font-style: italic;
+    `;
     typingDiv.textContent = 'Typing...';
-    document.getElementById('flash-ai-messages').appendChild(typingDiv);
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/widget/chat`, {
@@ -301,11 +287,23 @@
   async function init() {
     await loadConfig();
 
-    const chatButton = createChatButton();
-    const chatWindow = createChatWindow();
+    // Find where to insert the widget
+    const insertionPoint = findInsertionPoint();
 
-    widgetContainer.appendChild(chatButton);
-    widgetContainer.appendChild(chatWindow);
+    if (!insertionPoint) {
+      console.error('Flash AI: Could not find suitable insertion point');
+      return;
+    }
+
+    // Create and insert the widget
+    const widget = createInlineChatWidget();
+
+    // Insert after the found element
+    if (insertionPoint.nextSibling) {
+      insertionPoint.parentNode.insertBefore(widget, insertionPoint.nextSibling);
+    } else {
+      insertionPoint.parentNode.appendChild(widget);
+    }
 
     // Track widget load
     try {
