@@ -266,30 +266,63 @@
     console.log('Flash AI: Product page detected, creating widget...');
 
     setTimeout(() => {
-      const buttons = document.querySelectorAll('button');
-      let targetButton = null;
+      console.log('Flash AI: Searching for insertion point...');
 
-      // Find Buy it now button
-      for (const button of buttons) {
-        const text = button.textContent.toLowerCase();
-        if (text.includes('buy it now') || text.includes('buy now')) {
-          targetButton = button;
-          break;
+      // Strategy 1: Find product form
+      let targetElement = document.querySelector('form[action*="/cart/add"]');
+      if (targetElement) {
+        console.log('Flash AI: Found product form');
+      }
+
+      // Strategy 2: Find Buy button (multiple variations)
+      if (!targetElement) {
+        const buttons = document.querySelectorAll('button, input[type="submit"], a.button');
+        console.log('Flash AI: Found', buttons.length, 'buttons/inputs');
+
+        for (const button of buttons) {
+          const text = button.textContent?.toLowerCase() || button.value?.toLowerCase() || '';
+          console.log('Flash AI: Button text:', text.substring(0, 50));
+
+          if (text.includes('buy') ||
+              text.includes('add to cart') ||
+              text.includes('purchase') ||
+              text.includes('checkout')) {
+            targetElement = button;
+            console.log('Flash AI: Found target button:', text.substring(0, 30));
+            break;
+          }
         }
       }
 
-      if (targetButton) {
+      // Strategy 3: Find product info section
+      if (!targetElement) {
+        targetElement = document.querySelector('.product-form, .product-info, .product-details, [class*="product"]');
+        if (targetElement) {
+          console.log('Flash AI: Using product section as fallback');
+        }
+      }
+
+      // Strategy 4: Last resort - use main content
+      if (!targetElement) {
+        targetElement = document.querySelector('main, #main, .main-content');
+        console.log('Flash AI: Using main content as last resort');
+      }
+
+      if (targetElement) {
         const widget = createSubtleWidget();
-        if (targetButton.nextSibling) {
-          targetButton.parentNode.insertBefore(widget, targetButton.nextSibling);
+
+        // Insert after the target element
+        if (targetElement.nextSibling) {
+          targetElement.parentNode.insertBefore(widget, targetElement.nextSibling);
         } else {
-          targetButton.parentNode.appendChild(widget);
+          targetElement.parentNode.appendChild(widget);
         }
-        console.log('Flash AI: Subtle widget added!');
+
+        console.log('Flash AI: Widget added successfully!');
       } else {
-        console.log('Flash AI: Buy it now button not found');
+        console.error('Flash AI: Could not find suitable insertion point');
       }
-    }, 1500);
+    }, 2000); // Increased timeout to 2 seconds
   }
 
   if (document.readyState === 'loading') {
