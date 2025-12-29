@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import brandController from '../controllers/brand.controller';
 import { getWidgetConfig, updateWidgetConfig } from '../controllers/widget-config.controller';
+import {
+  connectStore,
+  getConnectionStatus,
+  disconnectStore,
+  testConnection,
+} from '../controllers/brand-store.controller';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -10,6 +16,22 @@ router.get('/:storeId/products', brandController.getPublicProducts);
 
 // All routes below require authentication
 router.use(authenticate);
+
+/**
+ * Store Connection & Management Routes
+ * For brand owners to connect their Shopify stores
+ */
+// Test connection without saving
+router.post('/stores/test-connection', testConnection);
+
+// Connect store with credentials
+router.post('/stores/connect', connectStore);
+
+// Get connection status
+router.get('/stores/:storeId/connection', getConnectionStatus);
+
+// Disconnect store
+router.delete('/stores/:storeId/connection', disconnectStore);
 
 // Widget Configuration
 router.get('/:storeId/widget/config', getWidgetConfig);
