@@ -119,7 +119,10 @@ IMPORTANT RULES:
         ],
       });
 
-      const content = response.content[0].type === 'text' ? response.content[0].text : '';
+      let content = response.content[0].type === 'text' ? response.content[0].text : '';
+
+      // Strip markdown code blocks if present (```json ... ```)
+      content = content.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
 
       // Parse JSON response
       const analysis = JSON.parse(content) as ProductAnalysisResult;
