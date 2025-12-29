@@ -87,7 +87,26 @@ export default function BrandDashboard() {
       const response = await axios.get(`/brand/${storeId}/embed-code`);
       setEmbedCode(response.data.data.embedCode);
     } catch (error: any) {
-      alert('Error: ' + (error.response?.data?.message || 'Failed to get embed code'));
+      const errorMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Failed to get embed code';
+      console.error('Embed code error:', error.response?.data);
+
+      // Fallback: Generate embed code client-side
+      const fallbackCode = `<!-- Flash AI Chat Widget -->
+<script>
+  (function() {
+    window.flashAIConfig = {
+      storeId: '${storeId}'
+    };
+    var script = document.createElement('script');
+    script.src = 'https://flash-ai-backend-rld7.onrender.com/widget/${storeId}.js';
+    script.async = true;
+    document.head.appendChild(script);
+  })();
+</script>
+<!-- End Flash AI Chat Widget -->`;
+
+      setEmbedCode(fallbackCode);
+      console.log('Using fallback embed code');
     }
   };
 
