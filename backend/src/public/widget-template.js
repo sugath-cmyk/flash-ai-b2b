@@ -244,7 +244,9 @@
 
       if (data.success) {
         conversationId = data.data.conversationId;
-        addMessage(data.data.response, 'bot');
+        // API returns 'message' not 'response'
+        const botMessage = data.data.message || data.data.response || 'Sorry, no response received.';
+        addMessage(botMessage, 'bot');
       } else {
         addMessage('Sorry, something went wrong. Please try again.', 'bot');
       }
