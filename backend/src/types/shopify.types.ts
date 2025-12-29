@@ -168,17 +168,41 @@ export interface WebhookEvent {
 }
 
 export const SHOPIFY_SCOPES = [
+  // Product & Collection Access
   'read_products',
   'write_products',
   'read_product_listings',
   'read_collections',
+
+  // Inventory & Fulfillment
   'read_inventory',
-  'read_customers',
+  'read_assigned_fulfillment_orders',
+  'read_fulfillments',
+
+  // Order Management
   'read_orders',
-  'read_content',
-  'read_themes',
+  'read_order_edits',
+  'read_returns',
+
+  // Pricing & Discounts
   'read_price_rules',
   'read_discounts',
+
+  // Customer & Marketing
+  'read_customers',
+  'read_marketing_events',
+
+  // Store Content
+  'read_content',
+  'read_themes',
+  'read_online_store_navigation',
+
+  // Shipping & Policies
+  'read_shipping',
+  'read_legal_policies',
+
+  // Discovery & Analytics
+  'read_discovery',
   'read_analytics',
   'read_shop_data',
 ];
