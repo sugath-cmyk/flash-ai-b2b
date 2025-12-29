@@ -103,9 +103,9 @@
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
       </svg>
-      <div>
-        <h3 style="margin: 0; font-size: 16px; font-weight: 600;">${config.title || 'Chat with us'}</h3>
-        <p style="margin: 2px 0 0 0; font-size: 12px; opacity: 0.9;">${config.subtitle || 'Ask us anything about this product'}</p>
+      <div style="flex: 1;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Ask anything</h3>
+        <p style="margin: 2px 0 0 0; font-size: 10px; opacity: 0.7;">powered by Flash AI</p>
       </div>
     `;
 
