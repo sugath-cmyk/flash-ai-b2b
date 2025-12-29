@@ -322,6 +322,143 @@ export class BrandController {
       throw error;
     }
   }
+
+  // Shopify Credentials Management
+  async getShopifyCredentials(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+
+      // Verify store ownership
+      const storeResult = await pool.query(
+        'SELECT shopify_shop_domain, shopify_access_token IS NOT NULL as has_token, shopify_scopes FROM stores WHERE id = $1 AND user_id = $2',
+        [storeId, userId]
+      );
+
+      if (storeResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Store not found',
+        });
+      }
+
+      const store = storeResult.rows[0];
+
+      res.json({
+        success: true,
+        data: {
+          shopDomain: store.shopify_shop_domain,
+          hasToken: store.has_token,
+          scopes: store.shopify_scopes ? store.shopify_scopes.split(',') : [],
+          configured: !!store.has_token,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async saveShopifyCredentials(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const { shopDomain, accessToken, apiKey } = req.body;
+
+      if (!shopDomain || !accessToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'Shop domain and access token are required',
+        });
+      }
+
+      // Verify store ownership
+      const storeResult = await pool.query(
+        'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+        [storeId, userId]
+      );
+
+      if (storeResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Store not found',
+        });
+      }
+
+      // Test the credentials by making a Shopify API call
+      const axios = (await import('axios')).default;
+      try {
+        await axios.get(`https://${shopDomain}/admin/api/2024-01/shop.json`, {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+          },
+        });
+      } catch (error: any) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid Shopify credentials. Please check your access token and shop domain.',
+        });
+      }
+
+      // Save credentials
+      await pool.query(
+        `UPDATE stores
+         SET shopify_shop_domain = $1,
+             shopify_access_token = $2,
+             shopify_installed_at = NOW(),
+             sync_status = 'active',
+             updated_at = NOW()
+         WHERE id = $3`,
+        [shopDomain, accessToken, storeId]
+      );
+
+      res.json({
+        success: true,
+        message: 'Shopify credentials saved successfully',
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async removeShopifyCredentials(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+
+      // Verify store ownership
+      const storeResult = await pool.query(
+        'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+        [storeId, userId]
+      );
+
+      if (storeResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Store not found',
+        });
+      }
+
+      // Remove credentials
+      await pool.query(
+        `UPDATE stores
+         SET shopify_shop_domain = NULL,
+             shopify_access_token = NULL,
+             shopify_scopes = NULL,
+             shopify_installed_at = NULL,
+             sync_status = 'disconnected',
+             updated_at = NOW()
+         WHERE id = $1`,
+        [storeId]
+      );
+
+      res.json({
+        success: true,
+        message: 'Shopify credentials removed successfully',
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default new BrandController();

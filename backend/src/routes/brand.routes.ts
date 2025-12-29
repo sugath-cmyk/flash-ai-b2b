@@ -38,4 +38,9 @@ router.get('/:storeId/invoices', brandController.getInvoices);
 router.get('/:storeId/conversations', brandController.getConversations);
 router.get('/:storeId/conversations/:conversationId', brandController.getConversation);
 
+// Shopify Credentials Management
+router.get('/:storeId/shopify/credentials', brandController.getShopifyCredentials);
+router.post('/:storeId/shopify/credentials', brandController.saveShopifyCredentials);
+router.delete('/:storeId/shopify/credentials', brandController.removeShopifyCredentials);
+
 export default router;
