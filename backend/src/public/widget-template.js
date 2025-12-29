@@ -49,55 +49,48 @@
     return window.location.pathname.includes('/products/');
   }
 
-  // Create subtle collapsible widget
+  // Create minimal collapsible widget
   function createSubtleWidget() {
     const widget = document.createElement('div');
     widget.id = 'flash-ai-widget';
     widget.style.cssText = `
-      margin: 30px 0;
+      margin: 20px 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       transition: all 0.3s ease;
     `;
 
-    // Collapsed state - subtle call to action
+    // Collapsed state - minimal single line
     const collapsedView = document.createElement('div');
     collapsedView.id = 'flash-ai-collapsed';
     collapsedView.style.cssText = `
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      background: #f8f9fa;
+      justify-content: center;
+      padding: 10px 16px;
+      background: transparent;
       border: 1px solid #e3e6e8;
-      border-radius: 12px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
     `;
 
     collapsedView.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
-          </svg>
-        </div>
-        <div style="flex: 1;">
-          <div style="font-size: 15px; font-weight: 600; color: #2c3e50; margin-bottom: 2px;">Have questions about this product?</div>
-          <div style="font-size: 12px; color: #6c757d;">Ask our AI assistant • <span style="opacity: 0.7;">powered by Flash AI</span></div>
-        </div>
-        <svg id="flash-ai-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" style="transition: transform 0.3s ease; flex-shrink: 0;">
-          <path d="M7 10l5 5 5-5" stroke="#6c757d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6c757d;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="#667eea"/>
         </svg>
+        <span>Questions? Ask AI</span>
+        <span style="font-size: 10px; opacity: 0.6;">• powered by Flash AI</span>
       </div>
     `;
 
     // Hover effect for collapsed view
     collapsedView.onmouseenter = () => {
-      collapsedView.style.background = '#f0f2f5';
-      collapsedView.style.borderColor = '#d0d4d8';
+      collapsedView.style.background = '#f8f9fa';
+      collapsedView.style.borderColor = '#667eea';
     };
     collapsedView.onmouseleave = () => {
-      collapsedView.style.background = '#f8f9fa';
+      collapsedView.style.background = 'transparent';
       collapsedView.style.borderColor = '#e3e6e8';
     };
 
@@ -113,22 +106,22 @@
     `;
 
     expandedView.innerHTML = `
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
           </svg>
           <div>
-            <div style="font-size: 15px; font-weight: 600;">AI Assistant</div>
-            <div style="font-size: 10px; opacity: 0.85;">powered by Flash AI</div>
+            <div style="font-size: 13px; font-weight: 600;">AI Assistant</div>
+            <div style="font-size: 9px; opacity: 0.8;">powered by Flash AI</div>
           </div>
         </div>
-        <button id="flash-ai-collapse" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; padding: 0; width: 30px; height: 30px; opacity: 0.9; transition: opacity 0.2s;">×</button>
+        <button id="flash-ai-collapse" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px; padding: 0; width: 24px; height: 24px; opacity: 0.9; transition: opacity 0.2s;">×</button>
       </div>
-      <div id="flash-ai-messages" style="min-height: 250px; max-height: 350px; overflow-y: auto; padding: 20px; background: #f8f9fa;"></div>
-      <div style="padding: 16px; background: white; border-top: 1px solid #e3e6e8; display: flex; gap: 10px;">
-        <input type="text" id="flash-ai-input" placeholder="Ask anything..." style="flex: 1; padding: 12px 16px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" />
-        <button id="flash-ai-send" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: opacity 0.2s;">Send</button>
+      <div id="flash-ai-messages" style="min-height: 180px; max-height: 280px; overflow-y: auto; padding: 16px; background: #f8f9fa;"></div>
+      <div style="padding: 12px; background: white; border-top: 1px solid #e3e6e8; display: flex; gap: 8px;">
+        <input type="text" id="flash-ai-input" placeholder="Ask anything..." style="flex: 1; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; outline: none; transition: border-color 0.2s;" />
+        <button id="flash-ai-send" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: opacity 0.2s;">Send</button>
       </div>
     `;
 
