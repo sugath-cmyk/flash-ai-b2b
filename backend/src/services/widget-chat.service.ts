@@ -615,7 +615,7 @@ Remember: You're not just selling products — you're providing trusted guidance
     ];
 
     const response = await this.anthropic.messages.create({
-      model: 'claude-3-5-sonnet-latest', // Latest Sonnet for best responses
+      model: 'claude-sonnet-4-5-20250929', // Claude Sonnet 4.5 for best responses
       max_tokens: 500, // Reduced to force crisp, concise responses
       temperature: 0.7, // Add personality while staying accurate
       system: systemPrompt,
