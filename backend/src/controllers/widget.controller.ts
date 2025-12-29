@@ -147,10 +147,14 @@ export class WidgetController {
       widgetScript = widgetScript.replace('{{API_BASE_URL}}', apiBaseUrl);
       widgetScript = widgetScript.replace('{{API_KEY}}', apiKey);
 
-      // Set appropriate headers
-      res.setHeader('Content-Type', 'application/javascript');
+      // Set appropriate headers for cross-origin loading
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
       res.setHeader('Access-Control-Allow-Origin', '*'); // Allow from any origin
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
 
       res.send(widgetScript);
     } catch (error) {

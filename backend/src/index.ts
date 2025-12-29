@@ -25,7 +25,11 @@ const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(helmet()); // Security headers
+// Configure helmet with relaxed CSP for widget endpoints
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP to allow widget to load on any site
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin resource loading
+}));
 
 // CORS configuration - allow widget endpoints from any origin
 app.use(cors({
@@ -59,6 +63,12 @@ app.get('/health', (req, res) => {
 });
 
 // Widget script serving route (public, must be before API routes)
+app.options('/widget/:storeId.js', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(200);
+});
 app.get('/widget/:storeId.js', widgetController.serveWidgetScript.bind(widgetController));
 
 // API Routes
