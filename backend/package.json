@@ -11,6 +11,7 @@
     "migrate": "ts-node src/scripts/migrate.ts",
     "seed": "ts-node src/scripts/migrate.ts seed",
     "sync-shopify": "ts-node src/scripts/update-shopify-credentials.ts",
+    "sync-production": "ts-node src/scripts/sync-production-store.ts",
     "lint": "echo \"Linting not configured yet\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
