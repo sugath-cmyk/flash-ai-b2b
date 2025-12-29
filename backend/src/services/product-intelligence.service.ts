@@ -120,9 +120,11 @@ IMPORTANT RULES:
       });
 
       let content = response.content[0].type === 'text' ? response.content[0].text : '';
+      console.log('AI Response Content:', content);
 
-      // Strip markdown code blocks if present (```json ... ```)
-      content = content.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+      // Strip markdown code blocks if present (```json ... ``` or ```...```)
+      // Handle multiple formats: ```json\n{...}\n``` or ```\n{...}\n```
+      content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
 
       // Parse JSON response
       const analysis = JSON.parse(content) as ProductAnalysisResult;
