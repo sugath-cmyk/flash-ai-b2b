@@ -400,14 +400,35 @@ export class ShopifyExtractionService {
    * Save page to database
    */
   private static async savePage(storeId: string, page: ShopifyPage): Promise<void> {
+    // Detect page type from handle or title
+    const handle = page.handle.toLowerCase();
+    const title = page.title.toLowerCase();
+
+    let pageType = 'custom';
+    if (handle.includes('about') || title.includes('about')) {
+      pageType = 'about';
+    } else if (handle.includes('contact') || title.includes('contact')) {
+      pageType = 'contact';
+    } else if (handle.includes('shipping') || title.includes('shipping')) {
+      pageType = 'shipping';
+    } else if (handle.includes('return') || title.includes('return')) {
+      pageType = 'returns';
+    } else if (handle.includes('refund') || title.includes('refund')) {
+      pageType = 'refund';
+    } else if (handle.includes('privacy') || title.includes('privacy')) {
+      pageType = 'privacy';
+    } else if (handle.includes('terms') || title.includes('terms')) {
+      pageType = 'terms';
+    }
+
     await pool.query(
       `INSERT INTO extracted_pages
        (store_id, page_type, title, content, handle, metadata)
-       VALUES ($1, 'custom', $2, $3, $4, $5)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (store_id, handle)
        DO UPDATE SET
-         title = $2, content = $3, metadata = $5, updated_at = NOW()`,
-      [storeId, page.title, page.body_html, page.handle, JSON.stringify(page)]
+         page_type = $2, title = $3, content = $4, metadata = $6, updated_at = NOW()`,
+      [storeId, pageType, page.title, page.body_html, page.handle, JSON.stringify(page)]
     );
   }
 

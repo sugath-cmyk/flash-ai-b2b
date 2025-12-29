@@ -177,14 +177,37 @@ export class WidgetChatService {
     }
 
     if (pagesResult.rows.length > 0) {
-      const policies = pagesResult.rows.filter(p =>
+      // Group pages by type
+      const aboutPages = pagesResult.rows.filter(p => p.page_type === 'about');
+      const policyPages = pagesResult.rows.filter(p =>
         ['terms', 'privacy', 'shipping', 'returns', 'refund'].includes(p.page_type)
       );
+      const otherPages = pagesResult.rows.filter(p =>
+        !['about', 'contact', 'terms', 'privacy', 'shipping', 'returns', 'refund'].includes(p.page_type)
+      );
 
-      if (policies.length > 0) {
+      // Add About/Brand info first (most relevant for brand questions)
+      if (aboutPages.length > 0) {
+        context += `About ${store.store_name || 'This Store'}:\n`;
+        aboutPages.forEach((page) => {
+          const cleanContent = this.stripHtml(page.content);
+          context += `${cleanContent.substring(0, 800)}...\n\n`;
+        });
+      }
+
+      // Add policies
+      if (policyPages.length > 0) {
         context += `Store Policies:\n`;
-        policies.forEach((page) => {
-          context += `${page.title}:\n${this.stripHtml(page.content).substring(0, 500)}...\n\n`;
+        policyPages.forEach((page) => {
+          context += `${page.title}:\n${this.stripHtml(page.content).substring(0, 400)}...\n\n`;
+        });
+      }
+
+      // Add other relevant pages
+      if (otherPages.length > 0) {
+        context += `Additional Information:\n`;
+        otherPages.forEach((page) => {
+          context += `${page.title}:\n${this.stripHtml(page.content).substring(0, 300)}...\n\n`;
         });
       }
     }
@@ -197,7 +220,7 @@ export class WidgetChatService {
       throw createError('AI service not configured', 500);
     }
 
-    const systemPrompt = `You are Flash AI, a helpful shopping assistant for this e-commerce store. Your primary goal is to help customers learn about products, make informed purchase decisions, and answer store-related questions.
+    const systemPrompt = `You are Flash AI, a helpful shopping assistant for this e-commerce store. Your primary goal is to help customers learn about products, make informed purchase decisions, and answer questions about the store and brand.
 
 Store Information:
 ${storeContext}
@@ -205,16 +228,18 @@ ${storeContext}
 IMPORTANT BOUNDARIES - You MUST follow these rules:
 1. ONLY answer questions related to:
    - Products in this store (features, ingredients, pricing, availability, usage, benefits, comparisons)
+   - Brand story, mission, values, and "About Us" information
    - Store policies (shipping, returns, refunds, terms, privacy)
    - Order process and payment methods
    - General shopping advice related to these products
+   - Company background and brand identity
 
 2. POLITELY DECLINE questions about:
    - Unrelated topics (news, politics, general knowledge, other websites)
    - Medical advice (instead suggest: "Please consult a healthcare professional")
    - Personal information requests
    - Competitor products not sold in this store
-   - Anything outside the scope of this store's products and policies
+   - Anything outside the scope of this store's products, brand, and policies
 
 3. Response Guidelines:
    - Keep responses concise (2-4 sentences for simple questions)
