@@ -1,7 +1,8 @@
 (function() {
   'use strict';
 
-  console.log('Flash AI: Widget initializing...');
+  const WIDGET_VERSION = 'v1.2.0-debug';
+  console.log('Flash AI: Widget initializing...', WIDGET_VERSION);
 
   const storeId = window.flashAIConfig?.storeId;
   if (!storeId) {
@@ -207,12 +208,20 @@
   }
 
   async function sendMessage() {
+    console.log('Flash AI: sendMessage called');
     const input = document.getElementById('flash-ai-input');
-    if (!input) return;
+    if (!input) {
+      console.error('Flash AI: Input element not found');
+      return;
+    }
 
     const message = input.value.trim();
-    if (!message) return;
+    if (!message) {
+      console.log('Flash AI: Empty message, skipping');
+      return;
+    }
 
+    console.log('Flash AI: Sending message:', message);
     addMessage(message, 'user');
     input.value = '';
 
@@ -225,6 +234,9 @@
     container.scrollTop = container.scrollHeight;
 
     try {
+      console.log('Flash AI: Making API request to:', `${API_BASE_URL}/api/widget/chat`);
+      console.log('Flash AI: Using API Key:', API_KEY.substring(0, 10) + '...');
+
       const response = await fetch(`${API_BASE_URL}/api/widget/chat`, {
         method: 'POST',
         headers: {
@@ -239,19 +251,27 @@
         })
       });
 
+      console.log('Flash AI: API response status:', response.status);
       const data = await response.json();
+      console.log('Flash AI: API response data:', data);
+
       typing.remove();
 
       if (data.success) {
         conversationId = data.data.conversationId;
+        console.log('Flash AI: Conversation ID:', conversationId);
+
         // API returns 'message' not 'response'
         const botMessage = data.data.message || data.data.response || 'Sorry, no response received.';
+        console.log('Flash AI: Bot message:', botMessage.substring(0, 50) + '...');
         addMessage(botMessage, 'bot');
+        console.log('Flash AI: Message added to chat');
       } else {
+        console.error('Flash AI: API returned success: false', data);
         addMessage('Sorry, something went wrong. Please try again.', 'bot');
       }
     } catch (error) {
-      console.error('Flash AI: Error:', error);
+      console.error('Flash AI: Catch error:', error);
       typing.remove();
       addMessage('Sorry, I\'m having trouble connecting. Please try again.', 'bot');
     }

@@ -149,12 +149,13 @@ export class WidgetController {
 
       // Set appropriate headers for cross-origin loading
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      res.setHeader('Cache-Control', 'public, max-age=60'); // Cache for 1 minute (reduced for debugging)
       res.setHeader('Access-Control-Allow-Origin', '*'); // Allow from any origin
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Widget-Version', '1.2.0-debug'); // Version for debugging
 
       res.send(widgetScript);
     } catch (error) {
