@@ -16,6 +16,7 @@ import widgetRoutes from './routes/widget.routes';
 import onboardingRoutes from './routes/onboarding.routes';
 import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
+import widgetController from './controllers/widget.controller';
 
 // Load environment variables
 dotenv.config();
@@ -56,6 +57,9 @@ app.use(morgan('dev')); // Logging
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Widget script serving route (public, must be before API routes)
+app.get('/widget/:storeId.js', widgetController.serveWidgetScript.bind(widgetController));
 
 // API Routes
 app.use('/api/auth', authRoutes);

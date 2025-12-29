@@ -3,6 +3,8 @@ import widgetService from '../services/widget.service';
 import widgetChatService from '../services/widget-chat.service';
 import subscriptionService from '../services/subscription.service';
 import { createError } from '../middleware/errorHandler';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class WidgetController {
   // Get widget configuration (public endpoint)
@@ -112,6 +114,47 @@ export class WidgetController {
         message: 'Event tracked',
       });
     } catch (error) {
+      throw error;
+    }
+  }
+
+  // Serve widget JavaScript file (public endpoint)
+  async serveWidgetScript(req: Request, res: Response) {
+    try {
+      const { storeId } = req.params;
+
+      if (!storeId) {
+        throw createError('Store ID is required', 400);
+      }
+
+      // Get API key for this store
+      const apiKeys = await widgetService.getActiveApiKey(storeId);
+
+      if (!apiKeys || apiKeys.length === 0) {
+        throw createError('No API key found for this store', 404);
+      }
+
+      const apiKey = apiKeys[0].api_key;
+
+      // Read widget template
+      const templatePath = path.join(__dirname, '../public/widget-template.js');
+      let widgetScript = fs.readFileSync(templatePath, 'utf8');
+
+      // Get API base URL from environment or default
+      const apiBaseUrl = process.env.API_BASE_URL || 'https://flash-ai-backend-rld7.onrender.com';
+
+      // Replace placeholders
+      widgetScript = widgetScript.replace('{{API_BASE_URL}}', apiBaseUrl);
+      widgetScript = widgetScript.replace('{{API_KEY}}', apiKey);
+
+      // Set appropriate headers
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      res.setHeader('Access-Control-Allow-Origin', '*'); // Allow from any origin
+
+      res.send(widgetScript);
+    } catch (error) {
+      console.error('Error serving widget script:', error);
       throw error;
     }
   }

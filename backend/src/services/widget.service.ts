@@ -175,6 +175,20 @@ export class WidgetService {
     return result.rows;
   }
 
+  // Get active API key for a store (public, no auth check)
+  async getActiveApiKey(storeId: string): Promise<any[]> {
+    const result = await pool.query(
+      `SELECT api_key, key_name, created_at
+       FROM widget_api_keys
+       WHERE store_id = $1 AND is_active = true
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [storeId]
+    );
+
+    return result.rows;
+  }
+
   // Verify API key (for widget authentication)
   async verifyApiKey(apiKey: string): Promise<{ storeId: string; isValid: boolean }> {
     const result = await pool.query(
