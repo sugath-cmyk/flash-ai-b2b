@@ -177,7 +177,7 @@ export class OnboardingService {
       // Create brand owner user with generated temporary password
       const userResult = await client.query(
         `INSERT INTO users (email, password, first_name, last_name, role, store_id)
-         VALUES ($1, $2, $3, $4, 'brand_owner', $5)
+         VALUES ($1, $2, $3, $4, 'owner', $5)
          RETURNING id`,
         [
           request.email,

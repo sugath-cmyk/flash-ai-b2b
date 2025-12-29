@@ -14,7 +14,7 @@ export default function Dashboard() {
     return <AdminDashboard />;
   }
 
-  if (user.role === 'brand_owner') {
+  if (user.role === 'owner' || user.role === 'brand_owner') {
     return <BrandOwnerDashboard />;
   }
 
