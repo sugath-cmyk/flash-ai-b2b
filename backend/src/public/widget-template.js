@@ -290,7 +290,7 @@
       padding: 12px 16px;
       border-radius: 16px;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.5;
       word-wrap: break-word;
       white-space: pre-wrap;
       ${sender === 'user'
@@ -316,22 +316,22 @@
     let formatted = text;
 
     // Convert markdown-style bullet points to HTML
-    formatted = formatted.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display: flex; margin: 4px 0;"><span style="margin-right: 8px;">•</span><span>$1</span></div>');
+    formatted = formatted.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display: flex; margin: 2px 0;"><span style="margin-right: 8px;">•</span><span>$1</span></div>');
 
     // Convert checkmarks to styled version
-    formatted = formatted.replace(/^✅\s+(.+)$/gm, '<div style="display: flex; margin: 4px 0;"><span style="margin-right: 6px;">✅</span><span>$1</span></div>');
+    formatted = formatted.replace(/^✅\s+(.+)$/gm, '<div style="display: flex; margin: 2px 0;"><span style="margin-right: 6px;">✅</span><span>$1</span></div>');
 
     // Convert warning signs
-    formatted = formatted.replace(/^⚠️\s+(.+)$/gm, '<div style="display: flex; margin: 4px 0;"><span style="margin-right: 6px;">⚠️</span><span>$1</span></div>');
+    formatted = formatted.replace(/^⚠️\s+(.+)$/gm, '<div style="display: flex; margin: 2px 0;"><span style="margin-right: 6px;">⚠️</span><span>$1</span></div>');
 
     // Bold text **text** or __text__
     formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
 
-    // Preserve double line breaks as paragraphs
-    formatted = formatted.replace(/\n\n+/g, '<div style="height: 8px;"></div>');
+    // Preserve double line breaks as smaller paragraphs
+    formatted = formatted.replace(/\n\n+/g, '<div style="height: 4px;"></div>');
 
-    // Convert single line breaks to <br> for better spacing
+    // Convert single line breaks to <br>
     formatted = formatted.replace(/\n/g, '<br>');
 
     return formatted;
