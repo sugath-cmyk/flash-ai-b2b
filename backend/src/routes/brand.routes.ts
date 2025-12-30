@@ -65,4 +65,50 @@ router.get('/:storeId/shopify/credentials', brandController.getShopifyCredential
 router.post('/:storeId/shopify/credentials', brandController.saveShopifyCredentials);
 router.delete('/:storeId/shopify/credentials', brandController.removeShopifyCredentials);
 
+// ============================================================================
+// QUERY ANALYTICS ROUTES (For Brand Owners)
+// ============================================================================
+
+/**
+ * Dashboard summary with overview, popular queries, categories, and cache stats
+ * GET /api/brand/:storeId/query-analytics/summary?days=30
+ */
+router.get('/:storeId/query-analytics/summary', brandController.getQueryAnalyticsSummary);
+
+/**
+ * Overall query statistics
+ * GET /api/brand/:storeId/query-analytics/stats?days=30
+ */
+router.get('/:storeId/query-analytics/stats', brandController.getQueryStats);
+
+/**
+ * Popular queries (most frequently asked)
+ * GET /api/brand/:storeId/query-analytics/popular?days=30&limit=20&category=ingredients
+ */
+router.get('/:storeId/query-analytics/popular', brandController.getPopularQueries);
+
+/**
+ * Category breakdown with percentages
+ * GET /api/brand/:storeId/query-analytics/categories?days=30
+ */
+router.get('/:storeId/query-analytics/categories', brandController.getCategoryBreakdown);
+
+/**
+ * Search queries with filters
+ * GET /api/brand/:storeId/query-analytics/search?category=ingredients&searchTerm=niacinamide&page=1&limit=50
+ */
+router.get('/:storeId/query-analytics/search', brandController.searchQueries);
+
+/**
+ * Export queries as CSV or JSON
+ * GET /api/brand/:storeId/query-analytics/export?format=csv&startDate=2024-01-01
+ */
+router.get('/:storeId/query-analytics/export', brandController.exportQueries);
+
+/**
+ * Cache performance statistics
+ * GET /api/brand/:storeId/query-analytics/cache-stats?days=30
+ */
+router.get('/:storeId/query-analytics/cache-stats', brandController.getCacheStats);
+
 export default router;

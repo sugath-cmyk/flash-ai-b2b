@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth';
 import widgetService from '../services/widget.service';
 import subscriptionService from '../services/subscription.service';
 import widgetChatService from '../services/widget-chat.service';
+import adminQueryService from '../services/admin-query.service';
+import queryCacheService from '../services/query-cache.service';
 import pool from '../config/database';
 
 export class BrandController {
@@ -454,6 +456,278 @@ export class BrandController {
       res.json({
         success: true,
         message: 'Shopify credentials removed successfully',
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // QUERY ANALYTICS ENDPOINTS (For Brand Owners)
+  // ============================================================================
+
+  /**
+   * Get query analytics dashboard summary
+   * GET /api/brand/:storeId/query-analytics/summary
+   */
+  async getQueryAnalyticsSummary(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const days = parseInt(req.query.days as string) || 30;
+
+      // Verify store ownership
+      const storeExtractionService = (await import('../services/store-extraction.service')).default;
+      await storeExtractionService.getStoreDetails(storeId, userId);
+
+      // Get overall stats
+      const stats = await adminQueryService.getQueryStats(storeId, days);
+
+      // Get popular queries (top 5)
+      const popularQueries = await adminQueryService.getPopularQueries(storeId, days, 5);
+
+      // Get category breakdown
+      const categories = await adminQueryService.getCategoryBreakdown(storeId, days);
+
+      // Get cache stats
+      const cacheStats = await queryCacheService.getCacheStats(storeId, days);
+
+      res.json({
+        success: true,
+        data: {
+          overview: {
+            totalQueries: stats.totalQueries,
+            uniqueConversations: stats.uniqueConversations,
+            avgMessagesPerConversation: stats.avgMessagesPerConversation,
+            cacheHitRate: stats.cacheHitRate,
+            avgTokensPerQuery: stats.avgTokensPerQuery,
+            timeRange: stats.timeRange
+          },
+          popularQueries: popularQueries.slice(0, 5),
+          categoryBreakdown: categories,
+          cachePerformance: {
+            hitRate: cacheStats.cacheHitRate,
+            totalCached: cacheStats.totalCachedResponses,
+            savings: cacheStats.costSavings
+          }
+        }
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get query statistics
+   * GET /api/brand/:storeId/query-analytics/stats
+   */
+  async getQueryStats(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const days = parseInt(req.query.days as string) || 30;
+
+      // Verify store ownership
+      const storeExtractionService = (await import('../services/store-extraction.service')).default;
+      await storeExtractionService.getStoreDetails(storeId, userId);
+
+      const stats = await adminQueryService.getQueryStats(storeId, days);
+
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get popular queries
+   * GET /api/brand/:storeId/query-analytics/popular
+   */
+  async getPopularQueries(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const days = parseInt(req.query.days as string) || 30;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const category = req.query.category as string | undefined;
+
+      // Verify store ownership
+      const storeExtractionService = (await import('../services/store-extraction.service')).default;
+      await storeExtractionService.getStoreDetails(storeId, userId);
+
+      const popularQueries = await adminQueryService.getPopularQueries(storeId, days, limit, category);
+
+      res.json({
+        success: true,
+        data: {
+          popularQueries,
+          timeRange: {
+            days,
+            start: new Date(Date.now() - (days * 24 * 60 * 60 * 1000)).toISOString(),
+            end: new Date().toISOString()
+          }
+        }
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get category breakdown
+   * GET /api/brand/:storeId/query-analytics/categories
+   */
+  async getCategoryBreakdown(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const days = parseInt(req.query.days as string) || 30;
+
+      // Verify store ownership
+      const storeExtractionService = (await import('../services/store-extraction.service')).default;
+      await storeExtractionService.getStoreDetails(storeId, userId);
+
+      const categories = await adminQueryService.getCategoryBreakdown(storeId, days);
+      const totalQueries = categories.reduce((sum, cat) => sum + cat.count, 0);
+
+      res.json({
+        success: true,
+        data: {
+          categories,
+          totalQueries,
+          timeRange: {
+            days,
+            start: new Date(Date.now() - (days * 24 * 60 * 60 * 1000)).toISOString(),
+            end: new Date().toISOString()
+          }
+        }
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Search queries
+   * GET /api/brand/:storeId/query-analytics/search
+   */
+  async searchQueries(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const {
+        startDate,
+        endDate,
+        category,
+        searchTerm,
+        sentiment,
+        page = '1',
+        limit = '50'
+      } = req.query;
+
+      // Verify store ownership
+      const storeExtractionService = (await import('../services/store-extraction.service')).default;
+      await storeExtractionService.getStoreDetails(storeId, userId);
+
+      const filters = {
+        storeId,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        category: category as string | undefined,
+        searchTerm: searchTerm as string | undefined,
+        sentiment: sentiment as string | undefined,
+        page: parseInt(page as string),
+        limit: parseInt(limit as string)
+      };
+
+      const result = await adminQueryService.searchQueries(filters);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Export queries
+   * GET /api/brand/:storeId/query-analytics/export
+   */
+  async exportQueries(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const {
+        format = 'csv',
+        startDate,
+        endDate,
+        category,
+        searchTerm
+      } = req.query;
+
+      // Verify store ownership
+      const storeExtractionService = (await import('../services/store-extraction.service')).default;
+      await storeExtractionService.getStoreDetails(storeId, userId);
+
+      if (format !== 'csv' && format !== 'json') {
+        return res.status(400).json({
+          success: false,
+          message: 'format must be either "csv" or "json"'
+        });
+      }
+
+      const filters = {
+        storeId,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        category: category as string | undefined,
+        searchTerm: searchTerm as string | undefined
+      };
+
+      const exportData = await adminQueryService.exportQueries(filters, format as 'csv' | 'json');
+
+      // Set appropriate headers
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `queries_export_${timestamp}.${format}`;
+
+      if (format === 'csv') {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      } else {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      }
+
+      res.send(exportData);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get cache statistics
+   * GET /api/brand/:storeId/query-analytics/cache-stats
+   */
+  async getCacheStats(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const days = parseInt(req.query.days as string) || 30;
+
+      // Verify store ownership
+      const storeExtractionService = (await import('../services/store-extraction.service')).default;
+      await storeExtractionService.getStoreDetails(storeId, userId);
+
+      const cacheStats = await queryCacheService.getCacheStats(storeId, days);
+
+      res.json({
+        success: true,
+        data: cacheStats
       });
     } catch (error) {
       throw error;
