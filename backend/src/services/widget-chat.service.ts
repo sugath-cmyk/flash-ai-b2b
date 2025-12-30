@@ -1,6 +1,8 @@
 import { pool } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 import Anthropic from '@anthropic-ai/sdk';
+import queryCategorizationService from './query-categorization.service';
+import queryCacheService from './query-cache.service';
 
 interface WidgetChatRequest {
   storeId: string;
@@ -37,8 +39,45 @@ export class WidgetChatService {
       convId = await this.createConversation(storeId, sessionId, visitorId);
     }
 
-    // Save user message
-    await this.saveMessage(convId, storeId, 'user', message);
+    // Step 1: Analyze and categorize the query
+    const queryAnalysis = queryCategorizationService.analyzeQuery(message);
+    console.log(`📊 Query categorized as: ${queryAnalysis.category} (confidence: ${queryAnalysis.confidence})`);
+
+    // Step 2: Check cache for similar queries (BEFORE calling AI)
+    const cachedResponse = await queryCacheService.findCachedResponse(storeId, message);
+
+    if (cachedResponse) {
+      console.log(`⚡ Cache HIT! Using cached response (similarity: ${cachedResponse.similarity})`);
+
+      // Save user message with categorization
+      await this.saveMessage(convId, storeId, 'user', message, null, queryAnalysis);
+
+      // Save cached assistant response
+      await this.saveMessage(
+        convId,
+        storeId,
+        'assistant',
+        cachedResponse.responseContent,
+        0, // No tokens used for cached response
+        {
+          cached_from: cachedResponse.id,
+          cache_key: cachedResponse.cacheKey
+        }
+      );
+
+      // Record cache hit
+      await queryCacheService.recordCacheHit(cachedResponse.id);
+
+      return {
+        conversationId: convId,
+        message: cachedResponse.responseContent,
+      };
+    }
+
+    console.log(`💭 Cache MISS. Calling AI...`);
+
+    // Save user message with categorization
+    await this.saveMessage(convId, storeId, 'user', message, null, queryAnalysis);
 
     // Get store info for branding
     const storeResult = await pool.query(
@@ -53,11 +92,30 @@ export class WidgetChatService {
     // Get conversation history
     const history = await this.getConversationHistory(convId);
 
-    // Generate AI response with store context
+    // Step 3: Generate AI response with store context
     const aiResponse = await this.generateResponse(storeName, storeContext, history, message);
 
-    // Save AI response
-    await this.saveMessage(convId, storeId, 'assistant', aiResponse.content, aiResponse.tokens);
+    // Step 4: Save AI response
+    const cacheKey = queryCacheService.generateCacheKey(queryCacheService.normalizeQuery(message));
+    await this.saveMessage(
+      convId,
+      storeId,
+      'assistant',
+      aiResponse.content,
+      aiResponse.tokens,
+      {
+        cache_key: cacheKey,
+        query_category: queryAnalysis.category
+      }
+    );
+
+    // Step 5: Cache the response for future reuse (7 days expiry)
+    await queryCacheService.cacheResponse(storeId, message, aiResponse.content, {
+      category: queryAnalysis.category,
+      topics: queryAnalysis.topics,
+      intent: queryAnalysis.intent,
+      expiresIn: 7 * 24 * 60 * 60 // 7 days
+    });
 
     return {
       conversationId: convId,
@@ -94,13 +152,56 @@ export class WidgetChatService {
     storeId: string,
     role: 'user' | 'assistant',
     content: string,
-    tokens?: number
+    tokens?: number | null,
+    metadata?: any
   ): Promise<void> {
-    await pool.query(
-      `INSERT INTO widget_messages (conversation_id, store_id, role, content, model, tokens)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [conversationId, storeId, role, content, role === 'assistant' ? 'claude-3-haiku' : null, tokens || null]
-    );
+    // For user messages, include categorization metadata
+    if (role === 'user' && metadata) {
+      await pool.query(
+        `INSERT INTO widget_messages
+         (conversation_id, store_id, role, content, model, tokens, query_category, query_intent, query_topics, query_metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          conversationId,
+          storeId,
+          role,
+          content,
+          null,
+          tokens || null,
+          metadata.category || null,
+          metadata.intent || null,
+          metadata.topics || [],
+          JSON.stringify({ confidence: metadata.confidence || 0 })
+        ]
+      );
+    }
+    // For assistant messages, include cache metadata
+    else if (role === 'assistant' && metadata) {
+      await pool.query(
+        `INSERT INTO widget_messages
+         (conversation_id, store_id, role, content, model, tokens, cached_from, cache_key, query_category)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          conversationId,
+          storeId,
+          role,
+          content,
+          'claude-sonnet-4-5-20250929',
+          tokens || null,
+          metadata.cached_from || null,
+          metadata.cache_key || null,
+          metadata.query_category || null
+        ]
+      );
+    }
+    // Default behavior for simple messages
+    else {
+      await pool.query(
+        `INSERT INTO widget_messages (conversation_id, store_id, role, content, model, tokens)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [conversationId, storeId, role, content, role === 'assistant' ? 'claude-sonnet-4-5-20250929' : null, tokens || null]
+      );
+    }
   }
 
   private async getStoreContext(storeId: string, productContext?: any): Promise<string> {

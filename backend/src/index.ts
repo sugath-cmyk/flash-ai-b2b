@@ -16,6 +16,7 @@ import widgetRoutes from './routes/widget.routes';
 import onboardingRoutes from './routes/onboarding.routes';
 import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
+import adminRoutes from './routes/admin.routes';
 import widgetController from './controllers/widget.controller';
 
 // Load environment variables
@@ -93,6 +94,9 @@ app.use('/api/otp', otpRoutes);
 
 // Shopify Integration Routes
 app.use('/api/shopify', shopifyRoutes);
+
+// Admin Routes (requires admin authentication)
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
