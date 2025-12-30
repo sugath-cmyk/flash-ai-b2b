@@ -114,7 +114,40 @@
       margin: 20px 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       transition: all 0.3s ease;
+      max-width: 100%;
     `;
+
+    // Add responsive styles
+    const style = document.createElement('style');
+    style.textContent = `
+      @media (max-width: 768px) {
+        #flash-ai-widget {
+          margin: 10px 0;
+        }
+        #flash-ai-messages {
+          max-height: 300px !important;
+          min-height: 150px !important;
+        }
+        #flash-ai-expanded {
+          border-radius: 8px !important;
+        }
+      }
+      #flash-ai-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+      #flash-ai-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      #flash-ai-messages::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+      }
+      #flash-ai-messages::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+    `;
+    document.head.appendChild(style);
 
     // Collapsed state - minimal single line
     const collapsedView = document.createElement('div');
@@ -175,7 +208,7 @@
         </div>
         <button id="flash-ai-collapse" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px; padding: 0; width: 24px; height: 24px; opacity: 0.9; transition: opacity 0.2s;">×</button>
       </div>
-      <div id="flash-ai-messages" style="min-height: 180px; max-height: 280px; overflow-y: auto; padding: 16px; background: #f8f9fa;"></div>
+      <div id="flash-ai-messages" style="min-height: 200px; max-height: 400px; overflow-y: auto; padding: 16px; background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; scroll-behavior: smooth;"></div>
       <div style="padding: 12px; background: white; border-top: 1px solid #e3e6e8; display: flex; gap: 8px;">
         <input type="text" id="flash-ai-input" placeholder="Ask anything..." style="flex: 1; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; outline: none; transition: border-color 0.2s;" />
         <button id="flash-ai-send" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: opacity 0.2s;">Send</button>
@@ -253,21 +286,55 @@
 
     const bubble = document.createElement('div');
     bubble.style.cssText = `
-      max-width: 75%;
-      padding: 10px 16px;
+      max-width: 85%;
+      padding: 12px 16px;
       border-radius: 16px;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
       word-wrap: break-word;
+      white-space: pre-wrap;
       ${sender === 'user'
         ? 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px;'
-        : 'background: white; color: #2c3e50; border-bottom-left-radius: 4px; border: 1px solid #e3e6e8;'
+        : 'background: white; color: #2c3e50; border-bottom-left-radius: 4px; border: 1px solid #e3e6e8; box-shadow: 0 1px 2px rgba(0,0,0,0.05);'
       }
     `;
-    bubble.textContent = text;
+
+    // Format the message for better readability
+    if (sender === 'bot') {
+      bubble.innerHTML = formatBotMessage(text);
+    } else {
+      bubble.textContent = text;
+    }
+
     msgDiv.appendChild(bubble);
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
+  }
+
+  function formatBotMessage(text) {
+    // Preserve emojis and format text for chat display
+    let formatted = text;
+
+    // Convert markdown-style bullet points to HTML
+    formatted = formatted.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display: flex; margin: 4px 0;"><span style="margin-right: 8px;">•</span><span>$1</span></div>');
+
+    // Convert checkmarks to styled version
+    formatted = formatted.replace(/^✅\s+(.+)$/gm, '<div style="display: flex; margin: 4px 0;"><span style="margin-right: 6px;">✅</span><span>$1</span></div>');
+
+    // Convert warning signs
+    formatted = formatted.replace(/^⚠️\s+(.+)$/gm, '<div style="display: flex; margin: 4px 0;"><span style="margin-right: 6px;">⚠️</span><span>$1</span></div>');
+
+    // Bold text **text** or __text__
+    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+    // Preserve double line breaks as paragraphs
+    formatted = formatted.replace(/\n\n+/g, '<div style="height: 8px;"></div>');
+
+    // Convert single line breaks to <br> for better spacing
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    return formatted;
   }
 
   async function sendMessage() {
