@@ -40,11 +40,22 @@ export class WidgetChatService {
     }
 
     // Step 1: Analyze and categorize the query
-    const queryAnalysis = queryCategorizationService.analyzeQuery(message);
-    console.log(`📊 Query categorized as: ${queryAnalysis.category} (confidence: ${queryAnalysis.confidence})`);
+    let queryAnalysis;
+    try {
+      queryAnalysis = queryCategorizationService.analyzeQuery(message);
+      console.log(`📊 Query categorized as: ${queryAnalysis.category} (confidence: ${queryAnalysis.confidence})`);
+    } catch (error) {
+      console.warn('Query categorization failed, continuing without it:', error);
+      queryAnalysis = { category: 'general', topics: [], intent: 'seeking_information', confidence: 0 };
+    }
 
     // Step 2: Check cache for similar queries (BEFORE calling AI)
-    const cachedResponse = await queryCacheService.findCachedResponse(storeId, message);
+    let cachedResponse = null;
+    try {
+      cachedResponse = await queryCacheService.findCachedResponse(storeId, message);
+    } catch (error) {
+      console.warn('Cache lookup failed, continuing without cache:', error);
+    }
 
     if (cachedResponse) {
       console.log(`⚡ Cache HIT! Using cached response (similarity: ${cachedResponse.similarity})`);
@@ -66,7 +77,11 @@ export class WidgetChatService {
       );
 
       // Record cache hit
-      await queryCacheService.recordCacheHit(cachedResponse.id);
+      try {
+        await queryCacheService.recordCacheHit(cachedResponse.id);
+      } catch (error) {
+        console.warn('Failed to record cache hit:', error);
+      }
 
       return {
         conversationId: convId,
@@ -110,12 +125,16 @@ export class WidgetChatService {
     );
 
     // Step 5: Cache the response for future reuse (7 days expiry)
-    await queryCacheService.cacheResponse(storeId, message, aiResponse.content, {
-      category: queryAnalysis.category,
-      topics: queryAnalysis.topics,
-      intent: queryAnalysis.intent,
-      expiresIn: 7 * 24 * 60 * 60 // 7 days
-    });
+    try {
+      await queryCacheService.cacheResponse(storeId, message, aiResponse.content, {
+        category: queryAnalysis.category,
+        topics: queryAnalysis.topics,
+        intent: queryAnalysis.intent,
+        expiresIn: 7 * 24 * 60 * 60 // 7 days
+      });
+    } catch (error) {
+      console.warn('Failed to cache response:', error);
+    }
 
     return {
       conversationId: convId,
@@ -155,47 +174,57 @@ export class WidgetChatService {
     tokens?: number | null,
     metadata?: any
   ): Promise<void> {
-    // For user messages, include categorization metadata
-    if (role === 'user' && metadata) {
-      await pool.query(
-        `INSERT INTO widget_messages
-         (conversation_id, store_id, role, content, model, tokens, query_category, query_intent, query_topics, query_metadata)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [
-          conversationId,
-          storeId,
-          role,
-          content,
-          null,
-          tokens || null,
-          metadata.category || null,
-          metadata.intent || null,
-          metadata.topics || [],
-          JSON.stringify({ confidence: metadata.confidence || 0 })
-        ]
-      );
-    }
-    // For assistant messages, include cache metadata
-    else if (role === 'assistant' && metadata) {
-      await pool.query(
-        `INSERT INTO widget_messages
-         (conversation_id, store_id, role, content, model, tokens, cached_from, cache_key, query_category)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [
-          conversationId,
-          storeId,
-          role,
-          content,
-          'claude-sonnet-4-5-20250929',
-          tokens || null,
-          metadata.cached_from || null,
-          metadata.cache_key || null,
-          metadata.query_category || null
-        ]
-      );
-    }
-    // Default behavior for simple messages
-    else {
+    try {
+      // For user messages, include categorization metadata
+      if (role === 'user' && metadata) {
+        await pool.query(
+          `INSERT INTO widget_messages
+           (conversation_id, store_id, role, content, model, tokens, query_category, query_intent, query_topics, query_metadata)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            conversationId,
+            storeId,
+            role,
+            content,
+            null,
+            tokens || null,
+            metadata.category || null,
+            metadata.intent || null,
+            metadata.topics || [],
+            JSON.stringify({ confidence: metadata.confidence || 0 })
+          ]
+        );
+      }
+      // For assistant messages, include cache metadata
+      else if (role === 'assistant' && metadata) {
+        await pool.query(
+          `INSERT INTO widget_messages
+           (conversation_id, store_id, role, content, model, tokens, cached_from, cache_key, query_category)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            conversationId,
+            storeId,
+            role,
+            content,
+            'claude-sonnet-4-5-20250929',
+            tokens || null,
+            metadata.cached_from || null,
+            metadata.cache_key || null,
+            metadata.query_category || null
+          ]
+        );
+      }
+      // Default behavior for simple messages
+      else {
+        await pool.query(
+          `INSERT INTO widget_messages (conversation_id, store_id, role, content, model, tokens)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [conversationId, storeId, role, content, role === 'assistant' ? 'claude-sonnet-4-5-20250929' : null, tokens || null]
+        );
+      }
+    } catch (error: any) {
+      // Fallback: If columns don't exist (migration not run), use basic insert
+      console.warn('Failed to save message with metadata, falling back to basic insert:', error.message);
       await pool.query(
         `INSERT INTO widget_messages (conversation_id, store_id, role, content, model, tokens)
          VALUES ($1, $2, $3, $4, $5, $6)`,
