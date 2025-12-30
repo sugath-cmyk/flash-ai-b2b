@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import axios from '../lib/axios';
+import QueryAnalytics from '../components/QueryAnalytics';
 
 interface Analytics {
   eventCounts: Array<{ event_type: string; count: string }>;
@@ -35,7 +36,7 @@ export default function BrandDashboard() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'overview' | 'widget' | 'analytics' | 'billing'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'widget' | 'analytics' | 'query-analytics' | 'billing'>('overview');
   const [store, setStore] = useState<any>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -188,6 +189,16 @@ export default function BrandDashboard() {
               }`}
             >
               Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('query-analytics')}
+              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'query-analytics'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              Query Analytics
             </button>
             <button
               onClick={() => setActiveTab('billing')}
@@ -422,6 +433,11 @@ export default function BrandDashboard() {
               )}
             </div>
           </div>
+        )}
+
+        {/* Query Analytics Tab */}
+        {activeTab === 'query-analytics' && storeId && (
+          <QueryAnalytics storeId={storeId} />
         )}
 
         {/* Billing Tab */}
