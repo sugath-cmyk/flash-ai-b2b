@@ -380,9 +380,10 @@
     const productId = 'product-' + Math.random().toString(36).substr(2, 9);
 
     // Use real image if available, otherwise fallback to emoji
+    // Fixed size with explicit dimensions to ensure consistent display
     const imageHtml = imageUrl && imageUrl.startsWith('http')
-      ? `<img src="${imageUrl}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div style="width: 100%; height: 100%; display: none; align-items: center; justify-content: center; font-size: 28px;">🧴</div>`
-      : '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 28px;">🧴</div>';
+      ? `<img src="${imageUrl}" alt="${title}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div style="width: 80px; height: 80px; display: none; align-items: center; justify-content: center; font-size: 32px;">🧴</div>`
+      : '<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px;">🧴</div>';
 
     return `
       <div style="
@@ -399,8 +400,10 @@
       " onmouseenter="this.style.boxShadow='0 4px 8px rgba(102,126,234,0.15)'; this.style.borderColor='#667eea';" onmouseleave="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'; this.style.borderColor='#e3e6e8';">
 
         <div style="
-          width: 70px;
-          height: 70px;
+          width: 80px;
+          height: 80px;
+          min-width: 80px;
+          min-height: 80px;
           background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
           border-radius: 6px;
           flex-shrink: 0;
