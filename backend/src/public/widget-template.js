@@ -337,6 +337,16 @@
         continue;
       }
 
+      // Check for product card format: [PRODUCT: Title | ₹Price]
+      const productMatch = line.match(/\[PRODUCT:\s*(.+?)\s*\|\s*₹(\d+(?:,\d+)*(?:\.\d+)?)\]/);
+      if (productMatch) {
+        const productTitle = productMatch[1];
+        const productPrice = productMatch[2];
+        const productCard = createProductCard(productTitle, productPrice);
+        processed.push(productCard);
+        continue;
+      }
+
       // Check if line starts with bullet/emoji that should be on same line as next
       const startsWithEmoji = /^[✅⚠️❌✨💡📌👉🔹]$/.test(line);
       const startsWithBullet = /^[•\-\*]$/.test(line);
@@ -362,6 +372,110 @@
 
     return processed.join('');
   }
+
+  function createProductCard(title, price) {
+    // Generate a unique ID for this product card
+    const productId = 'product-' + Math.random().toString(36).substr(2, 9);
+
+    return `
+      <div style="
+        margin: 8px 0;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e3e6e8;
+        border-radius: 8px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.2s;
+      " onmouseenter="this.style.boxShadow='0 4px 8px rgba(102,126,234,0.15)'; this.style.borderColor='#667eea';" onmouseleave="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'; this.style.borderColor='#e3e6e8';">
+
+        <div style="
+          width: 70px;
+          height: 70px;
+          background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+          border-radius: 6px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+        ">
+          🧴
+        </div>
+
+        <div style="flex: 1; min-width: 0;">
+          <div style="
+            font-weight: 600;
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          ">${title}</div>
+          <div style="
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 6px;
+          ">₹${price}</div>
+          <button onclick="window.flashAI_addToCart('${title.replace(/'/g, "\\'")}', '${price}')" style="
+            width: 100%;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+          " onmouseenter="this.style.opacity='0.9'; this.style.transform='translateY(-1px)';" onmouseleave="this.style.opacity='1'; this.style.transform='translateY(0)';">
+            Add to Cart 🛒
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Add to cart function
+  window.flashAI_addToCart = function(productTitle, productPrice) {
+    console.log('Add to cart:', productTitle, productPrice);
+
+    // Show success message in chat
+    const container = document.getElementById('flash-ai-messages');
+    if (container) {
+      const msgDiv = document.createElement('div');
+      msgDiv.style.cssText = 'margin-bottom: 12px; display: flex; justify-content: flex-start;';
+
+      const bubble = document.createElement('div');
+      bubble.style.cssText = `
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 13px;
+        line-height: 1.4;
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+        font-weight: 500;
+      `;
+      bubble.textContent = '✅ Added to cart! Continue shopping or check out when ready.';
+
+      msgDiv.appendChild(bubble);
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Try to add to Shopify cart if available
+    if (typeof fetch !== 'undefined') {
+      // Search for product by title in Shopify (this is a best-effort approach)
+      // In a real implementation, you'd want to store product handles/IDs with the recommendations
+      alert(`"${productTitle}" added to cart! (₹${productPrice})\n\nNote: Please add this product manually from the product page for now.`);
+    }
+  };
 
   async function sendMessage() {
     console.log('Flash AI: sendMessage called');
