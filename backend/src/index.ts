@@ -60,7 +60,11 @@ app.use(morgan('dev')); // Logging
 
 // Health check route
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '1.0.1' // Force rebuild
+  });
 });
 
 // Widget script serving route (public, must be before API routes)
