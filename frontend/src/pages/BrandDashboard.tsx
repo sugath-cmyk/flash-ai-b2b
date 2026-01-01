@@ -57,9 +57,7 @@ export default function BrandDashboard() {
         axios.get(`/stores/${storeId}`),
         axios.get(`/brand/${storeId}/analytics?days=30`),
         axios.get(`/brand/${storeId}/subscription`),
-        axios.get(`http://localhost:3000/api/shopify/stores/${storeId}/status`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        }),
+        axios.get(`/shopify/stores/${storeId}/status`),
       ]);
 
       if (storeRes.status === 'fulfilled') {
