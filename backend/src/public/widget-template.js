@@ -316,13 +316,17 @@
 
     // STEP 1: Replace [PRODUCT: ...] directly with product cards FIRST (before any other formatting)
     // Format: [PRODUCT: Title | ₹Price | ImageURL]
-    const productRegex = /\[PRODUCT:\s*(.+?)\s*\|\s*₹([\d,]+)\s*\|\s*(.+?)\]/g;
+    // Use [^\|] for title (anything except pipe), [^\]] for URL (anything except closing bracket)
+    const productRegex = /\[PRODUCT:\s*([^\|]+?)\s*\|\s*₹([\d,]+)\s*\|\s*([^\]]+?)\s*\]/g;
     let formatted = text.replace(productRegex, function(match, title, price, imageUrl) {
-      console.log('Found product:', title, price, imageUrl);
-      return createProductCard(title, price, imageUrl.trim());
+      console.log('Found product:', match);
+      console.log('  Title:', title.trim());
+      console.log('  Price:', price);
+      console.log('  Image URL:', imageUrl.trim());
+      return createProductCard(title.trim(), price, imageUrl.trim());
     });
 
-    console.log('After product replacement, length:', formatted.length);
+    console.log('After product replacement, formatted length:', formatted.length, 'original length:', text.length);
 
     // STEP 2: Now do all other text formatting
     // Bold text **text** or __text__
