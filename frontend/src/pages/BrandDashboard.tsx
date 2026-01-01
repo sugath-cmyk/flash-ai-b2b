@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import axios from '../lib/axios';
 import QueryAnalytics from '../components/QueryAnalytics';
+import Conversations from '../components/Conversations';
 
 interface Analytics {
   eventCounts: Array<{ event_type: string; count: string }>;
@@ -36,7 +37,7 @@ export default function BrandDashboard() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'overview' | 'widget' | 'analytics' | 'query-analytics' | 'billing'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'widget' | 'analytics' | 'conversations' | 'query-analytics' | 'billing'>('overview');
   const [store, setStore] = useState<any>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -189,6 +190,16 @@ export default function BrandDashboard() {
               }`}
             >
               Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('conversations')}
+              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'conversations'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              Conversations
             </button>
             <button
               onClick={() => setActiveTab('query-analytics')}
@@ -438,6 +449,11 @@ export default function BrandDashboard() {
         {/* Query Analytics Tab */}
         {activeTab === 'query-analytics' && storeId && (
           <QueryAnalytics storeId={storeId} />
+        )}
+
+        {/* Conversations Tab */}
+        {activeTab === 'conversations' && storeId && (
+          <Conversations storeId={storeId} />
         )}
 
         {/* Billing Tab */}
