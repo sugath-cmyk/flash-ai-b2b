@@ -312,14 +312,33 @@
   }
 
   function formatBotMessage(text) {
-    // Simple, clean formatting with minimal spacing
-    let formatted = text;
+    console.log('formatBotMessage input:', text);
+
+    // First, extract and replace all product cards with placeholders
+    const products = [];
+    const productRegex = /\[PRODUCT:\s*(.+?)\s*\|\s*₹([\d,]+)\]/g;
+    let match;
+    let textWithPlaceholders = text;
+    let productIndex = 0;
+
+    while ((match = productRegex.exec(text)) !== null) {
+      const productTitle = match[1];
+      const productPrice = match[2];
+      console.log('Found product:', productTitle, productPrice);
+      const placeholder = `___PRODUCT_${productIndex}___`;
+      products.push({ title: productTitle, price: productPrice, placeholder });
+      textWithPlaceholders = textWithPlaceholders.replace(match[0], placeholder);
+      productIndex++;
+    }
+
+    // Now format the text normally
+    let formatted = textWithPlaceholders;
 
     // Bold text **text** or __text__
     formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
 
-    // Handle multiple consecutive line breaks - replace with single small gap
+    // Handle multiple consecutive line breaks
     formatted = formatted.replace(/\n\n+/g, '\n\n');
 
     // Split into lines for processing
@@ -337,14 +356,16 @@
         continue;
       }
 
-      // Check for product card format: [PRODUCT: Title | ₹Price]
-      const productMatch = line.match(/\[PRODUCT:\s*(.+?)\s*\|\s*₹(\d+(?:,\d+)*(?:\.\d+)?)\]/);
-      if (productMatch) {
-        const productTitle = productMatch[1];
-        const productPrice = productMatch[2];
-        const productCard = createProductCard(productTitle, productPrice);
-        processed.push(productCard);
-        continue;
+      // Check if line contains product placeholder
+      const productPlaceholderMatch = line.match(/___PRODUCT_(\d+)___/);
+      if (productPlaceholderMatch) {
+        const idx = parseInt(productPlaceholderMatch[1]);
+        const product = products[idx];
+        if (product) {
+          const productCard = createProductCard(product.title, product.price);
+          processed.push(productCard);
+          continue;
+        }
       }
 
       // Check if line starts with bullet/emoji that should be on same line as next
@@ -352,25 +373,23 @@
       const startsWithBullet = /^[•\-\*]$/.test(line);
 
       if (startsWithEmoji && i + 1 < lines.length) {
-        // Emoji on separate line - combine with next line
         const nextLine = lines[i + 1].trim();
         processed.push(`<div style="margin: 2px 0;">${line} ${nextLine}</div>`);
-        i++; // Skip next line since we combined it
+        i++;
       } else if (startsWithBullet && i + 1 < lines.length) {
-        // Bullet on separate line - combine with next line
         const nextLine = lines[i + 1].trim();
         processed.push(`<div style="margin: 2px 0; padding-left: 4px;">• ${nextLine}</div>`);
-        i++; // Skip next line since we combined it
+        i++;
       } else if (/^[•\-\*]\s/.test(line)) {
-        // Bullet already on same line as text
         processed.push(`<div style="margin: 2px 0; padding-left: 4px;">${line.replace(/^[•\-\*]\s/, '• ')}</div>`);
       } else {
-        // Regular line
         processed.push(`<div style="margin: 2px 0;">${line}</div>`);
       }
     }
 
-    return processed.join('');
+    const result = processed.join('');
+    console.log('formatBotMessage output:', result);
+    return result;
   }
 
   function createProductCard(title, price) {
