@@ -397,72 +397,21 @@
     const productId = 'product-' + Math.random().toString(36).substr(2, 9);
 
     // Use real image if available, otherwise fallback to emoji
-    // Fixed size with explicit dimensions to ensure consistent display
     const imageHtml = imageUrl && imageUrl.startsWith('http')
-      ? `<img src="${imageUrl}" alt="${title}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div style="width: 80px; height: 80px; display: none; align-items: center; justify-content: center; font-size: 32px;">🧴</div>`
-      : '<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px;">🧴</div>';
+      ? `<img src="${imageUrl}" alt="${title}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div style="width:80px;height:80px;display:none;align-items:center;justify-content:center;font-size:32px;">🧴</div>`
+      : '<div style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:32px;">🧴</div>';
 
-    return `
-      <div style="
-        margin: 8px 0;
-        padding: 12px;
-        background: white;
-        border: 1px solid #e3e6e8;
-        border-radius: 8px;
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        transition: all 0.2s;
-      " onmouseenter="this.style.boxShadow='0 4px 8px rgba(102,126,234,0.15)'; this.style.borderColor='#667eea';" onmouseleave="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'; this.style.borderColor='#e3e6e8';">
-
-        <div style="
-          width: 80px;
-          height: 80px;
-          min-width: 80px;
-          min-height: 80px;
-          background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-          border-radius: 6px;
-          flex-shrink: 0;
-          overflow: hidden;
-          position: relative;
-        ">
-          ${imageHtml}
-        </div>
-
-        <div style="flex: 1; min-width: 0;">
-          <div style="
-            font-weight: 600;
-            font-size: 14px;
-            color: #2c3e50;
-            margin-bottom: 4px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          ">${title}</div>
-          <div style="
-            font-size: 16px;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 6px;
-          ">₹${price}</div>
-          <button onclick="window.flashAI_addToCart('${title.replace(/'/g, "\\'")}', '${price}')" style="
-            width: 100%;
-            padding: 8px 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-          " onmouseenter="this.style.opacity='0.9'; this.style.transform='translateY(-1px)';" onmouseleave="this.style.opacity='1'; this.style.transform='translateY(0)';">
-            Add to Cart 🛒
-          </button>
-        </div>
-      </div>
-    `;
+    // Return compact HTML without line breaks in style attributes
+    return '<div style="margin:8px 0;padding:12px;background:white;border:1px solid #e3e6e8;border-radius:8px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;" onmouseenter="this.style.boxShadow=\'0 4px 8px rgba(102,126,234,0.15)\';this.style.borderColor=\'#667eea\';" onmouseleave="this.style.boxShadow=\'0 2px 4px rgba(0,0,0,0.05)\';this.style.borderColor=\'#e3e6e8\';">' +
+      '<div style="width:80px;height:80px;min-width:80px;min-height:80px;background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf1 100%);border-radius:6px;flex-shrink:0;overflow:hidden;position:relative;">' +
+        imageHtml +
+      '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-weight:600;font-size:14px;color:#2c3e50;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + title + '</div>' +
+        '<div style="font-size:16px;font-weight:700;color:#667eea;margin-bottom:6px;">₹' + price + '</div>' +
+        '<button onclick="window.flashAI_addToCart(\'' + title.replace(/'/g, "\\'") + '\',\'' + price + '\')" style="width:100%;padding:8px 12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.opacity=\'0.9\';this.style.transform=\'translateY(-1px)\';" onmouseleave="this.style.opacity=\'1\';this.style.transform=\'translateY(0)\';">Add to Cart 🛒</button>' +
+      '</div>' +
+    '</div>';
   }
 
   // Add to cart function
