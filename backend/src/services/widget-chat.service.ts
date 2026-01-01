@@ -270,7 +270,7 @@ export class WidgetChatService {
     try {
       productsResult = await pool.query(
         `SELECT
-           title, description, short_description, price, product_type, vendor,
+           title, description, short_description, price, product_type, vendor, images,
            ingredients, key_benefits, skin_types, concerns,
            usage_instructions, usage_frequency, usage_time, results_timeline,
            texture, product_category, product_subcategory,
@@ -286,7 +286,7 @@ export class WidgetChatService {
       // Fallback to basic query if Phase 2 columns don't exist yet
       console.log('Using basic product query (Phase 2 columns not available)');
       productsResult = await pool.query(
-        `SELECT title, description, short_description, price, product_type, vendor
+        `SELECT title, description, short_description, price, product_type, vendor, images
          FROM extracted_products
          WHERE store_id = $1 AND status = 'active'
          ORDER BY created_at DESC
@@ -317,6 +317,14 @@ export class WidgetChatService {
       context += `Other Available Products:\n`;
       productsResult.rows.forEach((product, idx) => {
         context += `${idx + 1}. ${product.title} - ₹${product.price}`;
+
+        // Extract and add image URL if available
+        if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+          const firstImage = product.images[0];
+          if (firstImage && firstImage.src) {
+            context += `\n   Image URL: ${firstImage.src}`;
+          }
+        }
 
         // Add short description or benefits (Phase 2 enhanced data)
         if (product.short_description) {
@@ -676,14 +684,14 @@ PERSONALITY:
 
 🚨 MANDATORY: When recommending products, you MUST use this EXACT format:
 
-[PRODUCT: Exact Product Title | ₹Price]
+[PRODUCT: Exact Product Title | ₹Price | Image URL]
 
-This format triggers special UI with images and add-to-cart buttons!
+This format triggers special UI with product images and add-to-cart buttons!
 
 ✅ CORRECT FORMAT:
 "Here are my top picks:
 
-[PRODUCT: Lip Balm SPF 30 | ₹1,000]
+[PRODUCT: Lip Balm SPF 30 | ₹1,000 | https://cdn.shopify.com/s/files/image.jpg]
 
 This provides daily hydration + sun protection with ceramides!"
 
@@ -693,9 +701,10 @@ This provides daily hydration + sun protection with ceramides!"
 "Lip Balm SPF 30 for ₹1,000"
 
 CRITICAL RULES:
-✅ Use [PRODUCT: Title | ₹Price] format - NO EXCEPTIONS
+✅ Use [PRODUCT: Title | ₹Price | ImageURL] format - NO EXCEPTIONS
 ✅ Product title must match catalog exactly
 ✅ Include rupee symbol ₹ before price
+✅ Include the "Image URL" from the product catalog
 ✅ Each product on separate line
 ✅ Can add description before/after the product line
 ✅ Multiple products = multiple [PRODUCT: ...] lines
@@ -703,11 +712,11 @@ CRITICAL RULES:
 Example with multiple products:
 "Perfect for dry lips! Here are 3 options:
 
-[PRODUCT: Lip Balm SPF 30 | ₹1,000]
+[PRODUCT: Lip Balm SPF 30 | ₹1,000 | https://example.com/image1.jpg]
 
-[PRODUCT: Lip Sleeping Mask | ₹1,000]
+[PRODUCT: Lip Sleeping Mask | ₹1,000 | https://example.com/image2.jpg]
 
-[PRODUCT: L-Ascorbic Acid 8% Lip Treatment Balm | ₹1,000]
+[PRODUCT: L-Ascorbic Acid 8% Lip Treatment Balm | ₹1,000 | https://example.com/image3.jpg]
 
 All three are pregnancy-safe and fragrance-free! ✅"
 

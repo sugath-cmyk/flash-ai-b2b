@@ -314,29 +314,17 @@
   function formatBotMessage(text) {
     console.log('formatBotMessage input:', text);
 
-    // First, extract and replace all product cards with placeholders
-    const products = [];
-    const productRegex = /\[PRODUCT:\s*(.+?)\s*\|\s*₹([\d,]+)\]/g;
-    let match;
-    let textWithPlaceholders = text;
-    let productIndex = 0;
+    // STEP 1: Replace [PRODUCT: ...] directly with product cards FIRST (before any other formatting)
+    // Format: [PRODUCT: Title | ₹Price | ImageURL]
+    const productRegex = /\[PRODUCT:\s*(.+?)\s*\|\s*₹([\d,]+)\s*\|\s*(.+?)\]/g;
+    let formatted = text.replace(productRegex, function(match, title, price, imageUrl) {
+      console.log('Found product:', title, price, imageUrl);
+      return createProductCard(title, price, imageUrl.trim());
+    });
 
-    while ((match = productRegex.exec(text)) !== null) {
-      const productTitle = match[1];
-      const productPrice = match[2];
-      console.log('Found product:', productTitle, productPrice);
-      const placeholder = `___PRODUCT_${productIndex}___`;
-      products.push({ title: productTitle, price: productPrice, placeholder });
-      textWithPlaceholders = textWithPlaceholders.replace(match[0], placeholder);
-      productIndex++;
-    }
+    console.log('After product replacement, length:', formatted.length);
 
-    console.log('Products found:', products.length);
-    console.log('Text with placeholders:', textWithPlaceholders);
-
-    // Now format the text normally
-    let formatted = textWithPlaceholders;
-
+    // STEP 2: Now do all other text formatting
     // Bold text **text** or __text__
     formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
@@ -378,22 +366,19 @@
       }
     }
 
-    let result = processed.join('');
-
-    // Replace all placeholders with product cards in the final HTML
-    products.forEach((product, idx) => {
-      const placeholder = `___PRODUCT_${idx}___`;
-      const productCard = createProductCard(product.title, product.price);
-      result = result.replace(new RegExp(placeholder, 'g'), productCard);
-    });
-
+    const result = processed.join('');
     console.log('formatBotMessage final output length:', result.length);
     return result;
   }
 
-  function createProductCard(title, price) {
+  function createProductCard(title, price, imageUrl) {
     // Generate a unique ID for this product card
     const productId = 'product-' + Math.random().toString(36).substr(2, 9);
+
+    // Use real image if available, otherwise fallback to emoji
+    const imageHtml = imageUrl && imageUrl.startsWith('http')
+      ? `<img src="${imageUrl}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div style="width: 100%; height: 100%; display: none; align-items: center; justify-content: center; font-size: 28px;">🧴</div>`
+      : '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 28px;">🧴</div>';
 
     return `
       <div style="
@@ -415,12 +400,10 @@
           background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
           border-radius: 6px;
           flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 28px;
+          overflow: hidden;
+          position: relative;
         ">
-          🧴
+          ${imageHtml}
         </div>
 
         <div style="flex: 1; min-width: 0;">
