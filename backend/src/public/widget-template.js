@@ -1,8 +1,9 @@
 (function() {
   'use strict';
 
-  const WIDGET_VERSION = 'v1.2.0-debug';
-  console.log('Flash AI: Widget initializing...', WIDGET_VERSION);
+  const WIDGET_VERSION = 'v1.3.0-regex-fix';
+  console.log('🚀 Flash AI: Widget initializing...', WIDGET_VERSION);
+  console.log('🔍 Flash AI: Product card regex is ACTIVE');
 
   const storeId = window.flashAIConfig?.storeId;
   if (!storeId) {
@@ -312,21 +313,37 @@
   }
 
   function formatBotMessage(text) {
-    console.log('formatBotMessage input:', text);
+    console.log('🎨 formatBotMessage called with text length:', text.length);
+    console.log('📝 First 200 chars:', text.substring(0, 200));
 
     // STEP 1: Replace [PRODUCT: ...] directly with product cards FIRST (before any other formatting)
     // Format: [PRODUCT: Title | ₹Price | ImageURL]
     // Use [^\|] for title (anything except pipe), [^\]] for URL (anything except closing bracket)
     const productRegex = /\[PRODUCT:\s*([^\|]+?)\s*\|\s*₹([\d,]+)\s*\|\s*([^\]]+?)\s*\]/g;
+
+    // Test if the pattern exists in text
+    const hasProductTag = text.includes('[PRODUCT:');
+    console.log('🛍️ Contains [PRODUCT: tag?', hasProductTag);
+
+    if (hasProductTag) {
+      console.log('🔍 Attempting regex match...');
+      const matches = text.match(productRegex);
+      console.log('✅ Regex matches found:', matches ? matches.length : 0);
+      if (matches) {
+        matches.forEach(m => console.log('  Match:', m));
+      }
+    }
+
     let formatted = text.replace(productRegex, function(match, title, price, imageUrl) {
-      console.log('Found product:', match);
+      console.log('🎯 PRODUCT CARD MATCHED!');
+      console.log('  Full match:', match);
       console.log('  Title:', title.trim());
       console.log('  Price:', price);
       console.log('  Image URL:', imageUrl.trim());
       return createProductCard(title.trim(), price, imageUrl.trim());
     });
 
-    console.log('After product replacement, formatted length:', formatted.length, 'original length:', text.length);
+    console.log('📊 After product replacement - original:', text.length, 'formatted:', formatted.length);
 
     // STEP 2: Now do all other text formatting
     // Bold text **text** or __text__
