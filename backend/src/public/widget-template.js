@@ -331,6 +331,9 @@
       productIndex++;
     }
 
+    console.log('Products found:', products.length);
+    console.log('Text with placeholders:', textWithPlaceholders);
+
     // Now format the text normally
     let formatted = textWithPlaceholders;
 
@@ -356,18 +359,6 @@
         continue;
       }
 
-      // Check if line contains product placeholder
-      const productPlaceholderMatch = line.match(/___PRODUCT_(\d+)___/);
-      if (productPlaceholderMatch) {
-        const idx = parseInt(productPlaceholderMatch[1]);
-        const product = products[idx];
-        if (product) {
-          const productCard = createProductCard(product.title, product.price);
-          processed.push(productCard);
-          continue;
-        }
-      }
-
       // Check if line starts with bullet/emoji that should be on same line as next
       const startsWithEmoji = /^[✅⚠️❌✨💡📌👉🔹]$/.test(line);
       const startsWithBullet = /^[•\-\*]$/.test(line);
@@ -387,8 +378,16 @@
       }
     }
 
-    const result = processed.join('');
-    console.log('formatBotMessage output:', result);
+    let result = processed.join('');
+
+    // Replace all placeholders with product cards in the final HTML
+    products.forEach((product, idx) => {
+      const placeholder = `___PRODUCT_${idx}___`;
+      const productCard = createProductCard(product.title, product.price);
+      result = result.replace(new RegExp(placeholder, 'g'), productCard);
+    });
+
+    console.log('formatBotMessage final output length:', result.length);
     return result;
   }
 
