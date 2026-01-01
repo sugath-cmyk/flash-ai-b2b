@@ -312,29 +312,55 @@
   }
 
   function formatBotMessage(text) {
-    // Preserve emojis and format text for chat display
+    // Simple, clean formatting with minimal spacing
     let formatted = text;
-
-    // Convert markdown-style bullet points to HTML
-    formatted = formatted.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display: flex; margin: 1px 0;"><span style="margin-right: 8px;">•</span><span>$1</span></div>');
-
-    // Convert checkmarks to styled version
-    formatted = formatted.replace(/^✅\s+(.+)$/gm, '<div style="display: flex; margin: 1px 0;"><span style="margin-right: 6px;">✅</span><span>$1</span></div>');
-
-    // Convert warning signs
-    formatted = formatted.replace(/^⚠️\s+(.+)$/gm, '<div style="display: flex; margin: 1px 0;"><span style="margin-right: 6px;">⚠️</span><span>$1</span></div>');
 
     // Bold text **text** or __text__
     formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
 
-    // Preserve double line breaks as smaller paragraphs
-    formatted = formatted.replace(/\n\n+/g, '<div style="height: 6px;"></div>');
+    // Handle multiple consecutive line breaks - replace with single small gap
+    formatted = formatted.replace(/\n\n+/g, '\n\n');
 
-    // Convert single line breaks to <br>
-    formatted = formatted.replace(/\n/g, '<br>');
+    // Split into lines for processing
+    const lines = formatted.split('\n');
+    const processed = [];
 
-    return formatted;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Skip empty lines but add small spacing
+      if (line === '') {
+        if (processed.length > 0 && processed[processed.length - 1] !== '<div style="height: 4px;"></div>') {
+          processed.push('<div style="height: 4px;"></div>');
+        }
+        continue;
+      }
+
+      // Check if line starts with bullet/emoji that should be on same line as next
+      const startsWithEmoji = /^[✅⚠️❌✨💡📌👉🔹]$/.test(line);
+      const startsWithBullet = /^[•\-\*]$/.test(line);
+
+      if (startsWithEmoji && i + 1 < lines.length) {
+        // Emoji on separate line - combine with next line
+        const nextLine = lines[i + 1].trim();
+        processed.push(`<div style="margin: 2px 0;">${line} ${nextLine}</div>`);
+        i++; // Skip next line since we combined it
+      } else if (startsWithBullet && i + 1 < lines.length) {
+        // Bullet on separate line - combine with next line
+        const nextLine = lines[i + 1].trim();
+        processed.push(`<div style="margin: 2px 0; padding-left: 4px;">• ${nextLine}</div>`);
+        i++; // Skip next line since we combined it
+      } else if (/^[•\-\*]\s/.test(line)) {
+        // Bullet already on same line as text
+        processed.push(`<div style="margin: 2px 0; padding-left: 4px;">${line.replace(/^[•\-\*]\s/, '• ')}</div>`);
+      } else {
+        // Regular line
+        processed.push(`<div style="margin: 2px 0;">${line}</div>`);
+      }
+    }
+
+    return processed.join('');
   }
 
   async function sendMessage() {
