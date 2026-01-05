@@ -63,7 +63,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.0.1' // Force rebuild
+    version: '1.1.0' // Force rebuild with query analytics
   });
 });
 
