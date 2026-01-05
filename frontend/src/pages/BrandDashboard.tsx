@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import axios from '../lib/axios';
-import QueryAnalytics from '../components/QueryAnalytics';
+import AdminAnalytics from '../components/AdminAnalytics';
 import Conversations from '../components/Conversations';
 
 interface Analytics {
@@ -446,7 +446,7 @@ export default function BrandDashboard() {
 
         {/* Query Analytics Tab */}
         {activeTab === 'query-analytics' && storeId && (
-          <QueryAnalytics storeId={storeId} />
+          <AdminAnalytics storeId={storeId} />
         )}
 
         {/* Conversations Tab */}
