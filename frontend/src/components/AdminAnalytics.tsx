@@ -93,12 +93,29 @@ export default function AdminAnalytics({ storeId }: AdminAnalyticsProps) {
         axios.get(`/admin/queries?storeId=${storeId}&page=1&limit=50`)
       ]);
 
-      setStats(statsRes.data.data);
-      setPopularQueries(popularRes.data.data.popularQueries);
-      setCategories(categoriesRes.data.data.categories);
-      setRecentQueries(queriesRes.data.data.queries);
+      // Safely set data with fallbacks
+      if (statsRes.data?.success && statsRes.data?.data) {
+        setStats(statsRes.data.data);
+      }
+
+      if (popularRes.data?.success && popularRes.data?.data?.popularQueries) {
+        setPopularQueries(popularRes.data.data.popularQueries);
+      }
+
+      if (categoriesRes.data?.success && categoriesRes.data?.data?.categories) {
+        setCategories(categoriesRes.data.data.categories);
+      }
+
+      if (queriesRes.data?.success && queriesRes.data?.data?.queries) {
+        setRecentQueries(queriesRes.data.data.queries);
+      }
     } catch (error) {
       console.error('Failed to load analytics:', error);
+      // Set empty states on error
+      setStats(null);
+      setPopularQueries([]);
+      setCategories([]);
+      setRecentQueries([]);
     } finally {
       setLoading(false);
     }
@@ -152,6 +169,64 @@ export default function AdminAnalytics({ storeId }: AdminAnalyticsProps) {
       <div className="analytics-loading">
         <div className="spinner"></div>
         <p>Loading analytics...</p>
+      </div>
+    );
+  }
+
+  // Show helpful message if no data
+  const hasNoData = !stats && popularQueries.length === 0 && categories.length === 0 && recentQueries.length === 0;
+
+  if (hasNoData) {
+    return (
+      <div className="admin-analytics">
+        <div className="analytics-header">
+          <div>
+            <h1>Query Analytics & Intelligence</h1>
+            <p>Actionable insights from customer conversations</p>
+          </div>
+        </div>
+
+        <div className="empty-state" style={{ padding: '80px 32px', textAlign: 'center' }}>
+          <div style={{ fontSize: '64px', marginBottom: '24px' }}>📊</div>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1a202c', marginBottom: '16px' }}>
+            No Analytics Data Yet
+          </h2>
+          <p style={{ fontSize: '16px', color: '#64748b', marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>
+            Start chatting with your widget to generate analytics! Once customers ask questions, you'll see:
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', maxWidth: '800px', margin: '0 auto 32px', textAlign: 'left' }}>
+            <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🏷️</div>
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>Auto-Categorization</div>
+              <div style={{ fontSize: '14px', color: '#64748b' }}>Queries organized by type</div>
+            </div>
+            <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>Popular Questions</div>
+              <div style={{ fontSize: '14px', color: '#64748b' }}>Most asked queries</div>
+            </div>
+            <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>⚡</div>
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>Cost Savings</div>
+              <div style={{ fontSize: '14px', color: '#64748b' }}>Smart caching stats</div>
+            </div>
+            <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>💾</div>
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>Export Data</div>
+              <div style={{ fontSize: '14px', color: '#64748b' }}>CSV/JSON downloads</div>
+            </div>
+          </div>
+          <div style={{ padding: '24px', background: '#e0e7ff', borderRadius: '12px', maxWidth: '600px', margin: '0 auto' }}>
+            <p style={{ fontSize: '14px', color: '#4338ca', fontWeight: '600', marginBottom: '8px' }}>
+              💡 How to Generate Data:
+            </p>
+            <ol style={{ textAlign: 'left', color: '#4338ca', fontSize: '14px', paddingLeft: '20px' }}>
+              <li>Install the widget on your product pages</li>
+              <li>Chat with the widget (ask questions about products)</li>
+              <li>Refresh this page to see analytics appear!</li>
+            </ol>
+          </div>
+        </div>
       </div>
     );
   }
