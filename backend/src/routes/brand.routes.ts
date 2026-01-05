@@ -69,6 +69,16 @@ router.delete('/:storeId/shopify/credentials', brandController.removeShopifyCred
 // QUERY ANALYTICS ROUTES (For Brand Owners)
 // ============================================================================
 
+// Test endpoint to verify analytics routes are registered
+router.get('/:storeId/query-analytics/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Query analytics routes are registered!',
+    storeId: req.params.storeId,
+    timestamp: new Date().toISOString()
+  });
+});
+
 /**
  * Dashboard summary with overview, popular queries, categories, and cache stats
  * GET /api/brand/:storeId/query-analytics/summary?days=30

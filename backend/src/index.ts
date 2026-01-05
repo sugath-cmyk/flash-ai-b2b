@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.1.1', // Force rebuild with route debugging
+    version: '1.1.2', // Force rebuild with test route
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
@@ -75,28 +75,20 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Debug route to check registered routes
-app.get('/debug/routes', (req, res) => {
-  const routes: any[] = [];
-  app._router.stack.forEach((middleware: any) => {
-    if (middleware.route) {
-      routes.push({
-        path: middleware.route.path,
-        methods: Object.keys(middleware.route.methods)
-      });
-    } else if (middleware.name === 'router') {
-      middleware.handle.stack.forEach((handler: any) => {
-        if (handler.route) {
-          routes.push({
-            path: middleware.regexp.source,
-            route: handler.route.path,
-            methods: Object.keys(handler.route.methods)
-          });
-        }
-      });
-    }
+// Simple test endpoint for query analytics
+app.get('/test/analytics', (req, res) => {
+  res.json({
+    message: 'Analytics test endpoint working',
+    brandRoutes: {
+      imported: typeof brandRoutes !== 'undefined',
+      registered: true
+    },
+    testUrls: [
+      '/api/brand/STORE_ID/query-analytics/stats?days=30',
+      '/api/brand/STORE_ID/query-analytics/popular?days=30&limit=10',
+      '/api/brand/STORE_ID/query-analytics/categories?days=30'
+    ]
   });
-  res.json({ total: routes.length, routes: routes.slice(0, 50) });
 });
 
 // Widget script serving route (public, must be before API routes)
