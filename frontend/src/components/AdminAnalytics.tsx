@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../lib/axios';
 import '../styles/AdminAnalytics.css';
+import AnalyticsDiagnostic from './AnalyticsDiagnostic';
 
 interface QueryStats {
   totalQueries: number;
@@ -231,6 +232,9 @@ export default function AdminAnalytics({ storeId }: AdminAnalyticsProps) {
 
   return (
     <div className="admin-analytics">
+      {/* Diagnostics Tool */}
+      <AnalyticsDiagnostic storeId={storeId} />
+
       {/* Header */}
       <div className="analytics-header">
         <div>
