@@ -87,10 +87,10 @@ export default function AdminAnalytics({ storeId }: AdminAnalyticsProps) {
 
       // Load all analytics data in parallel
       const [statsRes, popularRes, categoriesRes, queriesRes] = await Promise.all([
-        axios.get(`/admin/queries/stats?storeId=${storeId}&days=${timeRange}`),
-        axios.get(`/admin/queries/popular?storeId=${storeId}&days=${timeRange}&limit=10`),
-        axios.get(`/admin/queries/categories?storeId=${storeId}&days=${timeRange}`),
-        axios.get(`/admin/queries?storeId=${storeId}&page=1&limit=50`)
+        axios.get(`/brand/${storeId}/query-analytics/stats?days=${timeRange}`),
+        axios.get(`/brand/${storeId}/query-analytics/popular?days=${timeRange}&limit=10`),
+        axios.get(`/brand/${storeId}/query-analytics/categories?days=${timeRange}`),
+        axios.get(`/brand/${storeId}/query-analytics/search?page=1&limit=50`)
       ]);
 
       // Safely set data with fallbacks
@@ -124,14 +124,13 @@ export default function AdminAnalytics({ storeId }: AdminAnalyticsProps) {
   const searchQueries = async () => {
     try {
       const params = new URLSearchParams({
-        storeId,
         page: '1',
         limit: '50',
         ...(searchTerm && { searchTerm }),
         ...(selectedCategory && { category: selectedCategory })
       });
 
-      const response = await axios.get(`/admin/queries?${params}`);
+      const response = await axios.get(`/brand/${storeId}/query-analytics/search?${params}`);
       setRecentQueries(response.data.data.queries);
     } catch (error) {
       console.error('Failed to search queries:', error);
@@ -141,13 +140,12 @@ export default function AdminAnalytics({ storeId }: AdminAnalyticsProps) {
   const exportData = async () => {
     try {
       const params = new URLSearchParams({
-        storeId,
         format: exportFormat,
         ...(searchTerm && { searchTerm }),
         ...(selectedCategory && { category: selectedCategory })
       });
 
-      const response = await axios.get(`/admin/queries/export?${params}`, {
+      const response = await axios.get(`/brand/${storeId}/query-analytics/export?${params}`, {
         responseType: 'blob'
       });
 
