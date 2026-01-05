@@ -18,6 +18,7 @@ import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
 import adminRoutes from './routes/admin.routes';
 import widgetController from './controllers/widget.controller';
+import brandController from './controllers/brand.controller';
 
 // Load environment variables
 dotenv.config();
@@ -63,8 +64,39 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.1.0' // Force rebuild with query analytics
+    version: '1.1.1', // Force rebuild with route debugging
+    features: {
+      queryAnalytics: true,
+      brandControllerExists: typeof brandController !== 'undefined',
+      hasGetQueryStats: typeof brandController.getQueryStats === 'function',
+      hasGetPopularQueries: typeof brandController.getPopularQueries === 'function',
+      hasGetCategoryBreakdown: typeof brandController.getCategoryBreakdown === 'function',
+    }
   });
+});
+
+// Debug route to check registered routes
+app.get('/debug/routes', (req, res) => {
+  const routes: any[] = [];
+  app._router.stack.forEach((middleware: any) => {
+    if (middleware.route) {
+      routes.push({
+        path: middleware.route.path,
+        methods: Object.keys(middleware.route.methods)
+      });
+    } else if (middleware.name === 'router') {
+      middleware.handle.stack.forEach((handler: any) => {
+        if (handler.route) {
+          routes.push({
+            path: middleware.regexp.source,
+            route: handler.route.path,
+            methods: Object.keys(handler.route.methods)
+          });
+        }
+      });
+    }
+  });
+  res.json({ total: routes.length, routes: routes.slice(0, 50) });
 });
 
 // Widget script serving route (public, must be before API routes)
