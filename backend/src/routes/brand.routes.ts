@@ -89,36 +89,36 @@ router.get('/:storeId/query-analytics/summary', brandController.getQueryAnalytic
  * Overall query statistics
  * GET /api/brand/:storeId/query-analytics/stats?days=30
  */
-router.get('/:storeId/query-analytics/stats', brandController.getQueryStats);
+router.get('/:storeId/query-analytics/stats', brandController.getQueryStats.bind(brandController));
 
 /**
  * Popular queries (most frequently asked)
  * GET /api/brand/:storeId/query-analytics/popular?days=30&limit=20&category=ingredients
  */
-router.get('/:storeId/query-analytics/popular', brandController.getPopularQueries);
+router.get('/:storeId/query-analytics/popular', brandController.getPopularQueries.bind(brandController));
 
 /**
  * Category breakdown with percentages
  * GET /api/brand/:storeId/query-analytics/categories?days=30
  */
-router.get('/:storeId/query-analytics/categories', brandController.getCategoryBreakdown);
+router.get('/:storeId/query-analytics/categories', brandController.getCategoryBreakdown.bind(brandController));
 
 /**
  * Search queries with filters
  * GET /api/brand/:storeId/query-analytics/search?category=ingredients&searchTerm=niacinamide&page=1&limit=50
  */
-router.get('/:storeId/query-analytics/search', brandController.searchQueries);
+router.get('/:storeId/query-analytics/search', brandController.searchQueries.bind(brandController));
 
 /**
  * Export queries as CSV or JSON
  * GET /api/brand/:storeId/query-analytics/export?format=csv&startDate=2024-01-01
  */
-router.get('/:storeId/query-analytics/export', brandController.exportQueries);
+router.get('/:storeId/query-analytics/export', brandController.exportQueries.bind(brandController));
 
 /**
  * Cache performance statistics
  * GET /api/brand/:storeId/query-analytics/cache-stats?days=30
  */
-router.get('/:storeId/query-analytics/cache-stats', brandController.getCacheStats);
+router.get('/:storeId/query-analytics/cache-stats', brandController.getCacheStats.bind(brandController));
 
 export default router;

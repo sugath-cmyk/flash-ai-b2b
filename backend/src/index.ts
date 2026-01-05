@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.1.2', // Force rebuild with test route
+    version: '1.1.3', // Fix: Add .bind() to analytics controller methods
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
