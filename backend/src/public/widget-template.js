@@ -529,6 +529,258 @@
     }
   }
 
+  // Create floating widget (right middle of page)
+  function createFloatingWidget() {
+    const floatingContainer = document.createElement('div');
+    floatingContainer.id = 'flash-ai-floating-widget';
+    floatingContainer.style.cssText = `
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 999999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+
+    // Floating icon button (collapsed state)
+    const floatingIcon = document.createElement('div');
+    floatingIcon.id = 'flash-ai-floating-icon';
+    floatingIcon.style.cssText = `
+      cursor: pointer;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 280px;
+    `;
+
+    floatingIcon.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+        <circle cx="8" cy="11" r="1.5" fill="#667eea"/>
+        <circle cx="12" cy="11" r="1.5" fill="#667eea"/>
+        <circle cx="16" cy="11" r="1.5" fill="#667eea"/>
+      </svg>
+      <div style="color: white; line-height: 1.3;">
+        <div style="font-size: 14px; font-weight: 600;">Ask anything about product</div>
+        <div style="font-size: 10px; opacity: 0.85;">powered by Flash AI</div>
+      </div>
+    `;
+
+    // Floating chat window (expanded state)
+    const floatingChat = document.createElement('div');
+    floatingChat.id = 'flash-ai-floating-chat';
+    floatingChat.style.cssText = `
+      display: none;
+      width: 380px;
+      max-width: calc(100vw - 40px);
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      animation: slideIn 0.3s ease;
+    `;
+
+    floatingChat.innerHTML = `
+      <style>
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        #flash-ai-floating-icon:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 24px rgba(102, 126, 234, 0.5);
+        }
+        @media (max-width: 768px) {
+          #flash-ai-floating-widget {
+            right: 10px !important;
+          }
+          #flash-ai-floating-chat {
+            width: calc(100vw - 20px) !important;
+          }
+        }
+      </style>
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
+          </svg>
+          <div>
+            <div style="font-size: 15px; font-weight: 600;">Product Assistant</div>
+            <div style="font-size: 10px; opacity: 0.85;">powered by Flash AI</div>
+          </div>
+        </div>
+        <button id="flash-ai-floating-close" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; padding: 0; width: 28px; height: 28px; opacity: 0.9; transition: opacity 0.2s;">×</button>
+      </div>
+      <div id="flash-ai-floating-messages" style="height: 400px; max-height: 60vh; overflow-y: auto; padding: 16px; background: #f8f9fa; scroll-behavior: smooth;"></div>
+      <div style="padding: 12px; background: white; border-top: 1px solid #e3e6e8; display: flex; gap: 8px;">
+        <input type="text" id="flash-ai-floating-input" placeholder="Ask anything..." style="flex: 1; padding: 12px 14px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" />
+        <button id="flash-ai-floating-send" style="padding: 12px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle;">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    floatingContainer.appendChild(floatingIcon);
+    floatingContainer.appendChild(floatingChat);
+    document.body.appendChild(floatingContainer);
+
+    // Toggle floating widget
+    let floatingExpanded = false;
+    floatingIcon.onclick = () => {
+      floatingExpanded = true;
+      floatingIcon.style.display = 'none';
+      floatingChat.style.display = 'block';
+
+      // Add welcome message if first time
+      const messages = document.getElementById('flash-ai-floating-messages');
+      if (messages && messages.children.length === 0) {
+        let welcomeMsg = 'Hi! I\'m here to help answer any questions about this product. What would you like to know?';
+        if (productContext && productContext.productTitle) {
+          welcomeMsg = `Hi! I'm here to help answer questions about ${productContext.productTitle}. What would you like to know?`;
+        }
+        addFloatingMessage(welcomeMsg, 'bot');
+      }
+
+      // Focus input
+      setTimeout(() => {
+        const input = document.getElementById('flash-ai-floating-input');
+        if (input) input.focus();
+      }, 100);
+    };
+
+    // Close floating widget
+    setTimeout(() => {
+      const closeBtn = document.getElementById('flash-ai-floating-close');
+      if (closeBtn) {
+        closeBtn.onclick = () => {
+          floatingExpanded = false;
+          floatingIcon.style.display = 'flex';
+          floatingChat.style.display = 'none';
+        };
+      }
+
+      const sendBtn = document.getElementById('flash-ai-floating-send');
+      const input = document.getElementById('flash-ai-floating-input');
+
+      if (sendBtn) sendBtn.onclick = sendFloatingMessage;
+      if (input) {
+        input.onkeypress = (e) => { if (e.key === 'Enter') sendFloatingMessage(); };
+        input.onfocus = () => { input.style.borderColor = '#667eea'; };
+        input.onblur = () => { input.style.borderColor = '#dee2e6'; };
+      }
+    }, 100);
+  }
+
+  function addFloatingMessage(text, sender) {
+    const container = document.getElementById('flash-ai-floating-messages');
+    if (!container) return;
+
+    const msgDiv = document.createElement('div');
+    msgDiv.style.cssText = `
+      margin-bottom: 12px;
+      display: flex;
+      ${sender === 'user' ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}
+    `;
+
+    const bubble = document.createElement('div');
+    bubble.style.cssText = `
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      ${sender === 'user'
+        ? 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px;'
+        : 'background: white; color: #2c3e50; border-bottom-left-radius: 4px; border: 1px solid #e3e6e8; box-shadow: 0 1px 2px rgba(0,0,0,0.05);'
+      }
+    `;
+
+    if (sender === 'bot') {
+      bubble.innerHTML = formatBotMessage(text);
+    } else {
+      bubble.textContent = text;
+    }
+
+    msgDiv.appendChild(bubble);
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async function sendFloatingMessage() {
+    const input = document.getElementById('flash-ai-floating-input');
+    if (!input) return;
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    addFloatingMessage(message, 'user');
+    input.value = '';
+
+    const container = document.getElementById('flash-ai-floating-messages');
+    const typing = document.createElement('div');
+    typing.id = 'flash-ai-floating-typing';
+    typing.style.cssText = 'margin-bottom: 14px; font-size: 13px; color: #6c757d; font-style: italic; padding-left: 4px;';
+    typing.textContent = 'Typing...';
+    container.appendChild(typing);
+    container.scrollTop = container.scrollHeight;
+
+    try {
+      const requestBody = {
+        sessionId: getSessionId(),
+        visitorId: getVisitorId(),
+        message: message,
+        conversationId: conversationId
+      };
+
+      if (productContext) {
+        requestBody.productContext = productContext;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/widget/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const data = await response.json();
+      typing.remove();
+
+      if (data.success) {
+        conversationId = data.data.conversationId;
+        const botMessage = data.data.message || data.data.response || 'Sorry, no response received.';
+        addFloatingMessage(botMessage, 'bot');
+      } else {
+        addFloatingMessage('Sorry, something went wrong. Please try again.', 'bot');
+      }
+    } catch (error) {
+      console.error('Flash AI: Error:', error);
+      typing.remove();
+      addFloatingMessage('Sorry, I\'m having trouble connecting. Please try again.', 'bot');
+    }
+  }
+
   // Initialize
   function init() {
     // Only add widget on product pages
@@ -537,13 +789,16 @@
       return;
     }
 
-    console.log('Flash AI: Product page detected, creating widget...');
+    console.log('Flash AI: Product page detected, creating widgets...');
 
     // Extract product context for this page
     productContext = extractProductContext();
 
+    // Add floating widget first
+    createFloatingWidget();
+
     setTimeout(() => {
-      console.log('Flash AI: Searching for insertion point...');
+      console.log('Flash AI: Searching for insertion point for inline widget...');
 
       // Strategy 1: Find product form
       let targetElement = document.querySelector('form[action*="/cart/add"]');
