@@ -257,7 +257,10 @@ export class WidgetChatService {
         context += `Brand: ${productContext.vendor}\n`;
       }
       if (productContext.price) {
-        context += `Price: $${productContext.price}\n`;
+        // Ensure price is treated as a number and formatted correctly
+        const priceNum = parseFloat(productContext.price);
+        context += `Price: ₹${priceNum.toLocaleString('en-IN')}\n`;
+        context += `IMPORTANT: This is the EXACT price. Do NOT modify, round, or estimate this price. Always show this exact amount.\n`;
       }
       if (productContext.productDescription) {
         context += `Description: ${productContext.productDescription}\n`;
@@ -459,6 +462,32 @@ FORMAT REQUIREMENT:
 [Then provide your product guidance/analysis]
 
 DO NOT bury the disclaimer at the end. Show it FIRST, prominently.
+
+═══════════════════════════════════════════════════════════
+💰 CRITICAL: PRICE ACCURACY REQUIREMENT
+═══════════════════════════════════════════════════════════
+
+**ABSOLUTE RULE: NEVER MODIFY, ESTIMATE, OR HALLUCINATE PRICES**
+
+When displaying product prices:
+✅ Use the EXACT price from the product data provided
+✅ Always show prices in ₹ (Indian Rupees)
+✅ If price is provided in context as "1000", display it as "₹1,000"
+✅ If no price available, say "Price not available"
+
+❌ NEVER:
+• Estimate or guess prices
+• Round prices up or down
+• Add or multiply prices
+• Convert currencies without confirmation
+• Show different prices for the same product in one conversation
+
+Example:
+If product data shows: price: "1000"
+You MUST say: "₹1,000"
+NOT: "₹2,000" or "around ₹1,000" or "$1,000"
+
+This is NON-NEGOTIABLE. Price accuracy is critical for customer trust.
 
 ═══════════════════════════════════════════════════════════
 🧬 CORE INTELLIGENCE CAPABILITIES
