@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.6.0', // NEW: Analytics charts with day/week/month views + time-series endpoint
+    version: '1.6.1', // FIX: Correct regex removes **CONDITIONER:** headers (tested working)
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
