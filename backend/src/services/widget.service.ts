@@ -255,30 +255,57 @@ export class WidgetService {
     const since = new Date();
     since.setDate(since.getDate() - days);
 
-    // Get event counts by type
+    // Get event counts from actual conversations and messages
     const eventCounts = await pool.query(
-      `SELECT event_type, COUNT(*) as count
-       FROM widget_analytics
+      `SELECT
+        'conversations' as event_type,
+        COUNT(*)::text as count
+       FROM widget_conversations
        WHERE store_id = $1 AND created_at >= $2
-       GROUP BY event_type
+       UNION ALL
+       SELECT
+        'messages' as event_type,
+        COUNT(*)::text as count
+       FROM widget_messages
+       WHERE conversation_id IN (
+         SELECT id FROM widget_conversations WHERE store_id = $1 AND created_at >= $2
+       )
+       UNION ALL
+       SELECT
+        'user_queries' as event_type,
+        COUNT(*)::text as count
+       FROM widget_messages
+       WHERE conversation_id IN (
+         SELECT id FROM widget_conversations WHERE store_id = $1 AND created_at >= $2
+       ) AND role = 'user'
+       UNION ALL
+       SELECT
+        'ai_responses' as event_type,
+        COUNT(*)::text as count
+       FROM widget_messages
+       WHERE conversation_id IN (
+         SELECT id FROM widget_conversations WHERE store_id = $1 AND created_at >= $2
+       ) AND role = 'assistant'
        ORDER BY count DESC`,
       [storeId, since]
     );
 
-    // Get daily active sessions
+    // Get daily active sessions from conversations
     const dailySessions = await pool.query(
-      `SELECT DATE(created_at) as date, COUNT(DISTINCT session_id) as sessions
-       FROM widget_analytics
+      `SELECT
+        DATE(created_at) as date,
+        COUNT(DISTINCT session_id)::text as sessions
+       FROM widget_conversations
        WHERE store_id = $1 AND created_at >= $2
        GROUP BY DATE(created_at)
        ORDER BY date DESC`,
       [storeId, since]
     );
 
-    // Get total unique visitors
+    // Get total unique visitors from conversations
     const uniqueVisitors = await pool.query(
       `SELECT COUNT(DISTINCT visitor_id) as count
-       FROM widget_analytics
+       FROM widget_conversations
        WHERE store_id = $1 AND created_at >= $2 AND visitor_id IS NOT NULL`,
       [storeId, since]
     );
@@ -286,9 +313,9 @@ export class WidgetService {
     // Get widget conversation stats
     const conversationStats = await pool.query(
       `SELECT
-        COUNT(*) as total_conversations,
-        COUNT(CASE WHEN status = 'resolved' THEN 1 END) as resolved_conversations,
-        AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))) as avg_resolution_time
+        COUNT(*)::text as total_conversations,
+        COUNT(CASE WHEN status = 'resolved' THEN 1 END)::text as resolved_conversations,
+        COALESCE(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)))::text, '0') as avg_resolution_time
        FROM widget_conversations
        WHERE store_id = $1 AND created_at >= $2`,
       [storeId, since]
