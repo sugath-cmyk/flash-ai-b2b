@@ -982,10 +982,34 @@ Remember: You're not just selling products — you're providing trusted guidance
       messages,
     });
 
-    const content = response.content[0].type === 'text' ? response.content[0].text : '';
+    let content = response.content[0].type === 'text' ? response.content[0].text : '';
     const tokens = response.usage.input_tokens + response.usage.output_tokens;
 
+    // Post-process: Remove section headers to ensure ONE carousel only
+    content = this.removeSectionHeaders(content);
+
     return { content, tokens };
+  }
+
+  /**
+   * Remove section headers like "CONDITIONER:", "**SHAMPOO:**", etc.
+   * This ensures only ONE carousel appears regardless of AI output
+   */
+  private removeSectionHeaders(content: string): string {
+    // Remove section headers that appear before [PRODUCT: tags
+    // Patterns: "SHAMPOO:", "**CONDITIONER:**", "HAIR OIL:", etc.
+    const sectionHeaderPattern = /^\s*\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER)S?:\*{0,2}\s*$/gmi;
+
+    // Also remove bold section headers in middle of text
+    const inlineSectionPattern = /\n\s*\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER)S?:\*{0,2}\s*\n/gi;
+
+    let cleaned = content.replace(sectionHeaderPattern, '');
+    cleaned = cleaned.replace(inlineSectionPattern, '\n\n');
+
+    // Clean up multiple blank lines
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+    return cleaned.trim();
   }
 
   private stripHtml(html: string): string {
