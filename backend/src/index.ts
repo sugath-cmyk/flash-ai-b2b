@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.3.0', // Feature: Button text now controlled by backend widget config
+    version: '1.4.0', // Feature: Product descriptions now appear inside carousel cards
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',

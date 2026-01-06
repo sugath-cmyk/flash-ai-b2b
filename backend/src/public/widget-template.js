@@ -317,9 +317,9 @@
     console.log('📝 First 200 chars:', text.substring(0, 200));
 
     // STEP 1: Replace [PRODUCT: ...] directly with product cards FIRST (before any other formatting)
-    // Format: [PRODUCT: Title | ₹Price | ImageURL] or [PRODUCT: Title | ₹Price | ImageURL | ProductURL]
-    // Use [^\|] for title (anything except pipe), [^\]] for URL (anything except closing bracket)
-    const productRegex = /\[PRODUCT:\s*([^\|]+?)\s*\|\s*₹([\d,]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*([^\]]+?))?\s*\]/g;
+    // Format: [PRODUCT: Title | ₹Price | ImageURL] or [PRODUCT: Title | ₹Price | ImageURL | ProductURL | Description]
+    // Use [^\|] for title (anything except pipe), [^\]] for last field (anything except closing bracket)
+    const productRegex = /\[PRODUCT:\s*([^\|]+?)\s*\|\s*₹([\d,]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*([^\|\]]+?))?(?:\s*\|\s*([^\]]+?))?\s*\]/g;
 
     // Test if the pattern exists in text
     const hasProductTag = text.includes('[PRODUCT:');
@@ -336,15 +336,16 @@
 
     // Collect all product cards first
     const productCards = [];
-    let formatted = text.replace(productRegex, function(match, title, price, imageUrl, productUrl) {
+    let formatted = text.replace(productRegex, function(match, title, price, imageUrl, productUrl, description) {
       console.log('🎯 PRODUCT CARD MATCHED!');
       console.log('  Full match:', match);
       console.log('  Title:', title.trim());
       console.log('  Price:', price);
       console.log('  Image URL:', imageUrl.trim());
       console.log('  Product URL:', productUrl ? productUrl.trim() : 'not provided - will generate from title');
+      console.log('  Description:', description ? description.trim() : 'not provided');
 
-      const card = createProductCard(title.trim(), price, imageUrl.trim(), productUrl ? productUrl.trim() : null);
+      const card = createProductCard(title.trim(), price, imageUrl.trim(), productUrl ? productUrl.trim() : null, description ? description.trim() : null);
       productCards.push(card);
 
       // Return placeholder that we'll replace with carousel
@@ -415,7 +416,7 @@
     return result;
   }
 
-  function createProductCard(title, price, imageUrl, productUrl) {
+  function createProductCard(title, price, imageUrl, productUrl, description) {
     // Generate a unique ID for this product card
     const productId = 'product-' + Math.random().toString(36).substr(2, 9);
 
@@ -434,11 +435,17 @@
       ? `<a href="${productUrl}" target="_blank" style="display:block;text-decoration:none;"><img src="${imageUrl}" alt="${title}" style="width:100%;height:140px;object-fit:cover;border-radius:8px 8px 0 0;display:block;cursor:pointer;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /></a><a href="${productUrl}" target="_blank" style="width:100%;height:140px;display:none;align-items:center;justify-content:center;font-size:48px;text-decoration:none;cursor:pointer;background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf1 100%);border-radius:8px 8px 0 0;">🧴</a>`
       : `<a href="${productUrl}" target="_blank" style="width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;text-decoration:none;cursor:pointer;background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf1 100%);border-radius:8px 8px 0 0;">🧴</a>`;
 
+    // Add description HTML if provided
+    const descriptionHtml = description
+      ? '<div style="font-size:11px;color:#64748b;line-height:1.4;margin-bottom:8px;height:32px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + description + '</div>'
+      : '';
+
     // Return vertical card for carousel - fixed width, vertical layout
     return '<div style="min-width:180px;max-width:180px;background:white;border:1px solid #e3e6e8;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;flex-shrink:0;overflow:hidden;" onmouseenter="this.style.boxShadow=\'0 6px 12px rgba(102,126,234,0.15)\';this.style.borderColor=\'{{PRIMARY_COLOR}}\';this.style.transform=\'translateY(-4px)\';" onmouseleave="this.style.boxShadow=\'0 2px 4px rgba(0,0,0,0.05)\';this.style.borderColor=\'#e3e6e8\';this.style.transform=\'translateY(0)\';">' +
       imageHtml +
       '<div style="padding:12px;">' +
         '<a href="' + productUrl + '" target="_blank" style="text-decoration:none;color:inherit;"><div style="font-weight:600;font-size:13px;color:#2c3e50;margin-bottom:6px;line-height:1.3;height:36px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;transition:color 0.2s;" onmouseenter="this.style.color=\'{{PRIMARY_COLOR}}\';" onmouseleave="this.style.color=\'#2c3e50\';">' + title + '</div></a>' +
+        descriptionHtml +
         '<div style="font-size:16px;font-weight:700;color:{{PRIMARY_COLOR}};margin-bottom:10px;">₹' + price + '</div>' +
         '<div style="display:flex;flex-direction:column;gap:6px;">' +
           '<a href="' + productUrl + '" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:8px 10px;background:white;color:{{PRIMARY_COLOR}};border:1px solid {{PRIMARY_COLOR}};border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.background=\'{{PRIMARY_COLOR}}\';this.style.color=\'white\';" onmouseleave="this.style.background=\'white\';this.style.color=\'{{PRIMARY_COLOR}}\';">View Details</button></a>' +

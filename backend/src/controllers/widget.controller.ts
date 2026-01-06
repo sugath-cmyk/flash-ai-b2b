@@ -182,7 +182,7 @@ export class WidgetController {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('X-Widget-Version', 'v1.3.0'); // Button text now configurable
+      res.setHeader('X-Widget-Version', 'v1.4.0'); // Product descriptions in cards + single carousel fix
 
       res.send(widgetScript);
     } catch (error) {
