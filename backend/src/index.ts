@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.5.1', // CRITICAL: Explicitly forbid all category:colon patterns - UI break warning added
+    version: '1.5.2', // FINAL FIX: Bulletproof multiline regex removes ALL section headers
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
