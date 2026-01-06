@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.1.3', // Fix: Add .bind() to analytics controller methods
+    version: '1.1.4', // Fix: Widget config controller matches database schema
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
