@@ -136,6 +136,20 @@ export class WidgetController {
 
       const apiKey = apiKeys[0].api_key;
 
+      // Get widget configuration
+      let widgetConfig;
+      try {
+        widgetConfig = await widgetService.getConfigPublic(storeId);
+      } catch (error) {
+        // Use default colors if config not found
+        widgetConfig = {
+          primary_color: '#667eea',
+          secondary_color: '#764ba2',
+          text_color: '#1f2937',
+          background_color: '#ffffff',
+        };
+      }
+
       // Read widget template
       const templatePath = path.join(__dirname, '../public/widget-template.js');
       let widgetScript = fs.readFileSync(templatePath, 'utf8');
@@ -144,8 +158,14 @@ export class WidgetController {
       const apiBaseUrl = process.env.API_BASE_URL || 'https://flash-ai-backend-rld7.onrender.com';
 
       // Replace placeholders
-      widgetScript = widgetScript.replace('{{API_BASE_URL}}', apiBaseUrl);
-      widgetScript = widgetScript.replace('{{API_KEY}}', apiKey);
+      widgetScript = widgetScript.replace(/{{API_BASE_URL}}/g, apiBaseUrl);
+      widgetScript = widgetScript.replace(/{{API_KEY}}/g, apiKey);
+
+      // Replace color placeholders with actual config colors
+      widgetScript = widgetScript.replace(/{{PRIMARY_COLOR}}/g, widgetConfig.primary_color || '#667eea');
+      widgetScript = widgetScript.replace(/{{SECONDARY_COLOR}}/g, widgetConfig.secondary_color || '#764ba2');
+      widgetScript = widgetScript.replace(/{{TEXT_COLOR}}/g, widgetConfig.text_color || '#1f2937');
+      widgetScript = widgetScript.replace(/{{BACKGROUND_COLOR}}/g, widgetConfig.background_color || '#ffffff');
 
       // Set appropriate headers for cross-origin loading
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');

@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.1.4', // Fix: Widget config controller matches database schema
+    version: '1.1.5', // Fix: Widget now uses custom colors from config
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
