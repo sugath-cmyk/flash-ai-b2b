@@ -188,6 +188,50 @@ export class ShopifyAPIService {
   }
 
   /**
+   * Get All Price Rules (with pagination)
+   */
+  async getAllPriceRules(): Promise<any[]> {
+    const priceRules: any[] = [];
+    let url = '/price_rules.json?limit=250';
+
+    while (url) {
+      const response = await this.axiosInstance.get(url);
+      priceRules.push(...response.data.price_rules);
+
+      // Check for next page
+      const linkHeader = response.headers['link'];
+      const links = this.extractLinkHeader(linkHeader);
+      url = links.next ? new URL(links.next).pathname + new URL(links.next).search : '';
+
+      if (!url) break;
+    }
+
+    return priceRules;
+  }
+
+  /**
+   * Get Discount Codes for a Price Rule
+   */
+  async getDiscountCodes(priceRuleId: number): Promise<any[]> {
+    const discountCodes: any[] = [];
+    let url = `/price_rules/${priceRuleId}/discount_codes.json?limit=250`;
+
+    while (url) {
+      const response = await this.axiosInstance.get(url);
+      discountCodes.push(...response.data.discount_codes);
+
+      // Check for next page
+      const linkHeader = response.headers['link'];
+      const links = this.extractLinkHeader(linkHeader);
+      url = links.next ? new URL(links.next).pathname + new URL(links.next).search : '';
+
+      if (!url) break;
+    }
+
+    return discountCodes;
+  }
+
+  /**
    * Create Webhook Subscription
    */
   async createWebhook(topic: WebhookTopic, address: string): Promise<ShopifyWebhook> {
@@ -298,6 +342,37 @@ export class ShopifyExtractionService {
           for (const page of pageBatch) {
             await this.savePage(storeId, page);
           }
+        }
+
+        // Extract discounts (price rules and discount codes)
+        console.log(`Extracting discounts for store ${storeId}...`);
+        try {
+          const priceRules = await shopify.getAllPriceRules();
+          const now = new Date();
+          let activeDiscountCount = 0;
+
+          for (const priceRule of priceRules) {
+            // Skip if not started or expired (only extract active discounts)
+            const startDate = new Date(priceRule.starts_at);
+            const endDate = priceRule.ends_at ? new Date(priceRule.ends_at) : null;
+
+            if (startDate > now || (endDate && endDate < now)) {
+              continue; // Skip inactive discounts
+            }
+
+            // Get discount codes for this price rule
+            const discountCodes = await shopify.getDiscountCodes(priceRule.id);
+
+            for (const discountCode of discountCodes) {
+              await this.saveDiscount(storeId, priceRule, discountCode);
+              activeDiscountCount++;
+            }
+          }
+
+          console.log(`Saved ${activeDiscountCount} active discounts`);
+        } catch (error: any) {
+          console.error('Failed to extract discounts:', error.message);
+          // Continue with extraction even if discounts fail
         }
 
         // Mark job as completed
@@ -429,6 +504,59 @@ export class ShopifyExtractionService {
        DO UPDATE SET
          page_type = $2, title = $3, content = $4, metadata = $6, updated_at = NOW()`,
       [storeId, pageType, page.title, page.body_html, page.handle, JSON.stringify(page)]
+    );
+  }
+
+  /**
+   * Save discount to database
+   */
+  private static async saveDiscount(storeId: string, priceRule: any, discountCode: any): Promise<void> {
+    const externalId = `${priceRule.id}_${discountCode.id}`;
+    const now = new Date();
+    const startDate = new Date(priceRule.starts_at);
+    const endDate = priceRule.ends_at ? new Date(priceRule.ends_at) : null;
+    const isActive = startDate <= now && (!endDate || endDate >= now);
+
+    await pool.query(
+      `INSERT INTO extracted_discounts
+       (store_id, external_id, price_rule_id, discount_code_id, title, code, description,
+        value_type, value, target_type, target_selection, customer_selection,
+        minimum_requirements, entitled_product_ids, entitled_collection_ids,
+        usage_limit, customer_usage_limit, usage_count,
+        starts_at, ends_at, is_active, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+       ON CONFLICT (store_id, external_id)
+       DO UPDATE SET
+         title = $5, code = $6, description = $7,
+         value_type = $8, value = $9,
+         usage_count = $18, is_active = $21, metadata = $22,
+         updated_at = NOW()`,
+      [
+        storeId,
+        externalId,
+        priceRule.id.toString(),
+        discountCode.id.toString(),
+        priceRule.title,
+        discountCode.code,
+        null, // description
+        priceRule.value_type,
+        parseFloat(priceRule.value),
+        priceRule.target_type,
+        priceRule.target_selection,
+        priceRule.customer_selection,
+        priceRule.prerequisite_subtotal_range || priceRule.prerequisite_quantity_range
+          ? JSON.stringify(priceRule.prerequisite_subtotal_range || priceRule.prerequisite_quantity_range)
+          : null,
+        priceRule.entitled_product_ids?.map((id: any) => id.toString()) || null,
+        priceRule.entitled_collection_ids?.map((id: any) => id.toString()) || null,
+        priceRule.usage_limit || null,
+        priceRule.once_per_customer ? 1 : null,
+        discountCode.usage_count,
+        priceRule.starts_at,
+        priceRule.ends_at || null,
+        isActive,
+        JSON.stringify({ priceRule, discountCode }),
+      ]
     );
   }
 

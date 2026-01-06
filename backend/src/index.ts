@@ -17,6 +17,7 @@ import onboardingRoutes from './routes/onboarding.routes';
 import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
 import adminRoutes from './routes/admin.routes';
+import offersRoutes from './routes/offers.routes';
 import widgetController from './controllers/widget.controller';
 import brandController from './controllers/brand.controller';
 
@@ -125,6 +126,9 @@ app.use('/api/shopify', shopifyRoutes);
 
 // Admin Routes (requires admin authentication)
 app.use('/api/admin', adminRoutes);
+
+// Offers Management Routes
+app.use('/api', offersRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

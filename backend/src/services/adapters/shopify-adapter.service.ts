@@ -69,6 +69,30 @@ export interface ExtractedPage {
   metadata: any;
 }
 
+export interface ExtractedDiscount {
+  externalId: string;
+  priceRuleId: string;
+  discountCodeId: string;
+  title: string;
+  code: string;
+  description?: string;
+  valueType: 'percentage' | 'fixed_amount' | 'free_shipping';
+  value: number;
+  targetType?: string;
+  targetSelection?: string;
+  customerSelection?: string;
+  minimumRequirements?: any;
+  entitledProductIds?: string[];
+  entitledCollectionIds?: string[];
+  usageLimit?: number;
+  customerUsageLimit?: number;
+  usageCount: number;
+  startsAt: string;
+  endsAt?: string;
+  isActive: boolean;
+  metadata: any;
+}
+
 export class ShopifyAdapterService {
   private shopify: Shopify | null = null;
   private shopName: string = '';
@@ -324,6 +348,65 @@ export class ShopifyAdapterService {
       }));
     } catch (error: any) {
       throw createError(`Failed to extract pages: ${error.message}`, 500);
+    }
+  }
+
+  async extractDiscounts(): Promise<ExtractedDiscount[]> {
+    if (!this.shopify) {
+      throw createError('Shopify client not initialized', 500);
+    }
+
+    try {
+      const discounts: ExtractedDiscount[] = [];
+      const now = new Date();
+
+      // Get all price rules
+      const priceRules = await this.shopify.priceRule.list({ limit: 250 });
+
+      for (const rule of priceRules) {
+        // Skip if not started or expired
+        const startDate = new Date(rule.starts_at);
+        const endDate = rule.ends_at ? new Date(rule.ends_at) : null;
+
+        if (startDate > now || (endDate && endDate < now)) {
+          continue; // Skip inactive discounts
+        }
+
+        // Get discount codes for this price rule
+        const codes = await this.shopify.discountCode.list(rule.id, { limit: 250 });
+
+        for (const code of codes) {
+          const isActive = startDate <= now && (!endDate || endDate >= now);
+
+          discounts.push({
+            externalId: `${rule.id}_${code.id}`,
+            priceRuleId: rule.id.toString(),
+            discountCodeId: code.id.toString(),
+            title: rule.title,
+            code: code.code,
+            description: undefined,
+            valueType: rule.value_type as any,
+            value: parseFloat(rule.value),
+            targetType: rule.target_type,
+            targetSelection: rule.target_selection,
+            customerSelection: rule.customer_selection,
+            minimumRequirements: rule.prerequisite_subtotal_range || rule.prerequisite_quantity_range || undefined,
+            entitledProductIds: rule.entitled_product_ids?.map((id: any) => id.toString()),
+            entitledCollectionIds: rule.entitled_collection_ids?.map((id: any) => id.toString()),
+            usageLimit: rule.usage_limit || undefined,
+            customerUsageLimit: rule.once_per_customer ? 1 : undefined,
+            usageCount: code.usage_count,
+            startsAt: rule.starts_at,
+            endsAt: rule.ends_at || undefined,
+            isActive,
+            metadata: { priceRule: rule, discountCode: code },
+          });
+        }
+      }
+
+      return discounts;
+    } catch (error: any) {
+      throw createError(`Failed to extract discounts: ${error.message}`, 500);
     }
   }
 
