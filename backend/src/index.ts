@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.5.2', // FINAL FIX: Bulletproof multiline regex removes ALL section headers
+    version: '1.6.0', // NEW: Analytics charts with day/week/month views + time-series endpoint
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
