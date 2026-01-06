@@ -17,8 +17,6 @@ import onboardingRoutes from './routes/onboarding.routes';
 import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
 import adminRoutes from './routes/admin.routes';
-import offersRoutes from './routes/offers.routes';
-import migrationRoutes from './routes/migration.routes';
 import widgetController from './controllers/widget.controller';
 import brandController from './controllers/brand.controller';
 
@@ -66,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.5.0', // Feature: Discount & offer system with migration endpoint
+    version: '1.4.1', // Fix: Accurate pricing using minimum variant price
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
@@ -127,12 +125,6 @@ app.use('/api/shopify', shopifyRoutes);
 
 // Admin Routes (requires admin authentication)
 app.use('/api/admin', adminRoutes);
-
-// Offers Management Routes
-app.use('/api', offersRoutes);
-
-// Migration Routes (for running database migrations via API)
-app.use('/api/migrate', migrationRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
