@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.4.5', // CRITICAL FIX: Load ALL products (was only showing 20/46)
+    version: '1.4.6', // CRITICAL FIX: Prevent duplicate products in carousels
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
