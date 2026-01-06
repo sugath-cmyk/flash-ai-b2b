@@ -61,10 +61,6 @@ export const getWidgetConfig = async (req: AuthRequest, res: Response) => {
       ...config,
       quick_questions: config.quick_questions || [],
       allowed_domains: config.allowed_domains || [],
-      personality_traits: config.personality_traits || ['Helpful', 'Friendly', 'Knowledgeable'],
-      allowed_topics: config.allowed_topics || ['Products', 'Pricing', 'Shipping', 'Returns'],
-      restricted_topics: config.restricted_topics || ['Personal Information', 'Medical Advice'],
-      supported_languages: config.supported_languages || ['en'],
     };
 
     res.json({
@@ -129,16 +125,12 @@ export const updateWidgetConfig = async (req: AuthRequest, res: Response) => {
           greeting_message, placeholder_text, button_text, powered_by_text,
           show_branding, auto_open, auto_open_delay, enable_sound,
           enable_typing_indicator, enable_product_search, enable_recommendations,
-          enable_order_tracking, response_tone, language, supported_languages,
-          personality_traits, response_style, custom_instructions,
-          allowed_topics, restricted_topics, max_message_length,
-          quick_questions, custom_css, custom_js, allowed_domains,
-          logo_url, company_name, offline_message
+          enable_order_tracking, response_tone, quick_questions, custom_css,
+          custom_js, logo_url, company_name
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
           $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-          $31, $32, $33, $34, $35, $36, $37, $38
+          $21, $22, $23, $24, $25, $26, $27, $28
         )`,
         [
           storeId,
@@ -164,21 +156,11 @@ export const updateWidgetConfig = async (req: AuthRequest, res: Response) => {
           config.enable_recommendations !== undefined ? config.enable_recommendations : true,
           config.enable_order_tracking || false,
           config.response_tone || 'friendly',
-          config.language || 'en',
-          JSON.stringify(config.supported_languages || ['en']),
-          JSON.stringify(config.personality_traits || ['Helpful', 'Friendly', 'Knowledgeable']),
-          config.response_style || 'balanced',
-          config.custom_instructions || null,
-          JSON.stringify(config.allowed_topics || ['Products', 'Pricing', 'Shipping', 'Returns']),
-          JSON.stringify(config.restricted_topics || ['Personal Information', 'Medical Advice']),
-          config.max_message_length || 500,
           JSON.stringify(config.quick_questions || []),
           config.custom_css || null,
           config.custom_js || null,
-          config.allowed_domains || [],
           config.logo_url || null,
           config.company_name || null,
-          config.offline_message || null,
         ]
       );
     } else {
@@ -207,21 +189,11 @@ export const updateWidgetConfig = async (req: AuthRequest, res: Response) => {
           enable_recommendations = $21,
           enable_order_tracking = $22,
           response_tone = $23,
-          language = $24,
-          supported_languages = $25,
-          personality_traits = $26,
-          response_style = $27,
-          custom_instructions = $28,
-          allowed_topics = $29,
-          restricted_topics = $30,
-          max_message_length = $31,
-          quick_questions = $32,
-          custom_css = $33,
-          custom_js = $34,
-          allowed_domains = $35,
-          logo_url = $36,
-          company_name = $37,
-          offline_message = $38,
+          quick_questions = $24,
+          custom_css = $25,
+          custom_js = $26,
+          logo_url = $27,
+          company_name = $28,
           updated_at = NOW()
         WHERE store_id = $1`,
         [
@@ -248,21 +220,11 @@ export const updateWidgetConfig = async (req: AuthRequest, res: Response) => {
           config.enable_recommendations !== undefined ? config.enable_recommendations : true,
           config.enable_order_tracking || false,
           config.response_tone || 'friendly',
-          config.language || 'en',
-          JSON.stringify(config.supported_languages || ['en']),
-          JSON.stringify(config.personality_traits || ['Helpful', 'Friendly', 'Knowledgeable']),
-          config.response_style || 'balanced',
-          config.custom_instructions || null,
-          JSON.stringify(config.allowed_topics || ['Products', 'Pricing', 'Shipping', 'Returns']),
-          JSON.stringify(config.restricted_topics || ['Personal Information', 'Medical Advice']),
-          config.max_message_length || 500,
           JSON.stringify(config.quick_questions || []),
           config.custom_css || null,
           config.custom_js || null,
-          config.allowed_domains || [],
           config.logo_url || null,
           config.company_name || null,
-          config.offline_message || null,
         ]
       );
     }
@@ -323,9 +285,6 @@ export const getPublicWidgetConfig = async (req: Request, res: Response) => {
       enable_sound: config.enable_sound,
       enable_typing_indicator: config.enable_typing_indicator,
       quick_questions: config.quick_questions || [],
-      language: config.language,
-      supported_languages: config.supported_languages || ['en'],
-      max_message_length: config.max_message_length,
       custom_css: config.custom_css,
     };
 
