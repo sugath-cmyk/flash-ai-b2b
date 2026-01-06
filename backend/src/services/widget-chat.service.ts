@@ -1011,20 +1011,20 @@ Remember: You're not just selling products — you're providing trusted guidance
    * This ensures only ONE carousel appears regardless of AI output
    */
   private removeSectionHeaders(content: string): string {
-    // AGGRESSIVE removal: Strip ANY line that's just a category word with colon
-    // This catches: "CONDITIONER:", "**CONDITIONER:**", "  **HAIR OIL:**  ", etc.
-
+    // Remove section headers like "**CONDITIONER:**", "HAIR OIL:", etc.
     let cleaned = content;
 
-    // Remove any line that contains ONLY a category word + colon (with optional bold/whitespace)
-    const headerPattern = /^\s*\*{0,2}\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)\s*:?\s*\*{0,2}\s*$/gmi;
-    cleaned = cleaned.replace(headerPattern, '');
+    // Pattern 1: Remove **CATEGORY:** (bold with colon inside)
+    // Matches: **CONDITIONER:** **Why:** **HAIR OIL:**
+    cleaned = cleaned.replace(/\*\*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits):\*\*/gi, '');
 
-    // Remove bold category headers that appear anywhere: **CONDITIONER:**
-    cleaned = cleaned.replace(/\*\*\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)\s*:\s*\*\*/gi, '');
+    // Pattern 2: Remove standalone lines with just category + colon
+    // Matches lines that are ONLY "CONDITIONER:" or "  HAIR OIL:  "
+    cleaned = cleaned.replace(/^\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits):\s*$/gmi, '');
 
-    // Remove plain category headers at start of line
-    cleaned = cleaned.replace(/\n\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)\s*:\s*(?=\n)/gi, '');
+    // Pattern 3: Remove category headers at start of line followed by newline
+    // Matches: "\nCONDITIONER:\n"
+    cleaned = cleaned.replace(/\n\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits):\s*\n/gi, '\n\n');
 
     // Clean up multiple blank lines
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
