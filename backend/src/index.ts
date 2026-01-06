@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.2.3', // Fix: Query Analytics endpoints now work (ownership checks fixed)
+    version: '1.3.0', // Feature: Button text now controlled by backend widget config
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',

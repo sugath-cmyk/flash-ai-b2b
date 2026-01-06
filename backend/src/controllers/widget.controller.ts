@@ -167,8 +167,10 @@ export class WidgetController {
       widgetScript = widgetScript.replace(/{{TEXT_COLOR}}/g, widgetConfig.text_color || '#1f2937');
       widgetScript = widgetScript.replace(/{{BACKGROUND_COLOR}}/g, widgetConfig.background_color || '#ffffff');
 
-      // Replace widget name
+      // Replace widget name and text
       widgetScript = widgetScript.replace(/{{WIDGET_NAME}}/g, widgetConfig.widget_name || 'AI Assistant');
+      widgetScript = widgetScript.replace(/{{BUTTON_TEXT}}/g, widgetConfig.button_text || 'Ask Anything');
+      widgetScript = widgetScript.replace(/{{POWERED_BY_TEXT}}/g, widgetConfig.powered_by_text || 'Powered by Flash AI');
 
       // Set appropriate headers for cross-origin loading
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
@@ -180,7 +182,7 @@ export class WidgetController {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('X-Widget-Version', 'v1.3.0-regex-fix'); // Updated version
+      res.setHeader('X-Widget-Version', 'v1.3.0'); // Button text now configurable
 
       res.send(widgetScript);
     } catch (error) {

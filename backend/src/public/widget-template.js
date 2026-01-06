@@ -1,9 +1,9 @@
 (function() {
   'use strict';
 
-  const WIDGET_VERSION = 'v1.3.0-regex-fix';
+  const WIDGET_VERSION = 'v1.3.0';
   console.log('🚀 Flash AI: Widget initializing...', WIDGET_VERSION);
-  console.log('🔍 Flash AI: Product card regex is ACTIVE');
+  console.log('🎨 Flash AI: Button text controlled by backend config');
 
   const storeId = window.flashAIConfig?.storeId;
   if (!storeId) {
@@ -170,8 +170,8 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
           <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="{{PRIMARY_COLOR}}"/>
         </svg>
-        <span>Questions? Ask AI</span>
-        <span style="font-size: 10px; opacity: 0.6;">• powered by Flash AI</span>
+        <span>{{BUTTON_TEXT}}</span>
+        <span style="font-size: 10px; opacity: 0.6;">• {{POWERED_BY_TEXT}}</span>
       </div>
     `;
 
@@ -204,7 +204,7 @@
           </svg>
           <div>
             <div style="font-size: 13px; font-weight: 600;">{{WIDGET_NAME}}</div>
-            <div style="font-size: 9px; opacity: 0.8;">powered by Flash AI</div>
+            <div style="font-size: 9px; opacity: 0.8;">{{POWERED_BY_TEXT}}</div>
           </div>
         </div>
         <button id="flash-ai-collapse" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px; padding: 0; width: 24px; height: 24px; opacity: 0.9; transition: opacity 0.2s;">×</button>
@@ -600,8 +600,8 @@
         <circle cx="16" cy="11" r="1.5" fill="{{PRIMARY_COLOR}}"/>
       </svg>
       <div style="color: white; line-height: 1.3;">
-        <div style="font-size: 14px; font-weight: 600;">Ask anything about product</div>
-        <div style="font-size: 10px; opacity: 0.85;">powered by Flash AI</div>
+        <div style="font-size: 14px; font-weight: 600;">{{BUTTON_TEXT}}</div>
+        <div style="font-size: 10px; opacity: 0.85;">{{POWERED_BY_TEXT}}</div>
       </div>
     `;
 
@@ -654,8 +654,8 @@
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
           </svg>
           <div>
-            <div style="font-size: 15px; font-weight: 600;">Product Assistant</div>
-            <div style="font-size: 10px; opacity: 0.85;">powered by Flash AI</div>
+            <div style="font-size: 15px; font-weight: 600;">{{WIDGET_NAME}}</div>
+            <div style="font-size: 10px; opacity: 0.85;">{{POWERED_BY_TEXT}}</div>
           </div>
         </div>
         <button id="flash-ai-floating-close" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; padding: 0; width: 28px; height: 28px; opacity: 0.9; transition: opacity 0.2s;">×</button>
