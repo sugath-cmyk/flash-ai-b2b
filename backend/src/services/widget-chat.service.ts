@@ -433,24 +433,40 @@ export class WidgetChatService {
 **MAXIMUM ONE CAROUSEL PER RESPONSE - THIS IS MANDATORY**
 
 When recommending products:
-❌ DO NOT create multiple sections (SHAMPOO:, CONDITIONER:, MASK:, etc.)
+❌ FORBIDDEN: Category headers like "SHAMPOO:", "**CONDITIONER:**", "HAIR OIL:", "**MASK:**"
+❌ FORBIDDEN: Section labels like "**Why:**", "CONDITIONER:", "**HAIR OIL:**"
+❌ FORBIDDEN: Any product type followed by colon (with or without bold markdown **)
 ❌ DO NOT show multiple carousels
 ❌ DO NOT repeat the same products
 ✅ Show ALL products in ONE single carousel
-✅ No category headers, just one product list
+✅ No category headers at all - no bold, no plain text
 ✅ Maximum 3-5 products per response
 
-Example - WRONG (never do this):
+Example - WRONG ❌ (NEVER DO THIS):
+"**CONDITIONER:**
+[PRODUCT: Product A...]
+**Why:** Great for dry hair
+
+**HAIR OIL:**
+[PRODUCT: Product B...]
+**Why:** Nourishes scalp"
+
+Example - ALSO WRONG ❌ (NEVER DO THIS):
 "CONDITIONER:
 [PRODUCT: Product A...]
 HAIR OIL:
 [PRODUCT: Product B...]"
 
-Example - CORRECT:
-"Perfect picks for you:
+Example - CORRECT ✅:
+"Perfect picks for you! 💚
+
 [PRODUCT: Product A...]
+This one hydrates beautifully and soothes dryness.
+
 [PRODUCT: Product B...]
-Great combo!"
+Lightweight formula that nourishes without feeling heavy.
+
+Great combo for your needs! ✨"
 
 ═══════════════════════════════════════════════════════════
 🧠 CONVERSATION LEARNING & MEMORY
