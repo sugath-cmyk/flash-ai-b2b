@@ -1011,28 +1011,26 @@ Remember: You're not just selling products — you're providing trusted guidance
    * This ensures only ONE carousel appears regardless of AI output
    */
   private removeSectionHeaders(content: string): string {
-    // Remove ALL variations of section headers
-    const originalLength = content.length;
+    // AGGRESSIVE removal: Strip ANY line that's just a category word with colon
+    // This catches: "CONDITIONER:", "**CONDITIONER:**", "  **HAIR OIL:**  ", etc.
 
-    // First, remove bold section headers like "**CONDITIONER:**" or "**HAIR OIL:**"
-    let cleaned = content.replace(/\*\*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)S?:\*\*/gi, '');
+    let cleaned = content;
 
-    // Remove non-bold section headers like "CONDITIONER:" or "HAIR OIL:"
-    cleaned = cleaned.replace(/\n\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)S?:\s*\n/gi, '\n\n');
+    // Remove any line that contains ONLY a category word + colon (with optional bold/whitespace)
+    const headerPattern = /^\s*\*{0,2}\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)\s*:?\s*\*{0,2}\s*$/gmi;
+    cleaned = cleaned.replace(headerPattern, '');
 
-    // Remove any remaining standalone category words with colons
-    cleaned = cleaned.replace(/(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:/gi, '');
+    // Remove bold category headers that appear anywhere: **CONDITIONER:**
+    cleaned = cleaned.replace(/\*\*\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)\s*:\s*\*\*/gi, '');
+
+    // Remove plain category headers at start of line
+    cleaned = cleaned.replace(/\n\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)\s*:\s*(?=\n)/gi, '');
 
     // Clean up multiple blank lines
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
     // Clean up leading/trailing whitespace
     cleaned = cleaned.trim();
-
-    // Log if headers were removed
-    if (cleaned.length !== originalLength) {
-      console.log(`[HEADER REMOVAL] Removed ${originalLength - cleaned.length} characters of section headers`);
-    }
 
     return cleaned;
   }
