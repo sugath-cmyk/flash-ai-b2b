@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.5.0', // CRITICAL FIX: Comprehensive section header removal - one carousel enforced
+    version: '1.5.1', // CRITICAL: Explicitly forbid all category:colon patterns - UI break warning added
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
