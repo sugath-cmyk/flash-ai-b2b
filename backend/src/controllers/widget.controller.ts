@@ -167,6 +167,9 @@ export class WidgetController {
       widgetScript = widgetScript.replace(/{{TEXT_COLOR}}/g, widgetConfig.text_color || '#1f2937');
       widgetScript = widgetScript.replace(/{{BACKGROUND_COLOR}}/g, widgetConfig.background_color || '#ffffff');
 
+      // Replace widget name
+      widgetScript = widgetScript.replace(/{{WIDGET_NAME}}/g, widgetConfig.widget_name || 'AI Assistant');
+
       // Set appropriate headers for cross-origin loading
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); // Disable caching during development

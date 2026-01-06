@@ -203,7 +203,7 @@
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="white"/>
           </svg>
           <div>
-            <div style="font-size: 13px; font-weight: 600;">AI Assistant</div>
+            <div style="font-size: 13px; font-weight: 600;">{{WIDGET_NAME}}</div>
             <div style="font-size: 9px; opacity: 0.8;">powered by Flash AI</div>
           </div>
         </div>
