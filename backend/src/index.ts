@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.6.1', // FIX: Correct regex removes **CONDITIONER:** headers (tested working)
+    version: '1.6.2', // FIX: Conversations tab now loads with inline styles + better error handling
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
