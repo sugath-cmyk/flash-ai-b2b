@@ -996,20 +996,31 @@ Remember: You're not just selling products — you're providing trusted guidance
    * This ensures only ONE carousel appears regardless of AI output
    */
   private removeSectionHeaders(content: string): string {
-    // Remove section headers that appear before [PRODUCT: tags
-    // Patterns: "SHAMPOO:", "**CONDITIONER:**", "HAIR OIL:", etc.
-    const sectionHeaderPattern = /^\s*\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER)S?:\*{0,2}\s*$/gmi;
+    // Remove section headers with or without markdown bold (**), appearing on their own line or inline
+    // Matches: "SHAMPOO:", "**CONDITIONER:**", "  **HAIR OIL:**  ", etc.
+    // Also matches plural: "CONDITIONERS:", "SHAMPOOS:", etc.
 
-    // Also remove bold section headers in middle of text
-    const inlineSectionPattern = /\n\s*\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER)S?:\*{0,2}\s*\n/gi;
+    // Pattern: optional whitespace + optional ** + category + optional S + : + optional ** + optional whitespace
+    const patterns = [
+      /\n\s*\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:\*{0,2}\s*\n/gi,
+      /^\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:\*{0,2}\s*$/gmi,
+      /\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:\*{0,2}/gi
+    ];
 
-    let cleaned = content.replace(sectionHeaderPattern, '');
-    cleaned = cleaned.replace(inlineSectionPattern, '\n\n');
+    let cleaned = content;
+
+    // Apply all patterns
+    for (const pattern of patterns) {
+      cleaned = cleaned.replace(pattern, '\n\n');
+    }
 
     // Clean up multiple blank lines
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
-    return cleaned.trim();
+    // Clean up leading/trailing whitespace
+    cleaned = cleaned.trim();
+
+    return cleaned;
   }
 
   private stripHtml(html: string): string {

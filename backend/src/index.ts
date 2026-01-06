@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.4.9', // CRITICAL FIX: Auto-remove section headers - guaranteed one carousel
+    version: '1.5.0', // CRITICAL FIX: Comprehensive section header removal - one carousel enforced
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
