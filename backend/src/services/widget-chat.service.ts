@@ -996,23 +996,21 @@ Remember: You're not just selling products — you're providing trusted guidance
    * This ensures only ONE carousel appears regardless of AI output
    */
   private removeSectionHeaders(content: string): string {
-    // Remove section headers with or without markdown bold (**), appearing on their own line or inline
-    // Matches: "SHAMPOO:", "**CONDITIONER:**", "  **HAIR OIL:**  ", etc.
-    // Also matches plural: "CONDITIONERS:", "SHAMPOOS:", etc.
+    // Remove ALL variations of section headers
+    // Patterns to match:
+    // - "**CONDITIONER:**"
+    // - "HAIR OIL:"
+    // - "**Why:**"
+    // - Any category name followed by colon, with or without bold markdown
 
-    // Pattern: optional whitespace + optional ** + category + optional S + : + optional ** + optional whitespace
-    const patterns = [
-      /\n\s*\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:\*{0,2}\s*\n/gi,
-      /^\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:\*{0,2}\s*$/gmi,
-      /\*{0,2}(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:\*{0,2}/gi
-    ];
+    // First, remove bold section headers like "**CONDITIONER:**" or "**HAIR OIL:**"
+    let cleaned = content.replace(/\*\*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)S?:\*\*/gi, '');
 
-    let cleaned = content;
+    // Remove non-bold section headers like "CONDITIONER:" or "HAIR OIL:"
+    cleaned = cleaned.replace(/\n\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits)S?:\s*\n/gi, '\n\n');
 
-    // Apply all patterns
-    for (const pattern of patterns) {
-      cleaned = cleaned.replace(pattern, '\n\n');
-    }
+    // Remove any remaining standalone category words with colons
+    cleaned = cleaned.replace(/(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE)S?:/gi, '');
 
     // Clean up multiple blank lines
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
