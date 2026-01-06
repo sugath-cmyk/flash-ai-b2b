@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import axios from '../lib/axios';
-import '../styles/Conversations.css';
 
 interface Message {
   id: string;
@@ -37,7 +36,12 @@ export default function Conversations({ storeId }: ConversationsProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    loadConversations();
+    if (storeId) {
+      loadConversations();
+    } else {
+      setError('Store ID is missing');
+      setLoading(false);
+    }
   }, [storeId]);
 
   const loadConversations = async () => {
@@ -103,26 +107,31 @@ export default function Conversations({ storeId }: ConversationsProps) {
 
   if (loading) {
     return (
-      <div className="conversations-loading">
-        <div className="spinner"></div>
-        <p>Loading conversations...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ width: '40px', height: '40px', border: '4px solid #f3f4f6', borderTop: '4px solid #667eea', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading conversations...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="conversations-error">
-        <p>❌ {error}</p>
-        <button onClick={loadConversations} className="btn-retry">Retry</button>
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <p style={{ color: '#ef4444', marginBottom: '16px' }}>❌ {error}</p>
+        <button
+          onClick={loadConversations}
+          style={{ padding: '8px 16px', backgroundColor: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="conversations-container">
+    <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', height: '600px', gap: '16px', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
       {/* Conversations List */}
-      <div className="conversations-list">
+      <div style={{ borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div className="conversations-header">
           <h3>💬 Customer Conversations</h3>
           <p className="conversations-subtitle">{conversations.length} total conversations</p>
@@ -174,17 +183,17 @@ export default function Conversations({ storeId }: ConversationsProps) {
       </div>
 
       {/* Conversation Detail */}
-      <div className="conversation-detail">
+      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {!selectedConversation ? (
-          <div className="no-conversation-selected">
-            <div className="illustration">💬</div>
-            <h3>Select a conversation</h3>
-            <p>Choose a conversation from the list to view the full chat history</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6b7280' }}>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>💬</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>Select a conversation</h3>
+            <p style={{ fontSize: '14px' }}>Choose a conversation from the list to view the full chat history</p>
           </div>
         ) : loadingDetail ? (
-          <div className="conversation-detail-loading">
-            <div className="spinner"></div>
-            <p>Loading messages...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div style={{ width: '40px', height: '40px', border: '4px solid #f3f4f6', borderTop: '4px solid #667eea', borderRadius: '50%' }}></div>
+            <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading messages...</p>
           </div>
         ) : (
           <>
