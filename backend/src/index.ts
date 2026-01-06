@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.2.1', // Fix: Analytics now shows actual conversation/message data
+    version: '1.2.2', // Fix: Conversations tab now works correctly
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',

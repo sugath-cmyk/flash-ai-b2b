@@ -289,10 +289,23 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       const conversations = await widgetChatService.getRecentConversations(storeId);
 
@@ -309,10 +322,23 @@ export class BrandController {
     try {
       const { storeId, conversationId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       const conversation = await widgetChatService.getConversation(conversationId, storeId);
 
