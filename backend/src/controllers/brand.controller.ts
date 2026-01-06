@@ -500,11 +500,24 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
       const days = parseInt(req.query.days as string) || 30;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       // Get overall stats
       const stats = await adminQueryService.getQueryStats(storeId, days);
@@ -551,11 +564,24 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
       const days = parseInt(req.query.days as string) || 30;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       const stats = await adminQueryService.getQueryStats(storeId, days);
 
@@ -576,13 +602,26 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
       const days = parseInt(req.query.days as string) || 30;
       const limit = parseInt(req.query.limit as string) || 20;
       const category = req.query.category as string | undefined;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       const popularQueries = await adminQueryService.getPopularQueries(storeId, days, limit, category);
 
@@ -610,11 +649,24 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
       const days = parseInt(req.query.days as string) || 30;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       const categories = await adminQueryService.getCategoryBreakdown(storeId, days);
       const totalQueries = categories.reduce((sum, cat) => sum + cat.count, 0);
@@ -644,6 +696,7 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
       const {
         startDate,
         endDate,
@@ -654,9 +707,21 @@ export class BrandController {
         limit = '50'
       } = req.query;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       const filters = {
         storeId,
@@ -688,6 +753,7 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
       const {
         format = 'csv',
         startDate,
@@ -696,9 +762,21 @@ export class BrandController {
         searchTerm
       } = req.query;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       if (format !== 'csv' && format !== 'json') {
         return res.status(400).json({
@@ -743,11 +821,24 @@ export class BrandController {
     try {
       const { storeId } = req.params;
       const userId = req.user!.id;
+      const userRole = req.user!.role;
       const days = parseInt(req.query.days as string) || 30;
 
-      // Verify store ownership
-      const storeExtractionService = (await import('../services/store-extraction.service')).default;
-      await storeExtractionService.getStoreDetails(storeId, userId);
+      // For admins, skip ownership check
+      if (userRole !== 'admin') {
+        // Verify store ownership
+        const storeResult = await pool.query(
+          'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+          [storeId, userId]
+        );
+
+        if (storeResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Store not found or access denied',
+          });
+        }
+      }
 
       const cacheStats = await queryCacheService.getCacheStats(storeId, days);
 

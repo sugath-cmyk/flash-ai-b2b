@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.2.2', // Fix: Conversations tab now works correctly
+    version: '1.2.3', // Fix: Query Analytics endpoints now work (ownership checks fixed)
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
