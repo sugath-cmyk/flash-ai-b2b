@@ -281,8 +281,8 @@ export class WidgetChatService {
            allergens
          FROM extracted_products
          WHERE store_id = $1 AND status = 'active'
-         ORDER BY created_at DESC
-         LIMIT 20`,
+         ORDER BY title ASC
+         LIMIT 100`,
         [storeId]
       );
     } catch (error: any) {
@@ -292,8 +292,8 @@ export class WidgetChatService {
         `SELECT title, description, short_description, price, product_type, vendor, images
          FROM extracted_products
          WHERE store_id = $1 AND status = 'active'
-         ORDER BY created_at DESC
-         LIMIT 20`,
+         ORDER BY title ASC
+         LIMIT 100`,
         [storeId]
       );
     }
