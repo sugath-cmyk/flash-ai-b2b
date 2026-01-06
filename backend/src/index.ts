@@ -17,6 +17,7 @@ import onboardingRoutes from './routes/onboarding.routes';
 import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
 import adminRoutes from './routes/admin.routes';
+import maintenanceRoutes from './routes/maintenance.routes';
 import widgetController from './controllers/widget.controller';
 import brandController from './controllers/brand.controller';
 
@@ -64,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.4.1', // Fix: Accurate pricing using minimum variant price
+    version: '1.4.2', // Fix: Add maintenance endpoints for automated syncing
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
@@ -125,6 +126,9 @@ app.use('/api/shopify', shopifyRoutes);
 
 // Admin Routes (requires admin authentication)
 app.use('/api/admin', adminRoutes);
+
+// Maintenance Routes (automated tasks with admin secret)
+app.use('/api/maintenance', maintenanceRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
