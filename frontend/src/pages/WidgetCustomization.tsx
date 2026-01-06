@@ -164,7 +164,7 @@ const WidgetCustomization: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:3000/api/brand/${storeId}/widget/config`,
+        `/brand/${storeId}/widget/config`,
       );
 
       if (response.data.data) {
@@ -187,7 +187,7 @@ const WidgetCustomization: React.FC = () => {
       setSuccess(null);
 
       await axios.put(
-        `http://localhost:3000/api/brand/${storeId}/widget/config`,
+        `/brand/${storeId}/widget/config`,
         config,
       );
 
@@ -202,16 +202,19 @@ const WidgetCustomization: React.FC = () => {
   };
 
   const generateEmbedCode = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://flash-ai-backend-rld7.onrender.com/api';
+    const baseUrl = apiUrl.replace('/api', '');
+
     const code = `<!-- Flash AI Widget -->
 <script>
   (function() {
     window.FlashAIConfig = {
       storeId: '${storeId}',
-      apiUrl: 'http://localhost:3000',
+      apiUrl: '${baseUrl}',
       config: ${JSON.stringify(config, null, 2)}
     };
     var script = document.createElement('script');
-    script.src = 'http://localhost:3000/widget/flash-ai-widget.js';
+    script.src = '${baseUrl}/widget/${storeId}.js';
     script.async = true;
     document.body.appendChild(script);
   })();
