@@ -158,11 +158,23 @@ export class ShopifyAdapterService {
         const batch = await this.shopify.product.list(params);
 
         for (const product of batch) {
-          // Calculate price from first variant
-          const firstVariant = product.variants?.[0];
-          const price = parseFloat(firstVariant?.price || '0');
-          const compareAtPrice = firstVariant?.compare_at_price
-            ? parseFloat(firstVariant.compare_at_price)
+          // Calculate price - use MINIMUM price from all variants (actual selling price)
+          // This ensures we show the lowest available price, not a bulk/wholesale variant
+          const variantPrices = product.variants
+            ?.map((v) => parseFloat(v.price || '0'))
+            .filter((p) => p > 0) || [0];
+
+          const price = variantPrices.length > 0
+            ? Math.min(...variantPrices)
+            : 0;
+
+          // Get compare_at_price from the variant that has the minimum price
+          const minPriceVariant = product.variants?.find(
+            (v) => parseFloat(v.price || '0') === price
+          ) || product.variants?.[0];
+
+          const compareAtPrice = minPriceVariant?.compare_at_price
+            ? parseFloat(minPriceVariant.compare_at_price)
             : undefined;
 
           products.push({
@@ -173,11 +185,11 @@ export class ShopifyAdapterService {
             price,
             compareAtPrice,
             currency: 'USD', // Will be overridden by store currency
-            sku: firstVariant?.sku || undefined,
-            barcode: firstVariant?.barcode || undefined,
-            weight: firstVariant?.weight ? parseFloat(firstVariant.weight.toString()) : undefined,
-            weightUnit: firstVariant?.weight_unit || undefined,
-            inventory: firstVariant?.inventory_quantity,
+            sku: minPriceVariant?.sku || undefined,
+            barcode: minPriceVariant?.barcode || undefined,
+            weight: minPriceVariant?.weight ? parseFloat(minPriceVariant.weight.toString()) : undefined,
+            weightUnit: minPriceVariant?.weight_unit || undefined,
+            inventory: minPriceVariant?.inventory_quantity,
             productType: product.product_type || undefined,
             vendor: product.vendor || undefined,
             handle: product.handle,
