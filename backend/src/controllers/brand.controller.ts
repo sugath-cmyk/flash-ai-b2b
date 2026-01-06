@@ -850,6 +850,124 @@ export class BrandController {
       throw error;
     }
   }
+
+  // Get time-series analytics (for charts)
+  async getTimeSeriesAnalytics(req: AuthRequest, res: Response) {
+    try {
+      const { storeId } = req.params;
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      const period = (req.query.period as string) || 'week'; // 'day', 'week', 'month'
+
+      // For admins, get the store owner
+      let analyticsUserId = userId;
+      if (userRole === 'admin') {
+        const storeResult = await pool.query(
+          'SELECT user_id FROM stores WHERE id = $1',
+          [storeId]
+        );
+        if (storeResult.rows.length > 0) {
+          analyticsUserId = storeResult.rows[0].user_id;
+        }
+      }
+
+      // Verify ownership
+      const storeResult = await pool.query(
+        'SELECT id FROM stores WHERE id = $1 AND user_id = $2',
+        [storeId, analyticsUserId]
+      );
+
+      if (storeResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Store not found',
+        });
+      }
+
+      // Determine date range based on period
+      let interval: string;
+      let dateFormat: string;
+      let limit: number;
+
+      switch (period) {
+        case 'day':
+          interval = '1 hour';
+          dateFormat = 'HH24:00';
+          limit = 24; // Last 24 hours
+          break;
+        case 'month':
+          interval = '1 day';
+          dateFormat = 'YYYY-MM-DD';
+          limit = 30; // Last 30 days
+          break;
+        case 'week':
+        default:
+          interval = '1 day';
+          dateFormat = 'YYYY-MM-DD';
+          limit = 7; // Last 7 days
+          break;
+      }
+
+      // Get conversation counts over time
+      const conversationsQuery = `
+        SELECT
+          TO_CHAR(DATE_TRUNC('${period === 'day' ? 'hour' : 'day'}', created_at), '${dateFormat}') as time_bucket,
+          COUNT(*) as count
+        FROM widget_conversations
+        WHERE store_id = $1
+          AND created_at >= NOW() - INTERVAL '${limit} ${period === 'day' ? 'hours' : 'days'}'
+        GROUP BY time_bucket
+        ORDER BY time_bucket ASC
+      `;
+
+      // Get message counts over time
+      const messagesQuery = `
+        SELECT
+          TO_CHAR(DATE_TRUNC('${period === 'day' ? 'hour' : 'day'}', created_at), '${dateFormat}') as time_bucket,
+          COUNT(*) as count
+        FROM widget_messages
+        WHERE conversation_id IN (
+          SELECT id FROM widget_conversations WHERE store_id = $1
+        )
+        AND created_at >= NOW() - INTERVAL '${limit} ${period === 'day' ? 'hours' : 'days'}'
+        GROUP BY time_bucket
+        ORDER BY time_bucket ASC
+      `;
+
+      // Get AI response counts
+      const aiResponsesQuery = `
+        SELECT
+          TO_CHAR(DATE_TRUNC('${period === 'day' ? 'hour' : 'day'}', created_at), '${dateFormat}') as time_bucket,
+          COUNT(*) as count
+        FROM widget_messages
+        WHERE conversation_id IN (
+          SELECT id FROM widget_conversations WHERE store_id = $1
+        )
+        AND role = 'assistant'
+        AND created_at >= NOW() - INTERVAL '${limit} ${period === 'day' ? 'hours' : 'days'}'
+        GROUP BY time_bucket
+        ORDER BY time_bucket ASC
+      `;
+
+      const [conversationsResult, messagesResult, aiResponsesResult] = await Promise.all([
+        pool.query(conversationsQuery, [storeId]),
+        pool.query(messagesQuery, [storeId]),
+        pool.query(aiResponsesQuery, [storeId]),
+      ]);
+
+      res.json({
+        success: true,
+        data: {
+          period,
+          conversations: conversationsResult.rows,
+          messages: messagesResult.rows,
+          aiResponses: aiResponsesResult.rows,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default new BrandController();

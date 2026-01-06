@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import axios from '../lib/axios';
 import AdminAnalytics from '../components/AdminAnalytics';
 import Conversations from '../components/Conversations';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface Analytics {
   eventCounts: Array<{ event_type: string; count: string }>;
@@ -33,6 +34,18 @@ interface ShopifyConnectionStatus {
   lastSync?: string;
 }
 
+interface TimeSeriesData {
+  time_bucket: string;
+  count: string;
+}
+
+interface TimeSeriesAnalytics {
+  period: string;
+  conversations: TimeSeriesData[];
+  messages: TimeSeriesData[];
+  aiResponses: TimeSeriesData[];
+}
+
 export default function BrandDashboard() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
@@ -44,6 +57,10 @@ export default function BrandDashboard() {
   const [shopifyStatus, setShopifyStatus] = useState<ShopifyConnectionStatus | null>(null);
   const [embedCode, setEmbedCode] = useState('');
   const [loading, setLoading] = useState(true);
+  const [analyticsView, setAnalyticsView] = useState<'summary' | 'charts'>('charts');
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<'day' | 'week' | 'month'>('week');
+  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesAnalytics | null>(null);
+  const [loadingCharts, setLoadingCharts] = useState(false);
 
   useEffect(() => {
     if (storeId) {
@@ -109,6 +126,26 @@ export default function BrandDashboard() {
       console.log('Using fallback embed code');
     }
   };
+
+  const loadTimeSeriesData = async () => {
+    if (!storeId) return;
+
+    setLoadingCharts(true);
+    try {
+      const response = await axios.get(`/brand/${storeId}/analytics/timeseries?period=${analyticsPeriod}`);
+      setTimeSeriesData(response.data.data);
+    } catch (error) {
+      console.error('Failed to load time series data:', error);
+    } finally {
+      setLoadingCharts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'analytics' && storeId) {
+      loadTimeSeriesData();
+    }
+  }, [activeTab, analyticsPeriod, storeId]);
 
   if (loading) {
     return (
@@ -426,21 +463,163 @@ export default function BrandDashboard() {
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
           <div className="space-y-6">
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Summary (Last 30 Days)</h3>
-              {analytics && analytics.eventCounts.length > 0 ? (
-                <div className="space-y-2">
-                  {analytics.eventCounts.map((event) => (
-                    <div key={event.event_type} className="flex justify-between items-center py-2 border-b">
-                      <span className="text-gray-700 capitalize">{event.event_type.replace(/_/g, ' ')}</span>
-                      <span className="font-semibold text-gray-900">{event.count}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-600">No analytics data available yet. Install the widget to start tracking.</p>
-              )}
+            {/* Period Selector */}
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAnalyticsPeriod('day')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    analyticsPeriod === 'day'
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => setAnalyticsPeriod('week')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    analyticsPeriod === 'week'
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                  }`}
+                >
+                  This Week
+                </button>
+                <button
+                  onClick={() => setAnalyticsPeriod('month')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    analyticsPeriod === 'month'
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                  }`}
+                >
+                  This Month
+                </button>
+              </div>
+              <button
+                onClick={() => setAnalyticsView(analyticsView === 'charts' ? 'summary' : 'charts')}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+              >
+                {analyticsView === 'charts' ? 'View Summary' : 'View Charts'}
+              </button>
             </div>
+
+            {/* Charts View */}
+            {analyticsView === 'charts' ? (
+              <>
+                {loadingCharts ? (
+                  <div className="card flex items-center justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : timeSeriesData ? (
+                  <>
+                    {/* AI Responses Chart */}
+                    <div className="card">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Responses</h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={timeSeriesData.aiResponses.map(d => ({ time: d.time_bucket, count: parseInt(d.count) }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis
+                            dataKey="time"
+                            stroke="#6b7280"
+                            style={{ fontSize: '12px' }}
+                            tickFormatter={(value) => {
+                              if (analyticsPeriod === 'day') {
+                                return value; // Show hour (e.g., "14:00")
+                              }
+                              return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            }}
+                          />
+                          <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                            labelStyle={{ color: '#374151', fontWeight: '600' }}
+                          />
+                          <Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: '#8b5cf6', r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Conversations & Messages Chart */}
+                    <div className="card">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversations & Messages</h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={timeSeriesData.conversations.map((d, i) => ({
+                          time: d.time_bucket,
+                          conversations: parseInt(d.count),
+                          messages: parseInt(timeSeriesData.messages[i]?.count || '0')
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis
+                            dataKey="time"
+                            stroke="#6b7280"
+                            style={{ fontSize: '12px' }}
+                            tickFormatter={(value) => {
+                              if (analyticsPeriod === 'day') {
+                                return value;
+                              }
+                              return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            }}
+                          />
+                          <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                            labelStyle={{ color: '#374151', fontWeight: '600' }}
+                          />
+                          <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                          <Bar dataKey="conversations" fill="#3b82f6" name="Conversations" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="messages" fill="#10b981" name="Messages" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="card">
+                        <div className="text-sm text-gray-600 mb-1">Total AI Responses</div>
+                        <div className="text-3xl font-bold text-purple-600">
+                          {timeSeriesData.aiResponses.reduce((sum, d) => sum + parseInt(d.count), 0)}
+                        </div>
+                      </div>
+                      <div className="card">
+                        <div className="text-sm text-gray-600 mb-1">Total Conversations</div>
+                        <div className="text-3xl font-bold text-blue-600">
+                          {timeSeriesData.conversations.reduce((sum, d) => sum + parseInt(d.count), 0)}
+                        </div>
+                      </div>
+                      <div className="card">
+                        <div className="text-sm text-gray-600 mb-1">Total Messages</div>
+                        <div className="text-3xl font-bold text-green-600">
+                          {timeSeriesData.messages.reduce((sum, d) => sum + parseInt(d.count), 0)}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="card">
+                    <p className="text-gray-600 text-center py-8">No analytics data available yet. Install the widget to start tracking.</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Summary View */
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Summary (Last 30 Days)</h3>
+                {analytics && analytics.eventCounts.length > 0 ? (
+                  <div className="space-y-2">
+                    {analytics.eventCounts.map((event) => (
+                      <div key={event.event_type} className="flex justify-between items-center py-2 border-b">
+                        <span className="text-gray-700 capitalize">{event.event_type.replace(/_/g, ' ')}</span>
+                        <span className="font-semibold text-gray-900">{event.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-600">No analytics data available yet. Install the widget to start tracking.</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 

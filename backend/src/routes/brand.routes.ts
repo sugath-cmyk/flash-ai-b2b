@@ -43,6 +43,7 @@ router.post('/:storeId/api-keys', brandController.generateApiKey);
 
 // Analytics
 router.get('/:storeId/analytics', brandController.getAnalytics);
+router.get('/:storeId/analytics/timeseries', brandController.getTimeSeriesAnalytics);
 
 // Embed Code
 router.get('/:storeId/embed-code', brandController.getEmbedCode);
