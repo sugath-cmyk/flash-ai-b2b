@@ -413,33 +413,41 @@ export class WidgetChatService {
       }
     }
 
-    // Get active discounts and offers
-    const discountsResult = await pool.query(
-      `SELECT code, title, description, value_type, value,
-              minimum_requirements, entitled_product_ids, entitled_collection_ids,
-              starts_at, ends_at
-       FROM extracted_discounts
-       WHERE store_id = $1
-         AND is_active = true
-         AND starts_at <= NOW()
-         AND (ends_at IS NULL OR ends_at >= NOW())
-       ORDER BY starts_at DESC
-       LIMIT 10`,
-      [storeId]
-    );
+    // Get active discounts and offers (with error handling for missing tables)
+    let discountsResult: any = { rows: [] };
+    let offersResult: any = { rows: [] };
 
-    const offersResult = await pool.query(
-      `SELECT title, description, offer_type, code, discount_type, discount_value,
-              minimum_purchase, start_date, end_date, terms_and_conditions
-       FROM store_offers
-       WHERE store_id = $1
-         AND is_active = true
-         AND (start_date IS NULL OR start_date <= NOW())
-         AND (end_date IS NULL OR end_date >= NOW())
-       ORDER BY created_at DESC
-       LIMIT 10`,
-      [storeId]
-    );
+    try {
+      discountsResult = await pool.query(
+        `SELECT code, title, description, value_type, value,
+                minimum_requirements, entitled_product_ids, entitled_collection_ids,
+                starts_at, ends_at
+         FROM extracted_discounts
+         WHERE store_id = $1
+           AND is_active = true
+           AND starts_at <= NOW()
+           AND (ends_at IS NULL OR ends_at >= NOW())
+         ORDER BY starts_at DESC
+         LIMIT 10`,
+        [storeId]
+      );
+
+      offersResult = await pool.query(
+        `SELECT title, description, offer_type, code, discount_type, discount_value,
+                minimum_purchase, start_date, end_date, terms_and_conditions
+         FROM store_offers
+         WHERE store_id = $1
+           AND is_active = true
+           AND (start_date IS NULL OR start_date <= NOW())
+           AND (end_date IS NULL OR end_date >= NOW())
+         ORDER BY created_at DESC
+         LIMIT 10`,
+        [storeId]
+      );
+    } catch (error: any) {
+      // Tables don't exist yet - migration not run. Continue without discounts.
+      console.log('Discount tables not yet created:', error.message);
+    }
 
     // Format discounts and offers for context
     if (discountsResult.rows.length > 0 || offersResult.rows.length > 0) {
