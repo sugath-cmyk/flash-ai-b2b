@@ -27,15 +27,13 @@ export class MaintenanceController {
 
       // Verify store exists
       const storeResult = await pool.query(
-        'SELECT id, shopify_store_url FROM stores WHERE id = $1',
+        'SELECT id FROM stores WHERE id = $1',
         [storeId]
       );
 
       if (storeResult.rows.length === 0) {
         throw createError('Store not found', 404);
       }
-
-      const store = storeResult.rows[0];
 
       // Trigger sync
       await ShopifyExtractionService.extractStoreData(storeId);
@@ -51,7 +49,6 @@ export class MaintenanceController {
         message: 'Sync completed successfully',
         data: {
           storeId,
-          shopifyUrl: store.shopify_store_url,
           productsCount: parseInt(countResult.rows[0].count),
           syncedAt: new Date().toISOString(),
         },

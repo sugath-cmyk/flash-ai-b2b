@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.4.3', // CRITICAL FIX: 100% accurate pricing - no hallucination
+    version: '1.4.4', // Fix: Enable real-time Shopify sync endpoint
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
