@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.1.6', // Fix: Widget now displays custom name from config
+    version: '1.2.0', // Feature: Product carousel + clickable cards with View Details
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',

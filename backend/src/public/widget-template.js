@@ -317,9 +317,9 @@
     console.log('📝 First 200 chars:', text.substring(0, 200));
 
     // STEP 1: Replace [PRODUCT: ...] directly with product cards FIRST (before any other formatting)
-    // Format: [PRODUCT: Title | ₹Price | ImageURL]
+    // Format: [PRODUCT: Title | ₹Price | ImageURL] or [PRODUCT: Title | ₹Price | ImageURL | ProductURL]
     // Use [^\|] for title (anything except pipe), [^\]] for URL (anything except closing bracket)
-    const productRegex = /\[PRODUCT:\s*([^\|]+?)\s*\|\s*₹([\d,]+)\s*\|\s*([^\]]+?)\s*\]/g;
+    const productRegex = /\[PRODUCT:\s*([^\|]+?)\s*\|\s*₹([\d,]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*([^\]]+?))?\s*\]/g;
 
     // Test if the pattern exists in text
     const hasProductTag = text.includes('[PRODUCT:');
@@ -334,14 +334,37 @@
       }
     }
 
-    let formatted = text.replace(productRegex, function(match, title, price, imageUrl) {
+    // Collect all product cards first
+    const productCards = [];
+    let formatted = text.replace(productRegex, function(match, title, price, imageUrl, productUrl) {
       console.log('🎯 PRODUCT CARD MATCHED!');
       console.log('  Full match:', match);
       console.log('  Title:', title.trim());
       console.log('  Price:', price);
       console.log('  Image URL:', imageUrl.trim());
-      return createProductCard(title.trim(), price, imageUrl.trim());
+      console.log('  Product URL:', productUrl ? productUrl.trim() : 'not provided - will generate from title');
+
+      const card = createProductCard(title.trim(), price, imageUrl.trim(), productUrl ? productUrl.trim() : null);
+      productCards.push(card);
+
+      // Return placeholder that we'll replace with carousel
+      return '___PRODUCT_CARD_' + (productCards.length - 1) + '___';
     });
+
+    // If we have product cards, wrap them in a carousel
+    if (productCards.length > 0) {
+      // Create carousel wrapper
+      const carousel = '<div style="margin:12px 0;"><div style="display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:4px 0 8px 0;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;" onscroll="this.style.paddingBottom = this.scrollLeft > 0 ? \'8px\' : \'8px\';">' +
+        productCards.join('') +
+      '</div><style>div::-webkit-scrollbar{height:6px;}div::-webkit-scrollbar-track{background:#f1f1f1;border-radius:3px;}div::-webkit-scrollbar-thumb{background:#888;border-radius:3px;}div::-webkit-scrollbar-thumb:hover{background:#555;}</style></div>';
+
+      // Replace all placeholders with the single carousel
+      formatted = formatted.replace(/___PRODUCT_CARD_\d+___/g, function(match, offset) {
+        // Only replace the first placeholder with carousel, remove others
+        const isFirst = formatted.indexOf(match) === offset;
+        return isFirst ? carousel : '';
+      });
+    }
 
     console.log('📊 After product replacement - original:', text.length, 'formatted:', formatted.length);
 
@@ -392,24 +415,35 @@
     return result;
   }
 
-  function createProductCard(title, price, imageUrl) {
+  function createProductCard(title, price, imageUrl, productUrl) {
     // Generate a unique ID for this product card
     const productId = 'product-' + Math.random().toString(36).substr(2, 9);
 
-    // Use real image if available, otherwise fallback to emoji
-    const imageHtml = imageUrl && imageUrl.startsWith('http')
-      ? `<img src="${imageUrl}" alt="${title}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div style="width:80px;height:80px;display:none;align-items:center;justify-content:center;font-size:32px;">🧴</div>`
-      : '<div style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:32px;">🧴</div>';
+    // If no productUrl provided, generate slug from title
+    if (!productUrl) {
+      const slug = title.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+        .replace(/\s+/g, '-')          // Replace spaces with hyphens
+        .replace(/-+/g, '-')           // Replace multiple hyphens with single
+        .replace(/^-|-$/g, '');        // Remove leading/trailing hyphens
+      productUrl = `/products/${slug}`;
+    }
 
-    // Return compact HTML without line breaks in style attributes
-    return '<div style="margin:8px 0;padding:12px;background:white;border:1px solid #e3e6e8;border-radius:8px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;" onmouseenter="this.style.boxShadow=\'0 4px 8px rgba(102,126,234,0.15)\';this.style.borderColor=\'{{PRIMARY_COLOR}}\';" onmouseleave="this.style.boxShadow=\'0 2px 4px rgba(0,0,0,0.05)\';this.style.borderColor=\'#e3e6e8\';">' +
-      '<div style="width:80px;height:80px;min-width:80px;min-height:80px;background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf1 100%);border-radius:6px;flex-shrink:0;overflow:hidden;position:relative;">' +
-        imageHtml +
-      '</div>' +
-      '<div style="flex:1;min-width:0;">' +
-        '<div style="font-weight:600;font-size:14px;color:#2c3e50;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + title + '</div>' +
-        '<div style="font-size:16px;font-weight:700;color:{{PRIMARY_COLOR}};margin-bottom:6px;">₹' + price + '</div>' +
-        '<button onclick="window.flashAI_addToCart(\'' + title.replace(/'/g, "\\'") + '\',\'' + price + '\')" style="width:100%;padding:8px 12px;background:linear-gradient(135deg,{{PRIMARY_COLOR}} 0%,{{SECONDARY_COLOR}} 100%);color:white;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.opacity=\'0.9\';this.style.transform=\'translateY(-1px)\';" onmouseleave="this.style.opacity=\'1\';this.style.transform=\'translateY(0)\';">Add to Cart 🛒</button>' +
+    // Use real image if available, otherwise fallback to emoji - make it clickable
+    const imageHtml = imageUrl && imageUrl.startsWith('http')
+      ? `<a href="${productUrl}" target="_blank" style="display:block;text-decoration:none;"><img src="${imageUrl}" alt="${title}" style="width:100%;height:140px;object-fit:cover;border-radius:8px 8px 0 0;display:block;cursor:pointer;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /></a><a href="${productUrl}" target="_blank" style="width:100%;height:140px;display:none;align-items:center;justify-content:center;font-size:48px;text-decoration:none;cursor:pointer;background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf1 100%);border-radius:8px 8px 0 0;">🧴</a>`
+      : `<a href="${productUrl}" target="_blank" style="width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;text-decoration:none;cursor:pointer;background:linear-gradient(135deg,#f5f7fa 0%,#e8ecf1 100%);border-radius:8px 8px 0 0;">🧴</a>`;
+
+    // Return vertical card for carousel - fixed width, vertical layout
+    return '<div style="min-width:180px;max-width:180px;background:white;border:1px solid #e3e6e8;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;flex-shrink:0;overflow:hidden;" onmouseenter="this.style.boxShadow=\'0 6px 12px rgba(102,126,234,0.15)\';this.style.borderColor=\'{{PRIMARY_COLOR}}\';this.style.transform=\'translateY(-4px)\';" onmouseleave="this.style.boxShadow=\'0 2px 4px rgba(0,0,0,0.05)\';this.style.borderColor=\'#e3e6e8\';this.style.transform=\'translateY(0)\';">' +
+      imageHtml +
+      '<div style="padding:12px;">' +
+        '<a href="' + productUrl + '" target="_blank" style="text-decoration:none;color:inherit;"><div style="font-weight:600;font-size:13px;color:#2c3e50;margin-bottom:6px;line-height:1.3;height:36px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;transition:color 0.2s;" onmouseenter="this.style.color=\'{{PRIMARY_COLOR}}\';" onmouseleave="this.style.color=\'#2c3e50\';">' + title + '</div></a>' +
+        '<div style="font-size:16px;font-weight:700;color:{{PRIMARY_COLOR}};margin-bottom:10px;">₹' + price + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          '<a href="' + productUrl + '" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:8px 10px;background:white;color:{{PRIMARY_COLOR}};border:1px solid {{PRIMARY_COLOR}};border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.background=\'{{PRIMARY_COLOR}}\';this.style.color=\'white\';" onmouseleave="this.style.background=\'white\';this.style.color=\'{{PRIMARY_COLOR}}\';">View Details</button></a>' +
+          '<button onclick="window.flashAI_addToCart(\'' + title.replace(/'/g, "\\'") + '\',\'' + price + '\')" style="width:100%;padding:8px 10px;background:linear-gradient(135deg,{{PRIMARY_COLOR}} 0%,{{SECONDARY_COLOR}} 100%);color:white;border:none;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.opacity=\'0.9\';this.style.transform=\'scale(1.02)\';" onmouseleave="this.style.opacity=\'1\';this.style.transform=\'scale(1)\';">Add to Cart 🛒</button>' +
+        '</div>' +
       '</div>' +
     '</div>';
   }
