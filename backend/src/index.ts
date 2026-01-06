@@ -64,7 +64,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.4.0', // Feature: Product descriptions now appear inside carousel cards
+    version: '1.4.1', // Fix: Accurate pricing using minimum variant price
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
