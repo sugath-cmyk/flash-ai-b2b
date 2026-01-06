@@ -66,7 +66,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.4.1', // Fix: Accurate pricing using minimum variant price
+    version: '1.5.0', // Feature: Discount & offer system with migration endpoint
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
