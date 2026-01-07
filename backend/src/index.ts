@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.6.3', // FIX: Conversations complete rewrite - 100% inline styles, no CSS dependencies
+    version: '1.6.4', // FIX: Conversations null safety - handle null visitor_id and last_message
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
