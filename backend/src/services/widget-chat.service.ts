@@ -1011,20 +1011,22 @@ Remember: You're not just selling products — you're providing trusted guidance
    * This ensures only ONE carousel appears regardless of AI output
    */
   private removeSectionHeaders(content: string): string {
-    // Remove section headers like "**CONDITIONER:**", "HAIR OIL:", etc.
+    // Remove section headers like "**CONDITIONER:**", "**Why it works:**", "**Results:**", etc.
+    // This ensures only ONE carousel appears regardless of AI output
     let cleaned = content;
 
-    // Pattern 1: Remove **CATEGORY:** (bold with colon inside)
-    // Matches: **CONDITIONER:** **Why:** **HAIR OIL:**
-    cleaned = cleaned.replace(/\*\*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits):\*\*/gi, '');
+    // Pattern 1: Remove **ANY TEXT:** (bold text followed by colon)
+    // Matches: **CONDITIONER:** **Why:** **Why it works:** **Results:** **Pro tip:**
+    // More robust than hardcoded list - catches any bold header the AI generates
+    cleaned = cleaned.replace(/\*\*[^*]+:\*\*/g, '');
 
-    // Pattern 2: Remove standalone lines with just category + colon
-    // Matches lines that are ONLY "CONDITIONER:" or "  HAIR OIL:  "
-    cleaned = cleaned.replace(/^\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits):\s*$/gmi, '');
+    // Pattern 2: Remove standalone lines with just text + colon
+    // Matches lines that are ONLY "CONDITIONER:" or "Why it works:" or "  Results:  "
+    cleaned = cleaned.replace(/^\s*[A-Z][^:\n]*:\s*$/gmi, '');
 
-    // Pattern 3: Remove category headers at start of line followed by newline
-    // Matches: "\nCONDITIONER:\n"
-    cleaned = cleaned.replace(/\n\s*(SHAMPOO|CONDITIONER|HAIR OIL|MASK|SERUM|TREATMENT|CLEANSER|MOISTURIZER|SUNSCREEN|TONER|BALM|LIP CARE|Why|How to use|Benefits):\s*\n/gi, '\n\n');
+    // Pattern 3: Remove headers at start of line followed by newline
+    // Matches: "\nCONDITIONER:\n" or "\nWhy it works:\n"
+    cleaned = cleaned.replace(/\n\s*[A-Z][^:\n]*:\s*\n/g, '\n\n');
 
     // Clean up multiple blank lines
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');

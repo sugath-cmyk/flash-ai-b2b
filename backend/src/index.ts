@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.6.4', // FIX: Conversations null safety - handle null visitor_id and last_message
+    version: '1.6.5', // FIX: Generic regex for section headers - catch all bold headers (not just hardcoded list)
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
