@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.6.2', // FIX: Conversations tab now loads with inline styles + better error handling
+    version: '1.6.3', // FIX: Conversations complete rewrite - 100% inline styles, no CSS dependencies
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
