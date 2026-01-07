@@ -107,20 +107,36 @@ export default function Conversations({ storeId }: ConversationsProps) {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-        <div style={{ width: '40px', height: '40px', border: '4px solid #f3f4f6', borderTop: '4px solid #667eea', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-        <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading conversations...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px' }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          border: '4px solid #f3f4f6',
+          borderTop: '4px solid #667eea',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <p style={{ marginTop: '20px', color: '#6b7280', fontSize: '14px' }}>Loading conversations...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <p style={{ color: '#ef4444', marginBottom: '16px' }}>❌ {error}</p>
+      <div style={{ padding: '60px', textAlign: 'center' }}>
+        <p style={{ color: '#ef4444', marginBottom: '20px', fontSize: '16px' }}>❌ {error}</p>
         <button
           onClick={loadConversations}
-          style={{ padding: '8px 16px', backgroundColor: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#667eea',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}
         >
           Retry
         </button>
@@ -129,51 +145,117 @@ export default function Conversations({ storeId }: ConversationsProps) {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', height: '600px', gap: '16px', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
-      {/* Conversations List */}
-      <div style={{ borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div className="conversations-header">
-          <h3>💬 Customer Conversations</h3>
-          <p className="conversations-subtitle">{conversations.length} total conversations</p>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '350px 1fr',
+      height: '70vh',
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      border: '1px solid #e5e7eb',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    }}>
+      {/* Left: Conversations List */}
+      <div style={{
+        borderRight: '1px solid #e5e7eb',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        backgroundColor: '#fafafa'
+      }}>
+        {/* Header */}
+        <div style={{ padding: '20px 16px', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>💬 Conversations</h3>
+          <p style={{ fontSize: '13px', color: '#6b7280' }}>{conversations.length} total</p>
         </div>
 
         {/* Search Bar */}
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search conversations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          <span className="search-icon">🔍</span>
+        <div style={{ padding: '12px 16px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px 8px 36px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+            />
+            <span style={{ position: 'absolute', left: '12px', top: '9px', fontSize: '16px' }}>🔍</span>
+          </div>
         </div>
 
-        {/* Conversation Items */}
-        <div className="conversation-items">
+        {/* Conversation List */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {filteredConversations.length === 0 ? (
-            <div className="empty-state">
-              <p>No conversations found</p>
+            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
+              No conversations found
             </div>
           ) : (
             filteredConversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
                 onClick={() => loadConversationDetail(conv.id)}
+                style={{
+                  padding: '16px',
+                  borderBottom: '1px solid #e5e7eb',
+                  cursor: 'pointer',
+                  backgroundColor: selectedConversation?.id === conv.id ? '#f3f4f6' : 'white',
+                  transition: 'background-color 0.15s'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedConversation?.id !== conv.id) {
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedConversation?.id !== conv.id) {
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }
+                }}
               >
-                <div className="conversation-avatar">👤</div>
-                <div className="conversation-info">
-                  <div className="conversation-header-row">
-                    <span className="visitor-id">Visitor {conv.visitor_id.substring(0, 8)}</span>
-                    <span className="conversation-time">{formatDate(conv.updated_at)}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: '#e0e7ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    flexShrink: 0
+                  }}>
+                    👤
                   </div>
-                  <div className="conversation-preview">
-                    {conv.last_message?.substring(0, 80)}
-                    {conv.last_message?.length > 80 && '...'}
-                  </div>
-                  <div className="conversation-meta">
-                    <span className="message-count">💬 {conv.message_count} messages</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
+                        Visitor {conv.visitor_id.substring(0, 8)}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                        {formatDate(conv.updated_at)}
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: '13px',
+                      color: '#6b7280',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      marginBottom: '6px'
+                    }}>
+                      {conv.last_message?.substring(0, 60)}
+                      {conv.last_message?.length > 60 && '...'}
+                    </div>
+                    <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                      💬 {conv.message_count} messages
+                    </span>
                   </div>
                 </div>
               </div>
@@ -182,57 +264,135 @@ export default function Conversations({ storeId }: ConversationsProps) {
         </div>
       </div>
 
-      {/* Conversation Detail */}
+      {/* Right: Conversation Detail */}
       <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {!selectedConversation ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6b7280' }}>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>💬</div>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>Select a conversation</h3>
-            <p style={{ fontSize: '14px' }}>Choose a conversation from the list to view the full chat history</p>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#9ca3af',
+            padding: '40px'
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>💬</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+              Select a conversation
+            </h3>
+            <p style={{ fontSize: '14px', textAlign: 'center' }}>
+              Choose a conversation from the list to view the full chat history
+            </p>
           </div>
         ) : loadingDetail ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <div style={{ width: '40px', height: '40px', border: '4px solid #f3f4f6', borderTop: '4px solid #667eea', borderRadius: '50%' }}></div>
-            <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading messages...</p>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #f3f4f6',
+              borderTop: '4px solid #667eea',
+              borderRadius: '50%'
+            }}></div>
+            <p style={{ marginTop: '20px', color: '#6b7280', fontSize: '14px' }}>Loading messages...</p>
           </div>
         ) : (
           <>
             {/* Detail Header */}
-            <div className="detail-header">
-              <div className="detail-header-left">
-                <h3>Conversation Details</h3>
-                <div className="detail-meta">
-                  <span>👤 Visitor: {selectedConversation.visitor_id.substring(0, 12)}...</span>
-                  <span>🕒 Started: {formatDate(selectedConversation.created_at)}</span>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: '#fafafa'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+                  Conversation Details
+                </h3>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#6b7280' }}>
+                  <span>👤 {selectedConversation.visitor_id.substring(0, 12)}...</span>
+                  <span>🕒 {formatDate(selectedConversation.created_at)}</span>
                   <span>💬 {selectedConversation.messages.length} messages</span>
                 </div>
               </div>
               <button
-                className="btn-close-detail"
                 onClick={() => setSelectedConversation(null)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
                 ✕
               </button>
             </div>
 
             {/* Messages */}
-            <div className="messages-container">
-              {selectedConversation.messages.map((message, index) => (
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '24px',
+              backgroundColor: '#ffffff'
+            }}>
+              {selectedConversation.messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`message ${message.role}`}
+                  style={{
+                    marginBottom: '20px',
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'flex-start'
+                  }}
                 >
-                  <div className="message-avatar">
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    backgroundColor: message.role === 'user' ? '#dbeafe' : '#f3e8ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    flexShrink: 0
+                  }}>
                     {message.role === 'user' ? '👤' : '🤖'}
                   </div>
-                  <div className="message-content">
-                    <div className="message-header">
-                      <span className="message-role">
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '6px'
+                    }}>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>
                         {message.role === 'user' ? 'Customer' : 'AI Assistant'}
                       </span>
-                      <span className="message-time">{formatTime(message.created_at)}</span>
+                      <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                        {formatTime(message.created_at)}
+                      </span>
                     </div>
-                    <div className="message-text">{message.content}</div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#374151',
+                      lineHeight: '1.5',
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {message.content}
+                    </div>
                   </div>
                 </div>
               ))}
