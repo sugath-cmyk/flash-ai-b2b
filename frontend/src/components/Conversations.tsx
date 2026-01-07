@@ -114,8 +114,8 @@ export default function Conversations({ storeId }: ConversationsProps) {
   };
 
   const filteredConversations = conversations.filter(conv =>
-    conv.last_message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.visitor_id?.toLowerCase().includes(searchTerm.toLowerCase())
+    (conv.last_message && conv.last_message.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (conv.visitor_id && conv.visitor_id.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   console.log('🔵 Render state:', { loading, error, conversationsCount: conversations.length });
@@ -251,7 +251,7 @@ export default function Conversations({ storeId }: ConversationsProps) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                       <span style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
-                        Visitor {conv.visitor_id.substring(0, 8)}
+                        Visitor {conv.visitor_id ? conv.visitor_id.substring(0, 8) : 'Unknown'}
                       </span>
                       <span style={{ fontSize: '12px', color: '#9ca3af' }}>
                         {formatDate(conv.updated_at)}
@@ -265,8 +265,8 @@ export default function Conversations({ storeId }: ConversationsProps) {
                       whiteSpace: 'nowrap',
                       marginBottom: '6px'
                     }}>
-                      {conv.last_message?.substring(0, 60)}
-                      {conv.last_message?.length > 60 && '...'}
+                      {conv.last_message ? conv.last_message.substring(0, 60) : 'No messages yet'}
+                      {conv.last_message && conv.last_message.length > 60 && '...'}
                     </div>
                     <span style={{ fontSize: '12px', color: '#9ca3af' }}>
                       💬 {conv.message_count} messages
@@ -332,7 +332,7 @@ export default function Conversations({ storeId }: ConversationsProps) {
                   Conversation Details
                 </h3>
                 <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#6b7280' }}>
-                  <span>👤 {selectedConversation.visitor_id.substring(0, 12)}...</span>
+                  <span>👤 {selectedConversation.visitor_id ? selectedConversation.visitor_id.substring(0, 12) + '...' : 'Unknown'}</span>
                   <span>🕒 {formatDate(selectedConversation.created_at)}</span>
                   <span>💬 {selectedConversation.messages.length} messages</span>
                 </div>
