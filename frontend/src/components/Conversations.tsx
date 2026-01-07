@@ -28,6 +28,8 @@ interface ConversationsProps {
 }
 
 export default function Conversations({ storeId }: ConversationsProps) {
+  console.log('🔵 Conversations component mounted, storeId:', storeId);
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,9 +38,11 @@ export default function Conversations({ storeId }: ConversationsProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    console.log('🔵 Conversations useEffect triggered, storeId:', storeId);
     if (storeId) {
       loadConversations();
     } else {
+      console.error('❌ Store ID is missing!');
       setError('Store ID is missing');
       setLoading(false);
     }
@@ -46,15 +50,24 @@ export default function Conversations({ storeId }: ConversationsProps) {
 
   const loadConversations = async () => {
     try {
+      console.log('🔵 loadConversations called for storeId:', storeId);
       setLoading(true);
       setError(null);
-      const response = await axios.get(`/brand/${storeId}/conversations`);
+
+      const url = `/brand/${storeId}/conversations`;
+      console.log('🔵 Fetching from:', url);
+
+      const response = await axios.get(url);
+      console.log('✅ Conversations loaded:', response.data.data?.length || 0, 'conversations');
+
       setConversations(response.data.data);
     } catch (err: any) {
-      console.error('Failed to load conversations:', err);
+      console.error('❌ Failed to load conversations:', err);
+      console.error('❌ Error response:', err.response?.data);
       setError(err.response?.data?.message || 'Failed to load conversations');
     } finally {
       setLoading(false);
+      console.log('🔵 Loading complete');
     }
   };
 
@@ -104,6 +117,8 @@ export default function Conversations({ storeId }: ConversationsProps) {
     conv.last_message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.visitor_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  console.log('🔵 Render state:', { loading, error, conversationsCount: conversations.length });
 
   if (loading) {
     return (
