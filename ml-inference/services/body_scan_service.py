@@ -6,6 +6,8 @@ Handles body scanning using MediaPipe, depth estimation, and 3D reconstruction
 import cv2
 import numpy as np
 import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 from typing import List, Dict, Optional
 import time
 import io
@@ -17,17 +19,18 @@ import os
 class BodyScanService:
     def __init__(self):
         """Initialize body scan service with MediaPipe models"""
-        # Initialize MediaPipe Pose
-        self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=True,
-            model_complexity=2,
-            enable_segmentation=True,
-            min_detection_confidence=0.5
-        )
-
-        # Initialize MediaPipe Holistic (for better body tracking)
-        self.mp_holistic = mp.solutions.holistic
+        # Initialize MediaPipe Pose Landmarker (new API)
+        try:
+            base_options = python.BaseOptions(model_asset_path='')
+            options = vision.PoseLandmarkerOptions(
+                base_options=base_options,
+                output_segmentation_masks=True,
+                num_poses=1
+            )
+            self.pose_landmarker = vision.PoseLandmarker.create_from_options(options)
+        except Exception as e:
+            print(f"Note: Using simplified pose detection (model file not found): {e}")
+            self.pose_landmarker = None
         self.holistic = self.mp_holistic.Holistic(
             static_image_mode=True,
             model_complexity=2,

@@ -11,7 +11,7 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 
-from services.body_scan_service import BodyScanService
+from services.body_scan_service_simple import BodyScanService
 from services.size_recommendation_service import SizeRecommendationService
 
 # Load environment variables
