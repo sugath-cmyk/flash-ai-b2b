@@ -365,6 +365,27 @@ export class WidgetService {
 
     return embedCode;
   }
+
+  // Check if chatbot is enabled for a store
+  async getChatbotEnabled(storeId: string): Promise<{ enabled: boolean }> {
+    try {
+      const result = await pool.query(
+        'SELECT chatbot_enabled FROM widget_settings WHERE store_id = $1',
+        [storeId]
+      );
+
+      if (result.rows.length === 0) {
+        // Default to enabled if no settings found
+        return { enabled: true };
+      }
+
+      return { enabled: result.rows[0].chatbot_enabled };
+    } catch (error) {
+      console.error('Error checking chatbot enabled status:', error);
+      // Default to enabled on error
+      return { enabled: true };
+    }
+  }
 }
 
 export default new WidgetService();

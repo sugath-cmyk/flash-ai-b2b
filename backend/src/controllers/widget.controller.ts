@@ -127,6 +127,16 @@ export class WidgetController {
         throw createError('Store ID is required', 400);
       }
 
+      // Check if chatbot is enabled
+      const chatbotEnabledResult = await widgetService.getChatbotEnabled(storeId);
+      if (!chatbotEnabledResult || !chatbotEnabledResult.enabled) {
+        // Return empty script if chatbot is disabled
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.send('// Flash AI Widget: Chatbot is disabled for this store');
+        return;
+      }
+
       // Get API key for this store
       const apiKeys = await widgetService.getActiveApiKey(storeId);
 
