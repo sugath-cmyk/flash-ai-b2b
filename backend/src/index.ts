@@ -18,7 +18,6 @@ import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
 import adminRoutes from './routes/admin.routes';
 import maintenanceRoutes from './routes/maintenance.routes';
-import vtoRoutes from './routes/vto.routes';
 import widgetController from './controllers/widget.controller';
 import brandController from './controllers/brand.controller';
 
@@ -66,7 +65,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.6.5', // FIX: Generic regex for section headers - catch all bold headers (not just hardcoded list)
+    version: '1.0.1', // Widget management system deployed
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
@@ -115,9 +114,6 @@ app.use('/api/brand', brandRoutes);
 
 // Widget Public API Routes (for embedded widget)
 app.use('/api/widget', widgetRoutes);
-
-// Virtual Try-On (VTO) Routes (widget + brand console)
-app.use('/api/vto', vtoRoutes);
 
 // Onboarding Routes (public + admin)
 app.use('/api/onboarding', onboardingRoutes);
