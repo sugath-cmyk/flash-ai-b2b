@@ -250,16 +250,30 @@ export const getPublicWidgetConfig = async (req: Request, res: Response) => {
   try {
     const { storeId } = req.params;
 
+    // Check if chatbot is enabled in widget_settings
+    const settingsResult = await pool.query(
+      `SELECT chatbot_enabled FROM widget_settings WHERE store_id = $1`,
+      [storeId]
+    );
+
+    // If chatbot is disabled, return 404
+    if (settingsResult.rows.length === 0 || !settingsResult.rows[0].chatbot_enabled) {
+      return res.status(404).json({
+        success: false,
+        message: 'Widget disabled',
+      });
+    }
+
     // Get widget configuration
     const configResult = await pool.query(
-      `SELECT * FROM widget_configs WHERE store_id = $1 AND enabled = true`,
+      `SELECT * FROM widget_configs WHERE store_id = $1`,
       [storeId]
     );
 
     if (configResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Widget not found or disabled',
+        message: 'Widget not found',
       });
     }
 

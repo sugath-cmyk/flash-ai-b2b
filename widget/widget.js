@@ -52,7 +52,14 @@
         },
       });
 
-      if (!response.ok) throw new Error('Failed to fetch config');
+      if (!response.ok) {
+        // Widget is disabled or not found
+        if (response.status === 404) {
+          console.log('Flash AI Widget: Widget is disabled');
+          return null;
+        }
+        throw new Error('Failed to fetch config');
+      }
 
       const data = await response.json();
       widgetConfig = data.data;
@@ -542,7 +549,13 @@
 
   // Initialize widget
   async function init() {
-    await fetchConfig();
+    const config = await fetchConfig();
+
+    // Don't create widget if disabled
+    if (!config) {
+      console.log('Flash AI Widget: Not initializing (disabled)');
+      return;
+    }
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', createWidget);
