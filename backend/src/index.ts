@@ -18,6 +18,7 @@ import otpRoutes from './routes/otp.routes';
 import shopifyRoutes from './routes/shopify.routes';
 import adminRoutes from './routes/admin.routes';
 import maintenanceRoutes from './routes/maintenance.routes';
+import vtoRoutes from './routes/vto.routes';
 import widgetController from './controllers/widget.controller';
 import brandController from './controllers/brand.controller';
 
@@ -114,6 +115,9 @@ app.use('/api/brand', brandRoutes);
 
 // Widget Public API Routes (for embedded widget)
 app.use('/api/widget', widgetRoutes);
+
+// Virtual Try-On (VTO) Routes (widget + brand console)
+app.use('/api/vto', vtoRoutes);
 
 // Onboarding Routes (public + admin)
 app.use('/api/onboarding', onboardingRoutes);

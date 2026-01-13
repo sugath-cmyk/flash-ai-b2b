@@ -15,6 +15,7 @@ import EnhancedProductPage from './pages/EnhancedProductPage';
 import ConnectStore from './pages/ConnectStore';
 import StoreManagement from './pages/StoreManagement';
 import WidgetCustomization from './pages/WidgetCustomization';
+import WidgetManagement from './pages/WidgetManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -119,10 +120,26 @@ function App() {
           }
         />
         <Route
-          path="/brand/:storeId/widget"
+          path="/brand/:storeId/widgets"
+          element={
+            <ProtectedRoute>
+              <WidgetManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/brand/:storeId/widget-customization"
           element={
             <ProtectedRoute>
               <WidgetCustomization />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/brand/:storeId/widget"
+          element={
+            <ProtectedRoute>
+              <WidgetManagement />
             </ProtectedRoute>
           }
         />

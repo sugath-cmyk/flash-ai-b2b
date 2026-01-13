@@ -256,10 +256,179 @@
     attachEventListeners();
   }
 
+  // Parse product tags from AI response
+  function parseProductTags(text) {
+    const productRegex = /\[PRODUCT:\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^\]]+)\]/g;
+    const products = [];
+    let match;
+
+    while ((match = productRegex.exec(text)) !== null) {
+      products.push({
+        title: match[1].trim(),
+        price: match[2].trim(),
+        imageUrl: match[3].trim(),
+        productUrl: match[4].trim(),
+        description: match[5].trim(),
+      });
+    }
+
+    return {
+      products,
+      textWithoutProducts: text.replace(productRegex, '').trim(),
+    };
+  }
+
+  // Create product carousel
+  function createProductCarousel(products) {
+    const carousel = document.createElement('div');
+    carousel.style.cssText = `
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 8px 0;
+      margin: 12px 0;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    `;
+
+    // Hide scrollbar but keep functionality
+    carousel.innerHTML = `<style>
+      .flashai-carousel::-webkit-scrollbar { height: 4px; }
+      .flashai-carousel::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+      .flashai-carousel::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+      .flashai-carousel::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>`;
+    carousel.className = 'flashai-carousel';
+
+    products.forEach((product) => {
+      const card = document.createElement('div');
+      card.style.cssText = `
+        min-width: 260px;
+        max-width: 260px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        scroll-snap-align: start;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      `;
+
+      card.onmouseenter = () => {
+        card.style.transform = 'translateY(-4px)';
+        card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+      };
+      card.onmouseleave = () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = 'none';
+      };
+
+      card.innerHTML = `
+        <img
+          src="${product.imageUrl}"
+          alt="${product.title}"
+          style="
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #e5e7eb;
+          "
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+        />
+        <div style="
+          display: none;
+          width: 100%;
+          height: 180px;
+          background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+          align-items: center;
+          justify-content: center;
+          color: #9ca3af;
+          font-size: 14px;
+        ">No image</div>
+
+        <div style="padding: 12px;">
+          <h4 style="
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 6px 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          ">${product.title}</h4>
+
+          <p style="
+            font-size: 12px;
+            color: #6b7280;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          ">${product.description}</p>
+
+          <div style="
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+          ">${product.price}</div>
+
+          <button
+            onclick="window.open('${product.productUrl}', '_blank')"
+            style="
+              width: 100%;
+              background: white;
+              color: #374151;
+              border: 1px solid #d1d5db;
+              padding: 8px 12px;
+              border-radius: 8px;
+              font-size: 13px;
+              font-weight: 500;
+              cursor: pointer;
+              margin-bottom: 6px;
+              transition: all 0.2s;
+            "
+            onmouseover="this.style.background='#f9fafb'; this.style.borderColor='#9ca3af';"
+            onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db';"
+          >View Details</button>
+
+          <button
+            onclick="window.open('${product.productUrl}', '_blank')"
+            style="
+              width: 100%;
+              background: ${widgetConfig?.primary_color || '#3B82F6'};
+              color: white;
+              border: none;
+              padding: 8px 12px;
+              border-radius: 8px;
+              font-size: 13px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: opacity 0.2s;
+            "
+            onmouseover="this.style.opacity='0.9';"
+            onmouseout="this.style.opacity='1';"
+          >Add to Cart 🛒</button>
+        </div>
+      `;
+
+      carousel.appendChild(card);
+    });
+
+    return carousel;
+  }
+
   // Add message to chat
   function addMessage(text, isUser = false) {
     const messagesContainer = document.getElementById('flashai-messages');
     const messageDiv = document.createElement('div');
+
+    // Parse products from AI response
+    const { products, textWithoutProducts } = parseProductTags(text);
 
     messageDiv.style.cssText = `
       background: ${isUser ? widgetConfig?.primary_color || '#3B82F6' : 'white'};
@@ -267,13 +436,30 @@
       padding: 12px 16px;
       border-radius: 12px;
       margin-bottom: 12px;
-      max-width: 80%;
+      max-width: ${products.length > 0 ? '90%' : '80%'};
       ${isUser ? 'margin-left: auto;' : ''}
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       word-wrap: break-word;
     `;
 
-    messageDiv.textContent = text;
+    // Add text content
+    if (textWithoutProducts) {
+      const textNode = document.createElement('div');
+      textNode.textContent = textWithoutProducts;
+      messageDiv.appendChild(textNode);
+    }
+
+    // Add product carousel if products exist
+    if (products.length > 0) {
+      const carousel = createProductCarousel(products);
+      messageDiv.appendChild(carousel);
+    }
+
+    // If no text and no products, show original text
+    if (!textWithoutProducts && products.length === 0) {
+      messageDiv.textContent = text;
+    }
+
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }

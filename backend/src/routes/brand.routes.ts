@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import brandController from '../controllers/brand.controller';
 import { getWidgetConfig, updateWidgetConfig } from '../controllers/widget-config.controller';
+import { getWidgetSettings, updateWidgetSettings, toggleWidget } from '../controllers/widget-settings.controller';
 import {
   connectStore,
   getConnectionStatus,
@@ -33,9 +34,14 @@ router.get('/stores/:storeId/connection', getConnectionStatus);
 // Disconnect store
 router.delete('/stores/:storeId/connection', disconnectStore);
 
-// Widget Configuration
+// Widget Configuration (legacy chatbot config)
 router.get('/:storeId/widget/config', getWidgetConfig);
 router.put('/:storeId/widget/config', updateWidgetConfig);
+
+// Widget Settings (unified chatbot + VTO management)
+router.get('/:storeId/widget/settings', getWidgetSettings);
+router.put('/:storeId/widget/settings', updateWidgetSettings);
+router.post('/:storeId/widget/toggle', toggleWidget);
 
 // API Keys
 router.get('/:storeId/api-keys', brandController.getApiKeys);

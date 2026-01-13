@@ -1,0 +1,26 @@
+# Flash AI VTO - ML Inference Service
+# Python 3.11-3.13 compatible (simplified for quick start)
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+python-multipart
+pydantic>=2.0.0
+
+# ML & Computer Vision (Essential only for MVP)
+mediapipe
+opencv-python-headless  # Headless version - faster to install, no GUI
+numpy
+pillow
+
+# 3D Processing
+trimesh
+
+# Utilities
+python-dotenv
+httpx
+pydantic-settings
+
+# Development
+pytest
+pytest-asyncio
