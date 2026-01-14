@@ -32,6 +32,7 @@ Thumbs.db
 models/*.pth
 models/*.onnx
 models/*.pkl
+models/*.task
 
 # Logs
 *.log
