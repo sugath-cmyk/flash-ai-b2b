@@ -168,8 +168,8 @@ class FaceScanService:
 
     def reload_models(self):
         """Reload ML models"""
-        # Reinitialize face landmarker
-        self._init_face_landmarker()
+        # Reinitialize face detection
+        self._init_face_detection()
         self._ready = True
 
     async def analyze_face(self, scan_id: str, image_data: List[bytes]) -> Dict[str, Any]:
