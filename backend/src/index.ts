@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import authRoutes from './routes/auth.routes';
@@ -110,6 +111,20 @@ app.options('/vto/:storeId.js', (req, res) => {
   res.sendStatus(200);
 });
 app.get('/vto/:storeId.js', widgetController.serveVTOWidgetScript.bind(widgetController));
+
+// VTO styles serving route (public)
+app.get('/widget/vto-styles.css', (req, res) => {
+  try {
+    const cssPath = path.join(__dirname, '../widget/vto-styles.css');
+    res.setHeader('Content-Type', 'text/css');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.sendFile(cssPath);
+  } catch (error) {
+    console.error('Error serving VTO styles:', error);
+    res.status(404).send('/* VTO styles not found */');
+  }
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
