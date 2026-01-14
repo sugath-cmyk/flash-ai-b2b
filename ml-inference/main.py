@@ -3,8 +3,9 @@ Flash AI VTO - ML Inference Service
 Main FastAPI application for body scanning and virtual try-on ML inference
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uvicorn
@@ -34,6 +35,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global exception handler to prevent 500 errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"[GLOBAL ERROR] {request.url.path}: {str(exc)}")
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=200,  # Return 200 so axios doesn't throw
+        content={
+            "success": False,
+            "error": f"Server error: {str(exc)}",
+            "scan_id": "unknown",
+            "quality_score": 0.0,
+            "processing_time_ms": 0,
+            "analysis": {}
+        }
+    )
 
 # Initialize services
 body_scan_service = BodyScanService()
