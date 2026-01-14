@@ -20,6 +20,7 @@ import shopifyRoutes from './routes/shopify.routes';
 import adminRoutes from './routes/admin.routes';
 import maintenanceRoutes from './routes/maintenance.routes';
 import vtoRoutes from './routes/vto.routes';
+import faceScanRoutes from './routes/face-scan.routes';
 import widgetController from './controllers/widget.controller';
 import brandController from './controllers/brand.controller';
 
@@ -143,6 +144,9 @@ app.use('/api/widget', widgetRoutes);
 
 // VTO Public API Routes (for virtual try-on widget)
 app.use('/api/vto', vtoRoutes);
+
+// Face Scan Public API Routes (for skin analysis widget)
+app.use('/api/face-scan', faceScanRoutes);
 
 // Onboarding Routes (public + admin)
 app.use('/api/onboarding', onboardingRoutes);

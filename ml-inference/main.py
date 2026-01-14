@@ -13,14 +13,15 @@ from dotenv import load_dotenv
 
 from services.body_scan_service_simple import BodyScanService
 from services.size_recommendation_service import SizeRecommendationService
+from services.face_scan_service import FaceScanService
 
 # Load environment variables
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Flash AI VTO ML Service",
-    description="ML inference service for virtual try-on body scanning and recommendations",
+    title="Flash AI VTO & Skin Analysis ML Service",
+    description="ML inference service for virtual try-on, face scanning, and skin analysis",
     version="1.0.0"
 )
 
@@ -36,6 +37,7 @@ app.add_middleware(
 # Initialize services
 body_scan_service = BodyScanService()
 size_rec_service = SizeRecommendationService()
+face_scan_service = FaceScanService()
 
 # =============================================================================
 # Request/Response Models
@@ -84,7 +86,8 @@ async def health_check():
         "version": "1.0.0",
         "models": {
             "pose_estimation": body_scan_service.is_ready(),
-            "size_recommendation": size_rec_service.is_ready()
+            "size_recommendation": size_rec_service.is_ready(),
+            "face_scan": face_scan_service.is_ready()
         }
     }
 
@@ -137,6 +140,55 @@ async def get_scan_status(scan_id: str):
     if not status:
         raise HTTPException(status_code=404, detail="Scan not found")
     return status
+
+# =============================================================================
+# Face Scan & Skin Analysis Endpoints
+# =============================================================================
+
+@app.post("/face-scan")
+async def process_face_scan(
+    scan_id: str,
+    images: List[UploadFile] = File(...)
+):
+    """
+    Process face scan and perform comprehensive skin analysis
+
+    - **scan_id**: Unique identifier for this scan
+    - **images**: 1-3 facial images (front, profile views)
+
+    Returns:
+    - Comprehensive skin analysis with scores for:
+      * Pigmentation (dark spots, sun damage)
+      * Acne & blemishes
+      * Wrinkles & fine lines
+      * Skin texture & pores
+      * Redness & sensitivity
+      * Hydration levels
+    - Overall skin score
+    - Skin age estimate
+    - Problem area overlays for visualization
+    """
+    try:
+        # Validate images
+        if len(images) < 1:
+            raise HTTPException(
+                status_code=400,
+                detail="At least 1 image required for face scanning"
+            )
+
+        # Read image data
+        image_data = []
+        for image in images:
+            content = await image.read()
+            image_data.append(content)
+
+        # Process face scan
+        result = await face_scan_service.analyze_face(scan_id, image_data)
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # =============================================================================
 # Size Recommendation Endpoints
