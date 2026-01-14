@@ -566,7 +566,7 @@
             throw new Error(data.error || 'Failed to get scan status');
           }
 
-          const scan = data.data.scan;
+          const scan = data.data;
 
           if (scan.status === 'completed') {
             clearInterval(this.pollInterval);
