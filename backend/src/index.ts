@@ -115,7 +115,8 @@ app.get('/vto/:storeId.js', widgetController.serveVTOWidgetScript.bind(widgetCon
 // VTO styles serving route (public)
 app.get('/widget/vto-styles.css', (req, res) => {
   try {
-    const cssPath = path.join(__dirname, '../widget/vto-styles.css');
+    // In production (dist/), widget folder is copied to dist/widget/
+    const cssPath = path.join(__dirname, './widget/vto-styles.css');
     res.setHeader('Content-Type', 'text/css');
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.setHeader('Access-Control-Allow-Origin', '*');

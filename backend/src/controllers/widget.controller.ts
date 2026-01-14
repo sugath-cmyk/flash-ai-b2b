@@ -232,8 +232,8 @@ export class WidgetController {
       // Get VTO settings
       const vtoSettings = await widgetService.getVTOSettings(storeId);
 
-      // Read VTO widget file (from project root)
-      const vtoWidgetPath = path.join(__dirname, '../../../widget/vto-widget.js');
+      // Read VTO widget file (from dist/widget after build copies it)
+      const vtoWidgetPath = path.join(__dirname, '../widget/vto-widget.js');
       let vtoScript = fs.readFileSync(vtoWidgetPath, 'utf8');
 
       // Get API base URL from environment
