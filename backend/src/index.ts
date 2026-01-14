@@ -169,11 +169,43 @@ app.use(notFoundHandler);
 // Error handler (must be last)
 app.use(errorHandler);
 
+// Auto-run face scan migration on startup if tables don't exist
+async function checkAndRunFaceScanMigration() {
+  try {
+    const { pool } = require('./config/database');
+
+    // Check if face_scans table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'face_scans'
+      );
+    `);
+
+    const tableExists = tableCheck.rows[0].exists;
+
+    if (!tableExists) {
+      console.log('⚠️  Face scan tables not found, running migration...');
+      const { FACE_SCAN_MIGRATION_SQL } = require('./migrations/face-scan-migration');
+      await pool.query(FACE_SCAN_MIGRATION_SQL);
+      console.log('✅ Face scan tables created successfully');
+    } else {
+      console.log('✅ Face scan tables already exist');
+    }
+  } catch (error) {
+    console.error('❌ Face scan migration check failed:', error);
+  }
+}
+
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+
+  // Run migration check after server starts
+  await checkAndRunFaceScanMigration();
 });
 
 export default app;
