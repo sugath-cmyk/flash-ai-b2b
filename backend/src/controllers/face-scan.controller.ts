@@ -69,10 +69,18 @@ export async function uploadFaceScan(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Upload face scan error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
+
     res.status(500).json({
       success: false,
       error: 'Failed to upload face scan',
-      message: error.message
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
