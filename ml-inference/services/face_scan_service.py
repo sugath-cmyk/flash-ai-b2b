@@ -348,9 +348,12 @@ class FaceScanService:
                         img_rgb = np.ascontiguousarray(img_rgb)
                         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
                         result = self.face_landmarker.detect(mp_image)
-                        if result.face_landmarks and len(result.face_landmarks) > 0:
-                            face_data = {"type": "landmarks", "data": result.face_landmarks[0]}
-                            print(f"[FaceScan] Image {idx}: MediaPipe detected {len(result.face_landmarks[0])} landmarks")
+                        # Check face_landmarks explicitly to avoid numpy.bool issues
+                        has_landmarks = result.face_landmarks is not None and len(result.face_landmarks) > 0
+                        if has_landmarks:
+                            landmarks = result.face_landmarks[0]
+                            face_data = {"type": "landmarks", "data": landmarks}
+                            print(f"[FaceScan] Image {idx}: MediaPipe detected {len(landmarks)} landmarks")
                         else:
                             print(f"[FaceScan] Image {idx}: MediaPipe no face detected")
                     except Exception as mp_err:
@@ -713,10 +716,10 @@ class FaceScanService:
             inflammation = "none"
 
         return {
-            "acne_score": acne_score,
-            "whitehead_count": whitehead_count,
-            "blackhead_count": blackhead_count,
-            "pimple_count": pimple_count,
+            "acne_score": int(acne_score),
+            "whitehead_count": int(whitehead_count),
+            "blackhead_count": int(blackhead_count),
+            "pimple_count": int(pimple_count),
             "inflammation_level": inflammation,
         }
 
@@ -800,9 +803,9 @@ class FaceScanService:
         wrinkle_score = min(100, int(edge_density * 400) + deep_wrinkles_count * 4)
 
         return {
-            "wrinkle_score": wrinkle_score,
-            "fine_lines_count": fine_lines_count,
-            "deep_wrinkles_count": deep_wrinkles_count,
+            "wrinkle_score": int(wrinkle_score),
+            "fine_lines_count": int(fine_lines_count),
+            "deep_wrinkles_count": int(deep_wrinkles_count),
             "forehead_lines_severity": forehead_severity,
             "crows_feet_severity": crows_feet_severity,
             "nasolabial_folds_severity": nasolabial_severity,
@@ -876,11 +879,11 @@ class FaceScanService:
         texture_score = max(0, min(100, smoothness_score - (enlarged_pores)))
 
         return {
-            "texture_score": texture_score,
+            "texture_score": int(texture_score),
             "pore_size_average": pore_size,
-            "enlarged_pores_count": enlarged_pores,
+            "enlarged_pores_count": int(enlarged_pores),
             "roughness_level": roughness,
-            "smoothness_score": smoothness_score,
+            "smoothness_score": int(smoothness_score),
         }
 
     def _analyze_redness(self, img: np.ndarray, mask: np.ndarray) -> Dict:
@@ -921,13 +924,13 @@ class FaceScanService:
         red_binary[((hsv_full[:, :, 0] < 15) | (hsv_full[:, :, 0] > 165)) & (mask > 0)] = 255
 
         num_labels, _ = cv2.connectedComponents(red_binary)
-        irritation_detected = (num_labels - 1) > 5
+        irritation_detected = bool((num_labels - 1) > 5)
 
         # Rosacea indicators
-        rosacea_indicators = intense_ratio > 0.18 and red_ratio > 0.35
+        rosacea_indicators = bool(intense_ratio > 0.18 and red_ratio > 0.35)
 
         return {
-            "redness_score": redness_score,
+            "redness_score": int(redness_score),
             "sensitivity_level": sensitivity,
             "irritation_detected": irritation_detected,
             "rosacea_indicators": rosacea_indicators,
@@ -1002,11 +1005,11 @@ class FaceScanService:
 
         # Hydration score
         if shine_ratio < 0.02 and mean_brightness < 140:
-            hydration_score = max(30, 55 - int(brightness_std / 2))
+            hydration_score = int(max(30, 55 - int(brightness_std / 2)))
             dry_patches = True
         else:
-            hydration_score = min(100, 65 + int(shine_ratio * 60))
-            dry_patches = shine_ratio < 0.01
+            hydration_score = int(min(100, 65 + int(shine_ratio * 60)))
+            dry_patches = bool(shine_ratio < 0.01)
 
         # Determine hydration level
         cheek_diff = abs(mean_brightness - t_zone_mean)
@@ -1020,9 +1023,9 @@ class FaceScanService:
             hydration_level = "normal"
 
         return {
-            "hydration_score": hydration_score,
+            "hydration_score": int(hydration_score),
             "hydration_level": hydration_level,
-            "oiliness_score": oiliness_score,
+            "oiliness_score": int(oiliness_score),
             "t_zone_oiliness": t_zone_oiliness,
             "dry_patches_detected": dry_patches,
         }
@@ -1085,14 +1088,14 @@ class FaceScanService:
             severity = "none"
 
         # Sun damage score
-        sun_damage_score = min(100, int(std_lightness * 1.8 + dark_spots_count * 1.5))
+        sun_damage_score = int(min(100, int(std_lightness * 1.8 + dark_spots_count * 1.5)))
 
         # Melasma detection
-        melasma_detected = large_patches >= 2
+        melasma_detected = bool(large_patches >= 2)
 
         return {
-            "pigmentation_score": pigmentation_score,
-            "dark_spots_count": dark_spots_count,
+            "pigmentation_score": int(pigmentation_score),
+            "dark_spots_count": int(dark_spots_count),
             "dark_spots_severity": severity,
             "sun_damage_score": sun_damage_score,
             "melasma_detected": melasma_detected,
