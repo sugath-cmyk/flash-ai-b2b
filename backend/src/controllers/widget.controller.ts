@@ -243,7 +243,7 @@ export class WidgetController {
       const configScript = `
 // VTO Widget Configuration (Auto-injected by server)
 (function() {
-  window.flashAIVTOConfig = {
+  window.FLASHAI_VTO_CONFIG = {
     storeId: '${storeId}',
     apiKey: '${apiKey}',
     apiUrl: '${apiBaseUrl}/api/vto',
