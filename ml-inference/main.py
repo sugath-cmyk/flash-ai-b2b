@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uvicorn
 import os
+import traceback
 from dotenv import load_dotenv
 
 from services.body_scan_service_simple import BodyScanService
@@ -181,13 +182,19 @@ async def process_face_scan(
         for image in images:
             content = await image.read()
             image_data.append(content)
+            print(f"[FaceScan] Read image: {image.filename}, size: {len(content)} bytes")
+
+        print(f"[FaceScan] Processing {len(image_data)} images for scan_id: {scan_id}")
 
         # Process face scan
         result = await face_scan_service.analyze_face(scan_id, image_data)
 
+        print(f"[FaceScan] Result success: {result.get('success', False)}")
         return result
 
     except Exception as e:
+        error_detail = f"{str(e)}\n{traceback.format_exc()}"
+        print(f"[FaceScan] ERROR: {error_detail}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # =============================================================================
@@ -240,7 +247,20 @@ async def get_models_info():
     """Get information about loaded models"""
     return {
         "body_scan": body_scan_service.get_model_info(),
-        "size_recommendation": size_rec_service.get_model_info()
+        "size_recommendation": size_rec_service.get_model_info(),
+        "face_scan": face_scan_service.get_model_info()
+    }
+
+@app.get("/face-scan/debug")
+async def face_scan_debug():
+    """Debug endpoint for face scan service"""
+    import cv2
+    return {
+        "service_ready": face_scan_service.is_ready(),
+        "model_info": face_scan_service.get_model_info(),
+        "opencv_version": cv2.__version__,
+        "mediapipe_available": face_scan_service.use_mediapipe,
+        "face_cascade_loaded": face_scan_service.face_cascade is not None,
     }
 
 # =============================================================================
