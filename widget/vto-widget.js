@@ -995,7 +995,10 @@
         formData.append('images', this.state.facePhotos[2], 'face-right.jpg');
         formData.append('visitorId', this.state.visitorId);
 
-        const response = await fetch(`${this.config.apiBaseUrl}/face-scan/upload`, {
+        // Face scan uses /api/face-scan instead of /api/vto
+        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+
+        const response = await fetch(`${faceScanBaseUrl}/upload`, {
           method: 'POST',
           headers: {
             'X-API-Key': this.config.apiKey
@@ -1061,7 +1064,10 @@
     async pollFaceScanStatus(scanId) {
       this.faceScanPollInterval = setInterval(async () => {
         try {
-          const response = await fetch(`${this.config.apiBaseUrl}/face-scan/${scanId}`, {
+          // Face scan uses /api/face-scan instead of /api/vto
+          const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+
+          const response = await fetch(`${faceScanBaseUrl}/${scanId}`, {
             headers: {
               'X-API-Key': this.config.apiKey
             }
@@ -1160,7 +1166,10 @@
 
     async loadProductRecommendations(scanId) {
       try {
-        const response = await fetch(`${this.config.apiBaseUrl}/face-scan/recommendations`, {
+        // Face scan uses /api/face-scan instead of /api/vto
+        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+
+        const response = await fetch(`${faceScanBaseUrl}/recommendations`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1527,7 +1536,10 @@
 
     async trackEvent(eventType, data = {}) {
       try {
-        await fetch(`${this.config.apiBaseUrl}/face-scan/track`, {
+        // Face scan uses /api/face-scan instead of /api/vto
+        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+
+        await fetch(`${faceScanBaseUrl}/track`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
