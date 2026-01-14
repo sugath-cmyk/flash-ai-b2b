@@ -83,14 +83,17 @@ class FaceScanService:
             except Exception as e:
                 print(f"MediaPipe initialization failed: {e}")
 
-        # Fallback to OpenCV Haar Cascade
-        if not self.use_mediapipe:
-            try:
-                cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-                self.face_cascade = cv2.CascadeClassifier(cascade_path)
-                print("Using OpenCV Haar Cascade face detection")
-            except Exception as e:
-                print(f"OpenCV face cascade failed: {e}")
+        # Always load OpenCV Haar Cascade as fallback
+        try:
+            cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+            self.face_cascade = cv2.CascadeClassifier(cascade_path)
+            if self.face_cascade.empty():
+                print("Warning: Haar Cascade loaded but is empty")
+                self.face_cascade = None
+            else:
+                print("OpenCV Haar Cascade loaded as fallback")
+        except Exception as e:
+            print(f"OpenCV face cascade failed: {e}")
 
     def _download_face_model(self, model_dir: str, model_path: str):
         """Download the MediaPipe face landmarker model"""
@@ -302,11 +305,15 @@ class FaceScanService:
         images = []
         face_data_list = []
 
-        for img_bytes in image_data:
+        print(f"[FaceScan] Processing {len(image_data)} images")
+
+        for idx, img_bytes in enumerate(image_data):
             try:
                 # Load image
+                print(f"[FaceScan] Image {idx}: Loading {len(img_bytes)} bytes")
                 img = Image.open(io.BytesIO(img_bytes))
                 img_array = np.array(img)
+                print(f"[FaceScan] Image {idx}: Shape {img_array.shape}, dtype {img_array.dtype}")
 
                 # Convert to BGR for OpenCV
                 if len(img_array.shape) == 3:
@@ -315,10 +322,12 @@ class FaceScanService:
                     elif img_array.shape[2] == 3:  # RGB (PIL default)
                         img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
                     else:
+                        print(f"[FaceScan] Image {idx}: Unsupported channels {img_array.shape[2]}")
                         continue
                 elif len(img_array.shape) == 2:  # Grayscale
                     img_bgr = cv2.cvtColor(img_array, cv2.COLOR_GRAY2BGR)
                 else:
+                    print(f"[FaceScan] Image {idx}: Unsupported shape {img_array.shape}")
                     continue
 
                 # Resize if too large (max 1920x1080)
@@ -326,36 +335,52 @@ class FaceScanService:
                 if h > 1080 or w > 1920:
                     scale = min(1920 / w, 1080 / h)
                     img_bgr = cv2.resize(img_bgr, None, fx=scale, fy=scale)
+                    print(f"[FaceScan] Image {idx}: Resized to {img_bgr.shape[:2]}")
+
+                # Ensure array is contiguous for MediaPipe
+                img_bgr = np.ascontiguousarray(img_bgr)
 
                 # Try MediaPipe first
                 face_data = None
                 if self.use_mediapipe and self.face_landmarker:
                     try:
                         img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+                        img_rgb = np.ascontiguousarray(img_rgb)
                         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
                         result = self.face_landmarker.detect(mp_image)
                         if result.face_landmarks and len(result.face_landmarks) > 0:
                             face_data = {"type": "landmarks", "data": result.face_landmarks[0]}
-                    except Exception:
-                        pass
+                            print(f"[FaceScan] Image {idx}: MediaPipe detected {len(result.face_landmarks[0])} landmarks")
+                        else:
+                            print(f"[FaceScan] Image {idx}: MediaPipe no face detected")
+                    except Exception as mp_err:
+                        print(f"[FaceScan] Image {idx}: MediaPipe error: {mp_err}")
 
                 # Fallback to OpenCV
                 if face_data is None and self.face_cascade is not None:
-                    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-                    faces = self.face_cascade.detectMultiScale(gray, 1.1, 4)
-                    if len(faces) > 0:
-                        # Use first detected face
-                        x, y, fw, fh = faces[0]
-                        face_data = {"type": "bbox", "data": (x, y, fw, fh)}
+                    try:
+                        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+                        faces = self.face_cascade.detectMultiScale(gray, 1.1, 4)
+                        if len(faces) > 0:
+                            x, y, fw, fh = faces[0]
+                            face_data = {"type": "bbox", "data": (x, y, fw, fh)}
+                            print(f"[FaceScan] Image {idx}: OpenCV detected face at ({x},{y},{fw},{fh})")
+                        else:
+                            print(f"[FaceScan] Image {idx}: OpenCV no face detected")
+                    except Exception as cv_err:
+                        print(f"[FaceScan] Image {idx}: OpenCV error: {cv_err}")
 
                 if face_data:
                     images.append(img_bgr)
                     face_data_list.append(face_data)
 
             except Exception as e:
-                print(f"Error processing image: {e}")
+                print(f"[FaceScan] Image {idx}: Error processing: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
 
+        print(f"[FaceScan] Successfully processed {len(images)} images with faces")
         return images, face_data_list
 
     def _create_skin_mask(self, img: np.ndarray, face_data: Dict) -> np.ndarray:
