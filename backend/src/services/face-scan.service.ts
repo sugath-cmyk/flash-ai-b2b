@@ -27,7 +27,34 @@ export async function createFaceScan(data: {
 // Get face scan by ID
 export async function getFaceScan(scanId: string) {
   const result = await pool.query(
-    `SELECT fs.*, fa.*
+    `SELECT
+       fs.id,
+       fs.store_id,
+       fs.visitor_id,
+       fs.user_id,
+       fs.status,
+       fs.front_image_url,
+       fs.left_profile_url,
+       fs.right_profile_url,
+       fs.quality_score,
+       fs.processing_time_ms,
+       fs.error_message,
+       fs.created_at,
+       fs.completed_at,
+       fa.skin_score,
+       fa.skin_tone,
+       fa.skin_undertone,
+       fa.skin_hex_color,
+       fa.face_shape,
+       fa.pigmentation_score,
+       fa.acne_score,
+       fa.wrinkle_score,
+       fa.texture_score,
+       fa.redness_score,
+       fa.hydration_score,
+       fa.hydration_level,
+       fa.oiliness_score,
+       fa.skin_age_estimate
      FROM face_scans fs
      LEFT JOIN face_analysis fa ON fs.id = fa.face_scan_id
      WHERE fs.id = $1`,
