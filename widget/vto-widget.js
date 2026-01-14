@@ -338,14 +338,13 @@
           <div id="flashai-vto-step-facescan" class="flashai-vto-step">
             <div class="flashai-vto-header">
               <h2>Face Scan</h2>
-              <p>Take a selfie for personalized analysis</p>
+              <p id="flashai-vto-face-angle-instruction">Take 3 photos: Front, Left Profile, Right Profile</p>
             </div>
 
             <div class="flashai-vto-camera-container">
               <video id="flashai-vto-face-camera" autoplay playsinline></video>
-              <div id="flashai-vto-face-guide" class="flashai-vto-face-guide">
-                <div class="flashai-vto-face-oval"></div>
-                <div class="flashai-vto-guide-text">Align your face within the oval</div>
+              <div class="flashai-vto-face-angle-indicator" id="flashai-vto-face-angle-indicator">
+                📸 Photo <span id="flashai-vto-face-photo-count">1</span> of 3: <span id="flashai-vto-current-angle">Front View</span>
               </div>
             </div>
 
@@ -357,7 +356,7 @@
                   <circle cx="12" cy="12" r="10"></circle>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                Capture
+                Capture Front View
               </button>
               <button id="flashai-vto-face-analyze" class="flashai-vto-btn-success" style="display: none;">
                 Analyze Skin
@@ -367,38 +366,42 @@
             <div class="flashai-vto-instructions">
               <h4>For best results:</h4>
               <ul>
-                <li>Face camera directly in good lighting</li>
-                <li>Remove makeup for accurate analysis (optional)</li>
-                <li>Keep face within the guide oval</li>
-                <li>Ensure face is well-lit and in focus</li>
+                <li>📷 <strong>Front View:</strong> Face the camera directly</li>
+                <li>📷 <strong>Left Profile:</strong> Turn your head 45° to the left</li>
+                <li>📷 <strong>Right Profile:</strong> Turn your head 45° to the right</li>
+                <li>💡 Good lighting is essential for accurate analysis</li>
               </ul>
             </div>
           </div>
 
           <!-- Face Scan Step 2: Processing -->
           <div id="flashai-vto-step-face-processing" class="flashai-vto-step">
-            <div class="flashai-vto-processing-content">
-              <div class="flashai-vto-processing-spinner"></div>
-              <h2>Analyzing Your Skin...</h2>
-              <p id="flashai-vto-face-progress-text">Detecting skin concerns</p>
+            <div class="flashai-vto-header">
+              <h2>Analyzing Your Skin</h2>
+              <p>This usually takes 10-15 seconds...</p>
+            </div>
 
-              <div class="flashai-vto-processing-steps">
-                <div class="flashai-vto-processing-step" data-step="1">
-                  <span class="flashai-vto-step-icon">⋯</span>
-                  <span>Detecting face features</span>
-                </div>
-                <div class="flashai-vto-processing-step" data-step="2">
-                  <span class="flashai-vto-step-icon">⋯</span>
-                  <span>Analyzing skin tone</span>
-                </div>
-                <div class="flashai-vto-processing-step" data-step="3">
-                  <span class="flashai-vto-step-icon">⋯</span>
-                  <span>Detecting skin concerns</span>
-                </div>
-                <div class="flashai-vto-processing-step" data-step="4">
-                  <span class="flashai-vto-step-icon">⋯</span>
-                  <span>Finding perfect products</span>
-                </div>
+            <div class="flashai-vto-loader-container">
+              <div class="flashai-vto-loader"></div>
+              <div class="flashai-vto-loader-text">Analyzing skin and finding products</div>
+            </div>
+
+            <div class="flashai-vto-processing-steps">
+              <div class="flashai-vto-processing-step" data-step="1">
+                <div class="flashai-vto-step-icon">✓</div>
+                <div class="flashai-vto-step-text">Photos uploaded</div>
+              </div>
+              <div class="flashai-vto-processing-step" data-step="2">
+                <div class="flashai-vto-step-icon">⋯</div>
+                <div class="flashai-vto-step-text">Analyzing skin tone & texture</div>
+              </div>
+              <div class="flashai-vto-processing-step" data-step="3">
+                <div class="flashai-vto-step-icon">⋯</div>
+                <div class="flashai-vto-step-text">Detecting skin concerns</div>
+              </div>
+              <div class="flashai-vto-processing-step" data-step="4">
+                <div class="flashai-vto-step-icon">⋯</div>
+                <div class="flashai-vto-step-text">Finding perfect products</div>
               </div>
             </div>
           </div>
@@ -880,10 +883,17 @@
         video.srcObject = stream;
         this.state.faceCameraStream = stream;
 
-        // Reset state
-        this.state.facePhoto = null;
+        // Reset state for 3-angle capture
+        this.state.facePhotos = [];
+        this.state.currentAngleIndex = 0;
+        this.state.faceAngles = ['Front View', 'Left Profile', 'Right Profile'];
+
         const analyzeBtn = document.getElementById('flashai-vto-face-analyze');
         if (analyzeBtn) analyzeBtn.style.display = 'none';
+
+        // Clear previous photos
+        const photosContainer = document.getElementById('flashai-vto-face-photos');
+        if (photosContainer) photosContainer.innerHTML = '';
       } catch (error) {
         console.error('Face camera access error:', error);
         this.showError('Camera access denied. Please allow camera access to use Face Scan.');
@@ -907,39 +917,82 @@
       ctx.drawImage(video, 0, 0);
 
       canvas.toBlob(blob => {
-        this.state.facePhoto = blob;
+        // Add photo to array
+        this.state.facePhotos.push(blob);
 
-        // Show analyze button
-        const analyzeBtn = document.getElementById('flashai-vto-face-analyze');
-        if (analyzeBtn) {
-          analyzeBtn.style.display = 'block';
+        // Show thumbnail
+        const photosContainer = document.getElementById('flashai-vto-face-photos');
+        if (photosContainer) {
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(blob);
+          img.className = 'flashai-vto-photo-thumb';
+          photosContainer.appendChild(img);
+        }
+
+        // Move to next angle
+        this.state.currentAngleIndex++;
+
+        // Update UI based on progress
+        if (this.state.currentAngleIndex < 3) {
+          // Update for next angle
+          const captureBtn = document.getElementById('flashai-vto-face-capture');
+          const angleText = document.getElementById('flashai-vto-current-angle');
+          const photoCount = document.getElementById('flashai-vto-face-photo-count');
+
+          const nextAngle = this.state.faceAngles[this.state.currentAngleIndex];
+
+          if (captureBtn) {
+            const angleActions = ['Capture Front View', 'Capture Left Profile', 'Capture Right Profile'];
+            captureBtn.innerHTML = `
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              ${angleActions[this.state.currentAngleIndex]}
+            `;
+          }
+
+          if (angleText) angleText.textContent = nextAngle;
+          if (photoCount) photoCount.textContent = this.state.currentAngleIndex + 1;
+        } else {
+          // All photos captured, show analyze button
+          const captureBtn = document.getElementById('flashai-vto-face-capture');
+          const analyzeBtn = document.getElementById('flashai-vto-face-analyze');
+
+          if (captureBtn) captureBtn.style.display = 'none';
+          if (analyzeBtn) analyzeBtn.style.display = 'block';
+
+          // Stop camera
+          this.stopFaceCamera();
         }
 
         // Flash effect to show capture
-        const guide = document.getElementById('flashai-vto-face-guide');
-        if (guide) {
-          guide.style.opacity = '0';
-          setTimeout(() => { guide.style.opacity = '1'; }, 200);
+        const indicator = document.getElementById('flashai-vto-face-angle-indicator');
+        if (indicator) {
+          indicator.style.opacity = '0';
+          setTimeout(() => { indicator.style.opacity = '1'; }, 200);
         }
       }, 'image/jpeg', 0.95);
     }
 
     async analyzeFaceScan() {
-      if (!this.state.facePhoto) {
-        alert('Please capture a photo first');
+      if (!this.state.facePhotos || this.state.facePhotos.length < 3) {
+        alert('Please capture all 3 photos first');
         return;
       }
 
-      // Stop camera
+      // Stop camera if still running
       this.stopFaceCamera();
 
       // Show processing step
       this.showStep('face-processing');
 
       try {
-        // Upload face scan
+        // Upload face scan with all 3 angles
         const formData = new FormData();
-        formData.append('images', this.state.facePhoto, 'face.jpg');
+        formData.append('images', this.state.facePhotos[0], 'face-front.jpg');
+        formData.append('images', this.state.facePhotos[1], 'face-left.jpg');
+        formData.append('images', this.state.facePhotos[2], 'face-right.jpg');
         formData.append('visitorId', this.state.visitorId);
 
         const response = await fetch(`${this.config.apiBaseUrl}/face-scan/upload`, {
@@ -958,6 +1011,9 @@
 
         this.state.faceScanId = data.data.scanId;
 
+        // Start progress animation
+        this.animateFaceScanProgress();
+
         // Poll for results
         this.pollFaceScanStatus(data.data.scanId);
       } catch (error) {
@@ -966,8 +1022,44 @@
       }
     }
 
+    animateFaceScanProgress() {
+      // Animate processing steps sequentially
+      setTimeout(() => {
+        this.updateFaceScanStep(1, 'complete');
+        this.updateFaceScanStep(2, 'active');
+      }, 500);
+
+      setTimeout(() => {
+        this.updateFaceScanStep(2, 'complete');
+        this.updateFaceScanStep(3, 'active');
+      }, 3000);
+
+      setTimeout(() => {
+        this.updateFaceScanStep(3, 'complete');
+        this.updateFaceScanStep(4, 'active');
+      }, 6000);
+    }
+
+    updateFaceScanStep(stepNumber, status) {
+      const step = document.querySelector(`#flashai-vto-step-face-processing .flashai-vto-processing-step[data-step="${stepNumber}"]`);
+      if (!step) return;
+
+      const icon = step.querySelector('.flashai-vto-step-icon');
+      if (!icon) return;
+
+      if (status === 'active') {
+        step.classList.add('active');
+        step.classList.remove('complete');
+        icon.textContent = '⋯';
+      } else if (status === 'complete') {
+        step.classList.remove('active');
+        step.classList.add('complete');
+        icon.textContent = '✓';
+      }
+    }
+
     async pollFaceScanStatus(scanId) {
-      const pollInterval = setInterval(async () => {
+      this.faceScanPollInterval = setInterval(async () => {
         try {
           const response = await fetch(`${this.config.apiBaseUrl}/face-scan/${scanId}`, {
             headers: {
@@ -984,18 +1076,23 @@
           const scan = data.data;
 
           if (scan.status === 'completed') {
-            clearInterval(pollInterval);
+            clearInterval(this.faceScanPollInterval);
             this.state.faceScan = scan;
 
-            // Show results
-            this.displayFaceResults(scan);
+            // Complete all steps
+            this.updateFaceScanStep(4, 'complete');
+
+            // Wait a moment for user to see completion
+            setTimeout(() => {
+              this.displayFaceResults(scan);
+            }, 1000);
           } else if (scan.status === 'failed') {
-            clearInterval(pollInterval);
+            clearInterval(this.faceScanPollInterval);
             this.showError(scan.error_message || 'Face scan failed. Please try again.');
           }
         } catch (error) {
           console.error('Face scan poll error:', error);
-          clearInterval(pollInterval);
+          clearInterval(this.faceScanPollInterval);
           this.showError(error.message);
         }
       }, 2000);
