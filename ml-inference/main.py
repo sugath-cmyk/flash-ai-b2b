@@ -103,7 +103,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "ml-inference",
-        "version": "1.0.7",  # Global exception handler added
+        "version": "1.0.8",  # Fixed numpy type serialization
         "models": {
             "pose_estimation": body_scan_service.is_ready(),
             "size_recommendation": size_rec_service.is_ready(),
