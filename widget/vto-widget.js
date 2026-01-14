@@ -131,10 +131,10 @@
       }
 
       this.elements.modal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = '';
 
-      // Start body scan flow
-      this.showStep('scanning');
+      // Show selection screen
+      this.showStep('selection');
     }
 
     closeModal() {
@@ -142,8 +142,9 @@
         this.elements.modal.style.display = 'none';
         document.body.style.overflow = '';
 
-        // Stop camera if active
+        // Stop cameras if active
         this.stopCamera();
+        this.stopFaceCamera();
 
         // Cleanup 3D renderer
         if (this.renderer) {
@@ -165,6 +166,40 @@
         <div class="flashai-vto-overlay"></div>
         <div class="flashai-vto-content">
           <button class="flashai-vto-close">&times;</button>
+
+          <!-- Step 0: Selection -->
+          <div id="flashai-vto-step-selection" class="flashai-vto-step">
+            <div class="flashai-vto-header">
+              <h2>Welcome to Flash AI</h2>
+              <p>Choose your experience</p>
+            </div>
+
+            <div class="flashai-vto-selection-grid">
+              <button id="flashai-vto-select-tryon" class="flashai-vto-selection-card">
+                <div class="flashai-vto-selection-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <h3>Virtual Try-On</h3>
+                <p>Visualize clothes on your body with AR</p>
+              </button>
+
+              <button id="flashai-vto-select-facescan" class="flashai-vto-selection-card" style="background: linear-gradient(135deg, ${this.config.primaryColor}15, ${this.config.primaryColor}25);">
+                <div class="flashai-vto-selection-icon" style="color: ${this.config.primaryColor};">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="9" cy="9" r="1" fill="currentColor"></circle>
+                    <circle cx="15" cy="9" r="1" fill="currentColor"></circle>
+                    <path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
+                  </svg>
+                </div>
+                <h3>Find My Shade</h3>
+                <p>AI skin analysis & product recommendations</p>
+              </button>
+            </div>
+          </div>
 
           <!-- Step 1: Body Scanning -->
           <div id="flashai-vto-step-scanning" class="flashai-vto-step">
@@ -299,6 +334,199 @@
             </div>
           </div>
 
+          <!-- Face Scan Step 1: Capture -->
+          <div id="flashai-vto-step-facescan" class="flashai-vto-step">
+            <div class="flashai-vto-header">
+              <h2>Face Scan</h2>
+              <p>Take a selfie for personalized analysis</p>
+            </div>
+
+            <div class="flashai-vto-camera-container">
+              <video id="flashai-vto-face-camera" autoplay playsinline></video>
+              <div id="flashai-vto-face-guide" class="flashai-vto-face-guide">
+                <div class="flashai-vto-face-oval"></div>
+                <div class="flashai-vto-guide-text">Align your face within the oval</div>
+              </div>
+            </div>
+
+            <div class="flashai-vto-face-photos-preview" id="flashai-vto-face-photos"></div>
+
+            <div class="flashai-vto-actions">
+              <button id="flashai-vto-face-capture" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Capture
+              </button>
+              <button id="flashai-vto-face-analyze" class="flashai-vto-btn-success" style="display: none;">
+                Analyze Skin
+              </button>
+            </div>
+
+            <div class="flashai-vto-instructions">
+              <h4>For best results:</h4>
+              <ul>
+                <li>Face camera directly in good lighting</li>
+                <li>Remove makeup for accurate analysis (optional)</li>
+                <li>Keep face within the guide oval</li>
+                <li>Ensure face is well-lit and in focus</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Face Scan Step 2: Processing -->
+          <div id="flashai-vto-step-face-processing" class="flashai-vto-step">
+            <div class="flashai-vto-processing-content">
+              <div class="flashai-vto-processing-spinner"></div>
+              <h2>Analyzing Your Skin...</h2>
+              <p id="flashai-vto-face-progress-text">Detecting skin concerns</p>
+
+              <div class="flashai-vto-processing-steps">
+                <div class="flashai-vto-processing-step" data-step="1">
+                  <span class="flashai-vto-step-icon">⋯</span>
+                  <span>Detecting face features</span>
+                </div>
+                <div class="flashai-vto-processing-step" data-step="2">
+                  <span class="flashai-vto-step-icon">⋯</span>
+                  <span>Analyzing skin tone</span>
+                </div>
+                <div class="flashai-vto-processing-step" data-step="3">
+                  <span class="flashai-vto-step-icon">⋯</span>
+                  <span>Detecting skin concerns</span>
+                </div>
+                <div class="flashai-vto-processing-step" data-step="4">
+                  <span class="flashai-vto-step-icon">⋯</span>
+                  <span>Finding perfect products</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Face Scan Step 3: Results -->
+          <div id="flashai-vto-step-face-results" class="flashai-vto-step">
+            <div class="flashai-vto-face-results-content">
+              <div class="flashai-vto-results-header">
+                <h2>Your Skin Analysis</h2>
+                <div class="flashai-vto-skin-score-circle">
+                  <svg viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="54" fill="none" stroke="#e0e0e0" stroke-width="12"></circle>
+                    <circle id="flashai-vto-score-circle" cx="60" cy="60" r="54" fill="none" stroke="${this.config.primaryColor}" stroke-width="12" stroke-dasharray="339.3" stroke-dashoffset="339.3" transform="rotate(-90 60 60)"></circle>
+                  </svg>
+                  <div class="flashai-vto-score-text">
+                    <span id="flashai-vto-skin-score">--</span>
+                    <span class="flashai-vto-score-label">Skin Score</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flashai-vto-skin-metrics">
+                <div class="flashai-vto-metric-card" id="flashai-vto-metric-pigmentation">
+                  <div class="flashai-vto-metric-icon">☀️</div>
+                  <div class="flashai-vto-metric-content">
+                    <h4>Pigmentation</h4>
+                    <div class="flashai-vto-metric-bar">
+                      <div class="flashai-vto-metric-fill" data-metric="pigmentation"></div>
+                    </div>
+                    <p class="flashai-vto-metric-value">--</p>
+                  </div>
+                </div>
+
+                <div class="flashai-vto-metric-card" id="flashai-vto-metric-acne">
+                  <div class="flashai-vto-metric-icon">🎯</div>
+                  <div class="flashai-vto-metric-content">
+                    <h4>Acne & Blemishes</h4>
+                    <div class="flashai-vto-metric-bar">
+                      <div class="flashai-vto-metric-fill" data-metric="acne"></div>
+                    </div>
+                    <p class="flashai-vto-metric-value">--</p>
+                  </div>
+                </div>
+
+                <div class="flashai-vto-metric-card" id="flashai-vto-metric-wrinkles">
+                  <div class="flashai-vto-metric-icon">✨</div>
+                  <div class="flashai-vto-metric-content">
+                    <h4>Wrinkles & Lines</h4>
+                    <div class="flashai-vto-metric-bar">
+                      <div class="flashai-vto-metric-fill" data-metric="wrinkles"></div>
+                    </div>
+                    <p class="flashai-vto-metric-value">--</p>
+                  </div>
+                </div>
+
+                <div class="flashai-vto-metric-card" id="flashai-vto-metric-texture">
+                  <div class="flashai-vto-metric-icon">💎</div>
+                  <div class="flashai-vto-metric-content">
+                    <h4>Skin Texture</h4>
+                    <div class="flashai-vto-metric-bar">
+                      <div class="flashai-vto-metric-fill" data-metric="texture"></div>
+                    </div>
+                    <p class="flashai-vto-metric-value">--</p>
+                  </div>
+                </div>
+
+                <div class="flashai-vto-metric-card" id="flashai-vto-metric-redness">
+                  <div class="flashai-vto-metric-icon">🌸</div>
+                  <div class="flashai-vto-metric-content">
+                    <h4>Redness</h4>
+                    <div class="flashai-vto-metric-bar">
+                      <div class="flashai-vto-metric-fill" data-metric="redness"></div>
+                    </div>
+                    <p class="flashai-vto-metric-value">--</p>
+                  </div>
+                </div>
+
+                <div class="flashai-vto-metric-card" id="flashai-vto-metric-hydration">
+                  <div class="flashai-vto-metric-icon">💧</div>
+                  <div class="flashai-vto-metric-content">
+                    <h4>Hydration</h4>
+                    <div class="flashai-vto-metric-bar">
+                      <div class="flashai-vto-metric-fill" data-metric="hydration"></div>
+                    </div>
+                    <p class="flashai-vto-metric-value">--</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flashai-vto-skin-details">
+                <div class="flashai-vto-detail-row">
+                  <span>Skin Tone:</span>
+                  <strong id="flashai-vto-skin-tone">--</strong>
+                </div>
+                <div class="flashai-vto-detail-row">
+                  <span>Undertone:</span>
+                  <strong id="flashai-vto-skin-undertone">--</strong>
+                </div>
+                <div class="flashai-vto-detail-row">
+                  <span>Skin Age:</span>
+                  <strong id="flashai-vto-skin-age">--</strong>
+                </div>
+                <div class="flashai-vto-detail-row">
+                  <span>Hydration Level:</span>
+                  <strong id="flashai-vto-hydration-level">--</strong>
+                </div>
+              </div>
+
+              <div class="flashai-vto-recommendations-section">
+                <h3>Recommended For You</h3>
+                <p class="flashai-vto-recommendations-subtitle">Products matched to your skin concerns</p>
+
+                <div class="flashai-vto-recommendations-carousel" id="flashai-vto-recommendations">
+                  <div class="flashai-vto-recommendations-loading">Finding perfect products...</div>
+                </div>
+              </div>
+
+              <div class="flashai-vto-actions">
+                <button id="flashai-vto-new-scan" class="flashai-vto-btn-secondary">
+                  New Scan
+                </button>
+                <button id="flashai-vto-shop-recommended" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor}">
+                  Shop Recommendations
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Error State -->
           <div id="flashai-vto-step-error" class="flashai-vto-step" style="display: none;">
             <div class="flashai-vto-error-content">
@@ -362,6 +590,34 @@
       modal.querySelector('#flashai-vto-retry').addEventListener('click', () => {
         this.showStep('scanning');
       });
+
+      // Selection buttons
+      modal.querySelector('#flashai-vto-select-tryon').addEventListener('click', () => {
+        this.showStep('scanning');
+      });
+
+      modal.querySelector('#flashai-vto-select-facescan').addEventListener('click', () => {
+        this.showStep('facescan');
+      });
+
+      // Face scan buttons
+      modal.querySelector('#flashai-vto-face-capture').addEventListener('click', () => {
+        this.captureFacePhoto();
+      });
+
+      modal.querySelector('#flashai-vto-face-analyze').addEventListener('click', () => {
+        this.analyzeFaceScan();
+      });
+
+      // Face scan result buttons
+      modal.querySelector('#flashai-vto-new-scan').addEventListener('click', () => {
+        this.showStep('selection');
+        this.stopFaceCamera();
+      });
+
+      modal.querySelector('#flashai-vto-shop-recommended').addEventListener('click', () => {
+        this.shopRecommendedProducts();
+      });
     }
 
     // ==========================================================================
@@ -375,9 +631,13 @@
       steps.forEach(s => s.style.display = 'none');
 
       const stepMap = {
+        selection: 'flashai-vto-step-selection',
         scanning: 'flashai-vto-step-scanning',
         processing: 'flashai-vto-step-processing',
         tryon: 'flashai-vto-step-tryon',
+        facescan: 'flashai-vto-step-facescan',
+        'face-processing': 'flashai-vto-step-face-processing',
+        'face-results': 'flashai-vto-step-face-results',
         error: 'flashai-vto-step-error',
       };
 
@@ -391,6 +651,8 @@
         this.startCamera();
       } else if (step === 'tryon') {
         this.initializeTryOn();
+      } else if (step === 'facescan') {
+        this.startFaceCamera();
       }
     }
 
@@ -598,6 +860,293 @@
           this.showError(error.message);
         }
       }, 2000);
+    }
+
+    // ==========================================================================
+    // Face Scan & Skin Analysis
+    // ==========================================================================
+
+    async startFaceCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+
+        const video = document.getElementById('flashai-vto-face-camera');
+        video.srcObject = stream;
+        this.state.faceCameraStream = stream;
+
+        // Reset state
+        this.state.facePhoto = null;
+        const analyzeBtn = document.getElementById('flashai-vto-face-analyze');
+        if (analyzeBtn) analyzeBtn.style.display = 'none';
+      } catch (error) {
+        console.error('Face camera access error:', error);
+        this.showError('Camera access denied. Please allow camera access to use Face Scan.');
+      }
+    }
+
+    stopFaceCamera() {
+      if (this.state.faceCameraStream) {
+        this.state.faceCameraStream.getTracks().forEach(track => track.stop());
+        this.state.faceCameraStream = null;
+      }
+    }
+
+    captureFacePhoto() {
+      const video = document.getElementById('flashai-vto-face-camera');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+
+      canvas.toBlob(blob => {
+        this.state.facePhoto = blob;
+
+        // Show analyze button
+        const analyzeBtn = document.getElementById('flashai-vto-face-analyze');
+        if (analyzeBtn) {
+          analyzeBtn.style.display = 'block';
+        }
+
+        // Flash effect to show capture
+        const guide = document.getElementById('flashai-vto-face-guide');
+        if (guide) {
+          guide.style.opacity = '0';
+          setTimeout(() => { guide.style.opacity = '1'; }, 200);
+        }
+      }, 'image/jpeg', 0.95);
+    }
+
+    async analyzeFaceScan() {
+      if (!this.state.facePhoto) {
+        alert('Please capture a photo first');
+        return;
+      }
+
+      // Stop camera
+      this.stopFaceCamera();
+
+      // Show processing step
+      this.showStep('face-processing');
+
+      try {
+        // Upload face scan
+        const formData = new FormData();
+        formData.append('images', this.state.facePhoto, 'face.jpg');
+        formData.append('visitorId', this.state.visitorId);
+
+        const response = await fetch(`${this.config.apiBaseUrl}/face-scan/upload`, {
+          method: 'POST',
+          headers: {
+            'X-API-Key': this.config.apiKey
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to upload face scan');
+        }
+
+        this.state.faceScanId = data.data.scanId;
+
+        // Poll for results
+        this.pollFaceScanStatus(data.data.scanId);
+      } catch (error) {
+        console.error('Analyze face scan error:', error);
+        this.showError(error.message || 'Failed to analyze face scan. Please try again.');
+      }
+    }
+
+    async pollFaceScanStatus(scanId) {
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`${this.config.apiBaseUrl}/face-scan/${scanId}`, {
+            headers: {
+              'X-API-Key': this.config.apiKey
+            }
+          });
+
+          const data = await response.json();
+
+          if (!data.success) {
+            throw new Error(data.error || 'Failed to get scan status');
+          }
+
+          const scan = data.data;
+
+          if (scan.status === 'completed') {
+            clearInterval(pollInterval);
+            this.state.faceScan = scan;
+
+            // Show results
+            this.displayFaceResults(scan);
+          } else if (scan.status === 'failed') {
+            clearInterval(pollInterval);
+            this.showError(scan.error_message || 'Face scan failed. Please try again.');
+          }
+        } catch (error) {
+          console.error('Face scan poll error:', error);
+          clearInterval(pollInterval);
+          this.showError(error.message);
+        }
+      }, 2000);
+    }
+
+    displayFaceResults(scan) {
+      // Update skin score
+      const scoreElement = document.getElementById('flashai-vto-skin-score');
+      if (scoreElement) {
+        scoreElement.textContent = scan.analysis?.skin_score || '--';
+      }
+
+      // Update progress circle
+      const scoreCircle = document.getElementById('flashai-vto-score-circle');
+      if (scoreCircle && scan.analysis?.skin_score) {
+        const score = scan.analysis.skin_score;
+        const circumference = 2 * Math.PI * 54; // r=54
+        const offset = circumference - (score / 100) * circumference;
+        scoreCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+        scoreCircle.style.strokeDashoffset = offset;
+      }
+
+      // Update metrics
+      const metrics = ['pigmentation', 'acne', 'wrinkle', 'texture', 'redness', 'hydration'];
+      metrics.forEach(metric => {
+        const scoreElem = document.getElementById(`flashai-vto-${metric}-score`);
+        const barElem = document.getElementById(`flashai-vto-${metric}-bar`);
+
+        if (scoreElem && barElem && scan.analysis) {
+          const score = scan.analysis[`${metric}_score`] || 0;
+          scoreElem.textContent = score;
+          barElem.style.width = `${score}%`;
+
+          // Color based on score (inverse for some metrics)
+          const isGood = metric === 'texture' || metric === 'hydration';
+          let color;
+          if (isGood) {
+            color = score > 70 ? '#10b981' : score > 40 ? '#f59e0b' : '#ef4444';
+          } else {
+            color = score < 30 ? '#10b981' : score < 60 ? '#f59e0b' : '#ef4444';
+          }
+          barElem.style.backgroundColor = color;
+        }
+      });
+
+      // Update skin details
+      if (scan.analysis) {
+        const toneElem = document.getElementById('flashai-vto-skin-tone');
+        const undertoneElem = document.getElementById('flashai-vto-skin-undertone');
+        const ageElem = document.getElementById('flashai-vto-skin-age');
+        const hydrationElem = document.getElementById('flashai-vto-skin-hydration');
+
+        if (toneElem) toneElem.textContent = scan.analysis.skin_tone || 'N/A';
+        if (undertoneElem) undertoneElem.textContent = scan.analysis.skin_undertone || 'N/A';
+        if (ageElem) ageElem.textContent = scan.analysis.skin_age_estimate || 'N/A';
+        if (hydrationElem) hydrationElem.textContent = scan.analysis.hydration_level || 'N/A';
+      }
+
+      // Load product recommendations
+      this.loadProductRecommendations(scan.id);
+
+      // Show results step
+      this.showStep('face-results');
+    }
+
+    async loadProductRecommendations(scanId) {
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl}/face-scan/recommendations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            scanId: scanId
+          })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load recommendations');
+        }
+
+        this.displayProductRecommendations(data.data.recommendations);
+      } catch (error) {
+        console.error('Load recommendations error:', error);
+        const container = document.getElementById('flashai-vto-recommendations');
+        if (container) {
+          container.innerHTML = '<p class="flashai-vto-error-text">Failed to load recommendations</p>';
+        }
+      }
+    }
+
+    displayProductRecommendations(recommendations) {
+      const container = document.getElementById('flashai-vto-recommendations');
+      if (!container) return;
+
+      if (!recommendations || recommendations.length === 0) {
+        container.innerHTML = '<p class="flashai-vto-no-products">No recommendations available</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <h3>Recommended for Your Skin</h3>
+        <div class="flashai-vto-product-grid">
+          ${recommendations.slice(0, 6).map(rec => `
+            <div class="flashai-vto-product-card">
+              <img src="${rec.product_image_url || ''}" alt="${rec.product_title || 'Product'}">
+              <div class="flashai-vto-product-info">
+                <h4>${rec.product_title || 'Product'}</h4>
+                <p class="flashai-vto-product-reason">${rec.reason || ''}</p>
+                <div class="flashai-vto-product-footer">
+                  <span class="flashai-vto-product-price">$${rec.product_price || '0.00'}</span>
+                  <span class="flashai-vto-product-confidence">${Math.round((rec.confidence_score || 0) * 100)}% match</span>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      // Add click handlers for products
+      container.querySelectorAll('.flashai-vto-product-card').forEach((card, index) => {
+        card.addEventListener('click', () => {
+          const rec = recommendations[index];
+          if (rec.product_id) {
+            this.trackEvent('product_clicked', {
+              scanId: this.state.faceScanId,
+              productId: rec.product_id
+            });
+            window.open(`/products/${rec.product_id}`, '_blank');
+          }
+        });
+      });
+    }
+
+    shopRecommendedProducts() {
+      // Scroll to products or redirect to collection page
+      this.trackEvent('shop_recommendations_clicked', {
+        scanId: this.state.faceScanId
+      });
+
+      // Close modal and scroll to products
+      this.closeModal();
+
+      // Optionally scroll to product collection
+      const productsSection = document.querySelector('.products, .collection, #products');
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth' });
+      }
     }
 
     // ==========================================================================
@@ -877,6 +1426,26 @@
         childList: true,
         subtree: true
       });
+    }
+
+    async trackEvent(eventType, data = {}) {
+      try {
+        await fetch(`${this.config.apiBaseUrl}/face-scan/track`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            eventType,
+            visitorId: this.state.visitorId,
+            ...data
+          })
+        });
+      } catch (error) {
+        console.error('Track event error:', error);
+        // Don't throw - tracking failures shouldn't break UX
+      }
     }
   }
 
