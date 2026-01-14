@@ -187,15 +187,36 @@ async def process_face_scan(
         print(f"[FaceScan] Processing {len(image_data)} images for scan_id: {scan_id}")
 
         # Process face scan
-        result = await face_scan_service.analyze_face(scan_id, image_data)
-
-        print(f"[FaceScan] Result success: {result.get('success', False)}")
-        return result
+        try:
+            result = await face_scan_service.analyze_face(scan_id, image_data)
+            print(f"[FaceScan] Result success: {result.get('success', False)}")
+            return result
+        except Exception as analysis_error:
+            error_msg = f"Analysis failed: {str(analysis_error)}"
+            print(f"[FaceScan] Analysis ERROR: {error_msg}")
+            print(traceback.format_exc())
+            # Return error response instead of 500
+            return {
+                "success": False,
+                "scan_id": scan_id,
+                "quality_score": 0.0,
+                "processing_time_ms": 0,
+                "error": error_msg,
+                "analysis": {}
+            }
 
     except Exception as e:
         error_detail = f"{str(e)}\n{traceback.format_exc()}"
         print(f"[FaceScan] ERROR: {error_detail}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return error response instead of raising 500
+        return {
+            "success": False,
+            "scan_id": scan_id if 'scan_id' in dir() else "unknown",
+            "quality_score": 0.0,
+            "processing_time_ms": 0,
+            "error": str(e),
+            "analysis": {}
+        }
 
 # =============================================================================
 # Size Recommendation Endpoints
@@ -255,12 +276,50 @@ async def get_models_info():
 async def face_scan_debug():
     """Debug endpoint for face scan service"""
     import cv2
+
+    # Test if we can create basic CV objects
+    test_results = {}
+    try:
+        # Test numpy
+        import numpy as np
+        test_arr = np.zeros((100, 100, 3), dtype=np.uint8)
+        test_results["numpy"] = "ok"
+    except Exception as e:
+        test_results["numpy"] = str(e)
+
+    try:
+        # Test OpenCV
+        gray = cv2.cvtColor(test_arr, cv2.COLOR_BGR2GRAY)
+        test_results["opencv_convert"] = "ok"
+    except Exception as e:
+        test_results["opencv_convert"] = str(e)
+
+    try:
+        # Test PIL
+        from PIL import Image
+        import io
+        pil_img = Image.fromarray(test_arr)
+        test_results["pil"] = "ok"
+    except Exception as e:
+        test_results["pil"] = str(e)
+
+    try:
+        # Test MediaPipe image creation
+        if face_scan_service.use_mediapipe:
+            import mediapipe as mp
+            rgb_arr = np.zeros((100, 100, 3), dtype=np.uint8)
+            mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_arr)
+            test_results["mediapipe_image"] = "ok"
+    except Exception as e:
+        test_results["mediapipe_image"] = str(e)
+
     return {
         "service_ready": face_scan_service.is_ready(),
         "model_info": face_scan_service.get_model_info(),
         "opencv_version": cv2.__version__,
         "mediapipe_available": face_scan_service.use_mediapipe,
         "face_cascade_loaded": face_scan_service.face_cascade is not None,
+        "tests": test_results,
     }
 
 # =============================================================================
