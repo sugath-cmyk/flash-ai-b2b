@@ -13,7 +13,26 @@ import * as vtoService from '../services/vto.service';
 export async function uploadBodyScan(req: Request, res: Response) {
   try {
     const files = req.files as Express.Multer.File[];
-    const { visitorId, storeId } = req.body;
+    const { visitorId } = req.body;
+
+    // Verify API key and get storeId
+    const apiKey = req.headers['x-api-key'] as string;
+    if (!apiKey) {
+      return res.status(401).json({
+        success: false,
+        error: 'API key required'
+      });
+    }
+
+    const widgetService = require('../services/widget.service').default;
+    const { storeId, isValid } = await widgetService.verifyApiKey(apiKey);
+
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid API key'
+      });
+    }
 
     if (!files || files.length < 3) {
       return res.status(400).json({
@@ -22,10 +41,10 @@ export async function uploadBodyScan(req: Request, res: Response) {
       });
     }
 
-    if (!visitorId || !storeId) {
+    if (!visitorId) {
       return res.status(400).json({
         success: false,
-        error: 'Visitor ID and Store ID are required'
+        error: 'Visitor ID is required'
       });
     }
 
@@ -95,7 +114,26 @@ export async function getBodyScan(req: Request, res: Response) {
  */
 export async function startTryOnSession(req: Request, res: Response) {
   try {
-    const { bodyScanId, productId, visitorId, storeId } = req.body;
+    const { bodyScanId, productId, visitorId } = req.body;
+
+    // Verify API key and get storeId
+    const apiKey = req.headers['x-api-key'] as string;
+    if (!apiKey) {
+      return res.status(401).json({
+        success: false,
+        error: 'API key required'
+      });
+    }
+
+    const widgetService = require('../services/widget.service').default;
+    const { storeId, isValid } = await widgetService.verifyApiKey(apiKey);
+
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid API key'
+      });
+    }
 
     if (!bodyScanId || !productId) {
       return res.status(400).json({
@@ -189,12 +227,31 @@ export async function getSizeRecommendation(req: Request, res: Response) {
  */
 export async function trackVTOEvent(req: Request, res: Response) {
   try {
-    const { eventType, storeId, visitorId, sessionId, productId, metadata } = req.body;
+    const { eventType, visitorId, sessionId, productId, metadata } = req.body;
 
-    if (!eventType || !storeId) {
+    // Verify API key and get storeId
+    const apiKey = req.headers['x-api-key'] as string;
+    if (!apiKey) {
+      return res.status(401).json({
+        success: false,
+        error: 'API key required'
+      });
+    }
+
+    const widgetService = require('../services/widget.service').default;
+    const { storeId, isValid } = await widgetService.verifyApiKey(apiKey);
+
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid API key'
+      });
+    }
+
+    if (!eventType) {
       return res.status(400).json({
         success: false,
-        error: 'Event type and store ID are required'
+        error: 'Event type is required'
       });
     }
 
