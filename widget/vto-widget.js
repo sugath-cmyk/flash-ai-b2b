@@ -490,7 +490,7 @@
         });
         formData.append('visitorId', this.state.visitorId);
 
-        const response = await fetch(`${this.config.apiBaseUrl}/widget/body-scan/upload`, {
+        const response = await fetch(`${this.config.apiBaseUrl}/body-scan`, {
           method: 'POST',
           headers: {
             'X-API-Key': this.config.apiKey
@@ -554,7 +554,7 @@
     async pollBodyScanStatus(scanId) {
       this.pollInterval = setInterval(async () => {
         try {
-          const response = await fetch(`${this.config.apiBaseUrl}/widget/body-scan/${scanId}`, {
+          const response = await fetch(`${this.config.apiBaseUrl}/body-scan/${scanId}`, {
             headers: {
               'X-API-Key': this.config.apiKey
             }
@@ -607,7 +607,7 @@
     async initializeTryOn() {
       try {
         // Start try-on session
-        const response = await fetch(`${this.config.apiBaseUrl}/widget/try-on/start`, {
+        const response = await fetch(`${this.config.apiBaseUrl}/try-on/start`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -643,7 +643,7 @@
     async getSizeRecommendation() {
       try {
         const response = await fetch(
-          `${this.config.apiBaseUrl}/widget/size-recommendation?bodyScanId=${this.state.bodyScan.scan.id}&productId=${this.config.productId}`,
+          `${this.config.apiBaseUrl}/size-recommendation?bodyScanId=${this.state.bodyScan.scan.id}&productId=${this.config.productId}`,
           {
             headers: {
               'X-API-Key': this.config.apiKey
@@ -761,7 +761,7 @@
           reader.onloadend = async () => {
             const base64 = reader.result;
 
-            await fetch(`${this.config.apiBaseUrl}/widget/try-on/${this.state.session.sessionId}/screenshot`, {
+            await fetch(`${this.config.apiBaseUrl}/try-on/${this.state.session.sessionId}/screenshot`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -782,7 +782,7 @@
 
     async shareSocial() {
       try {
-        await fetch(`${this.config.apiBaseUrl}/widget/try-on/${this.state.session.sessionId}/share`, {
+        await fetch(`${this.config.apiBaseUrl}/try-on/${this.state.session.sessionId}/share`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
