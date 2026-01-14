@@ -200,6 +200,81 @@ export class WidgetController {
       throw error;
     }
   }
+
+  // Serve VTO widget JavaScript file (public endpoint)
+  async serveVTOWidgetScript(req: Request, res: Response) {
+    try {
+      const { storeId } = req.params;
+
+      if (!storeId) {
+        throw createError('Store ID is required', 400);
+      }
+
+      // Check if VTO is enabled
+      const vtoEnabledResult = await widgetService.getVTOEnabled(storeId);
+      if (!vtoEnabledResult || !vtoEnabledResult.enabled) {
+        // Return empty script if VTO is disabled
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.send('// Flash AI VTO Widget: Virtual Try-On is disabled for this store');
+        return;
+      }
+
+      // Get API key for this store
+      const apiKeys = await widgetService.getActiveApiKey(storeId);
+
+      if (!apiKeys || apiKeys.length === 0) {
+        throw createError('No API key found for this store', 404);
+      }
+
+      const apiKey = apiKeys[0].api_key;
+
+      // Get VTO settings
+      const vtoSettings = await widgetService.getVTOSettings(storeId);
+
+      // Read VTO widget file
+      const vtoWidgetPath = path.join(__dirname, '../../widget/vto-widget.js');
+      let vtoScript = fs.readFileSync(vtoWidgetPath, 'utf8');
+
+      // Get API base URL from environment
+      const apiBaseUrl = process.env.API_BASE_URL || 'https://flash-ai-backend-rld7.onrender.com';
+
+      // Inject configuration at the top of the script
+      const configScript = `
+// VTO Widget Configuration (Auto-injected by server)
+(function() {
+  window.flashAIVTOConfig = {
+    storeId: '${storeId}',
+    apiKey: '${apiKey}',
+    apiUrl: '${apiBaseUrl}/api/vto',
+    primaryColor: '${vtoSettings?.vto_primary_color || '#8B5CF6'}',
+    buttonPosition: '${vtoSettings?.vto_position || 'bottom-left'}',
+    buttonText: '${vtoSettings?.vto_button_text || 'Try On'}',
+    mode: '${vtoSettings?.vto_mode || 'floating'}'
+  };
+})();
+
+${vtoScript}
+`;
+
+      // Set appropriate headers
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-VTO-Widget-Version', 'v1.0.0');
+
+      res.send(configScript);
+    } catch (error) {
+      console.error('Error serving VTO widget script:', error);
+      throw error;
+    }
+  }
 }
 
 export default new WidgetController();

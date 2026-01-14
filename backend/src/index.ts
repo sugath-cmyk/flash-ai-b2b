@@ -102,6 +102,15 @@ app.options('/widget/:storeId.js', (req, res) => {
 });
 app.get('/widget/:storeId.js', widgetController.serveWidgetScript.bind(widgetController));
 
+// VTO widget script serving route (public, must be before API routes)
+app.options('/vto/:storeId.js', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(200);
+});
+app.get('/vto/:storeId.js', widgetController.serveVTOWidgetScript.bind(widgetController));
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

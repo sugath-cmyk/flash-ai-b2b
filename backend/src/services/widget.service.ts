@@ -386,6 +386,47 @@ export class WidgetService {
       return { enabled: true };
     }
   }
+
+  // Check if VTO is enabled for a store
+  async getVTOEnabled(storeId: string): Promise<{ enabled: boolean }> {
+    try {
+      const result = await pool.query(
+        'SELECT vto_enabled FROM widget_settings WHERE store_id = $1',
+        [storeId]
+      );
+
+      if (result.rows.length === 0) {
+        // Default to disabled if no settings found
+        return { enabled: false };
+      }
+
+      return { enabled: result.rows[0].vto_enabled };
+    } catch (error) {
+      console.error('Error checking VTO enabled status:', error);
+      // Default to disabled on error
+      return { enabled: false };
+    }
+  }
+
+  // Get VTO settings for a store
+  async getVTOSettings(storeId: string): Promise<any> {
+    try {
+      const result = await pool.query(
+        `SELECT vto_enabled, vto_mode, vto_position, vto_button_text, vto_primary_color
+         FROM widget_settings WHERE store_id = $1`,
+        [storeId]
+      );
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error getting VTO settings:', error);
+      return null;
+    }
+  }
 }
 
 export default new WidgetService();
