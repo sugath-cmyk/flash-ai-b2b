@@ -103,7 +103,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "ml-inference",
-        "version": "1.0.6",  # Updated to track deployments
+        "version": "1.0.7",  # Global exception handler added
         "models": {
             "pose_estimation": body_scan_service.is_ready(),
             "size_recommendation": size_rec_service.is_ready(),
