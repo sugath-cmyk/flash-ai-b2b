@@ -3,7 +3,7 @@ Flash AI VTO - ML Inference Service
 Main FastAPI application for body scanning and virtual try-on ML inference
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict
@@ -97,7 +97,7 @@ async def health_check():
 
 @app.post("/body-scan", response_model=BodyScanResponse)
 async def process_body_scan(
-    scan_id: str,
+    scan_id: str = Form(...),
     images: List[UploadFile] = File(...)
 ):
     """
@@ -147,7 +147,7 @@ async def get_scan_status(scan_id: str):
 
 @app.post("/face-scan")
 async def process_face_scan(
-    scan_id: str,
+    scan_id: str = Form(...),
     images: List[UploadFile] = File(...)
 ):
     """
