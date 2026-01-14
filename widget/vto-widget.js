@@ -1,8 +1,8 @@
 /**
- * Flash AI Virtual Try-On Widget
- * Version: 1.0.0
+ * Flash AI Virtual Try-On & Face Scan Widget
+ * Version: 1.2.0 (Face Scan with 3 angles)
  *
- * Embeddable widget for virtual try-on functionality
+ * Embeddable widget for virtual try-on and face scan functionality
  *
  * Usage:
  * <script src="https://your-domain.com/api/vto/YOUR_STORE_ID.js"></script>
@@ -10,6 +10,9 @@
 
 (function() {
   'use strict';
+
+  // Version check for debugging
+  console.log('[Flash AI Widget] Version 1.2.0 - Face Scan with 3 angles');
 
   // ==========================================================================
   // Main Widget Class
@@ -1005,6 +1008,11 @@
           },
           body: formData
         });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+          throw new Error(errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
 
         const data = await response.json();
 

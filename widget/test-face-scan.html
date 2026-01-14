@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash AI - Face Scan Test Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #1f2937;
+      margin-top: 0;
+    }
+    .info {
+      background: #dbeafe;
+      border-left: 4px solid #3b82f6;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .warning {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .btn {
+      background: #8B5CF6;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .btn:hover {
+      background: #7C3AED;
+    }
+    #console-output {
+      background: #1f2937;
+      color: #10b981;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-card">
+    <h1>🧪 Flash AI Face Scan - Test Page</h1>
+
+    <div class="warning">
+      <strong>⚠️ Important:</strong> If you see old widget behavior (oval guide), please do a hard refresh:
+      <ul>
+        <li><strong>Windows/Linux:</strong> Ctrl + Shift + R</li>
+        <li><strong>Mac:</strong> Cmd + Shift + R</li>
+      </ul>
+    </div>
+
+    <div class="info">
+      <strong>✨ New Face Scan Features:</strong>
+      <ul>
+        <li>✅ 3-angle photo capture (Front, Left, Right)</li>
+        <li>✅ No oval guide overlay - clean camera view</li>
+        <li>✅ Fixed processing text: "Analyzing Your Skin"</li>
+        <li>✅ Comprehensive skin analysis with 6 metrics</li>
+        <li>✅ Personalized product recommendations</li>
+      </ul>
+    </div>
+
+    <div class="success" style="display: none;" id="version-check">
+      <strong>✅ Widget Loaded:</strong> <span id="widget-version"></span>
+    </div>
+
+    <h2>Console Output</h2>
+    <div id="console-output">Waiting for widget to load...</div>
+
+    <div style="margin-top: 30px;">
+      <button class="btn" onclick="location.reload(true)">🔄 Force Refresh Page</button>
+      <button class="btn" onclick="checkWidget()" style="background: #3b82f6; margin-left: 10px;">🔍 Check Widget Status</button>
+    </div>
+  </div>
+
+  <!-- Flash AI VTO Widget -->
+  <script>
+    // Capture console logs
+    const consoleOutput = document.getElementById('console-output');
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    function addToConsole(type, ...args) {
+      const message = args.map(arg =>
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+
+      const timestamp = new Date().toLocaleTimeString();
+      const prefix = type === 'error' ? '❌' : '✓';
+      consoleOutput.textContent += `\n[${timestamp}] ${prefix} ${message}`;
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+      // Update version check
+      if (message.includes('Version')) {
+        const versionMatch = message.match(/Version ([\d.]+)/);
+        if (versionMatch) {
+          document.getElementById('version-check').style.display = 'block';
+          document.getElementById('widget-version').textContent = 'v' + versionMatch[1];
+        }
+      }
+    }
+
+    console.log = function(...args) {
+      addToConsole('log', ...args);
+      originalLog.apply(console, args);
+    };
+
+    console.error = function(...args) {
+      addToConsole('error', ...args);
+      originalError.apply(console, args);
+    };
+
+    function checkWidget() {
+      if (window.FlashAI_VTO) {
+        console.log('Widget instance found:', {
+          config: window.FlashAI_VTO.config,
+          state: window.FlashAI_VTO.state
+        });
+      } else if (window.FLASHAI_VTO_CONFIG) {
+        console.log('Widget config found:', window.FLASHAI_VTO_CONFIG);
+      } else {
+        console.error('Widget not loaded! Please check the script tag.');
+      }
+    }
+
+    // Auto-check after 2 seconds
+    setTimeout(checkWidget, 2000);
+  </script>
+
+  <!-- Replace YOUR_STORE_ID with actual store ID -->
+  <script src="https://flash-ai-backend-rld7.onrender.com/vto/YOUR_STORE_ID.js"></script>
+</body>
+</html>

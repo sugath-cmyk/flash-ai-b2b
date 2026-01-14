@@ -267,7 +267,8 @@ ${vtoScript}
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('X-VTO-Widget-Version', 'v1.0.0');
+      res.setHeader('X-VTO-Widget-Version', 'v1.2.0');
+      res.setHeader('X-Widget-Build-Time', new Date().toISOString());
 
       res.send(configScript);
     } catch (error) {
