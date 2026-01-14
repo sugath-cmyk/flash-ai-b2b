@@ -246,7 +246,7 @@ export class WidgetController {
   window.FLASHAI_VTO_CONFIG = {
     storeId: '${storeId}',
     apiKey: '${apiKey}',
-    apiUrl: '${apiBaseUrl}/api/vto',
+    apiBaseUrl: '${apiBaseUrl}/api/vto',
     primaryColor: '${vtoSettings?.vto_primary_color || '#8B5CF6'}',
     buttonPosition: '${vtoSettings?.vto_position || 'bottom-left'}',
     buttonText: '${vtoSettings?.vto_button_text || 'Try On'}',
