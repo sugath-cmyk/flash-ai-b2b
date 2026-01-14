@@ -140,6 +140,13 @@ export async function updateFaceScan(scanId: string, data: {
 export async function saveFaceAnalysis(scanId: string, analysis: any) {
   // Build dynamic query based on available analysis fields
   const fields = Object.keys(analysis);
+
+  // Handle empty analysis - nothing to save
+  if (fields.length === 0) {
+    console.warn('saveFaceAnalysis called with empty analysis, skipping');
+    return null;
+  }
+
   const columns = ['face_scan_id', ...fields];
   const placeholders = columns.map((_, i) => `$${i + 1}`);
   const values = [scanId, ...fields.map(field => {
@@ -189,6 +196,18 @@ export async function processFaceScan(scanId: string, files: Express.Multer.File
 
     const processingTime = Date.now() - startTime;
 
+    // Check if ML service returned an error
+    if (!response.data.success) {
+      const errorMsg = response.data.error || 'Face analysis failed';
+      console.error('ML service returned error:', errorMsg);
+      await updateFaceScan(scanId, {
+        status: 'failed',
+        errorMessage: errorMsg,
+        processingTime
+      });
+      return; // Don't throw - just mark as failed
+    }
+
     // Update scan with results
     await updateFaceScan(scanId, {
       status: 'completed',
@@ -196,8 +215,10 @@ export async function processFaceScan(scanId: string, files: Express.Multer.File
       processingTime
     });
 
-    // Save complete analysis results
-    await saveFaceAnalysis(scanId, response.data.analysis);
+    // Save complete analysis results (only if we have analysis data)
+    if (response.data.analysis && Object.keys(response.data.analysis).length > 0) {
+      await saveFaceAnalysis(scanId, response.data.analysis);
+    }
 
   } catch (error: any) {
     console.error('Face scan processing error:', error);
