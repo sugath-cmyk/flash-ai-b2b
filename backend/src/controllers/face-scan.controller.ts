@@ -96,26 +96,45 @@ export async function getFaceScan(req: Request, res: Response) {
 
   try {
     const { scanId } = req.params;
-    console.log('[getFaceScan] Fetching scan:', scanId);
+    console.log('[getFaceScan] ====== START ======');
+    console.log('[getFaceScan] Raw scanId param:', scanId);
+    console.log('[getFaceScan] scanId type:', typeof scanId);
+    console.log('[getFaceScan] scanId length:', scanId?.length);
+    console.log('[getFaceScan] Full URL:', req.originalUrl);
+    console.log('[getFaceScan] Params:', JSON.stringify(req.params));
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(scanId)) {
+      console.log('[getFaceScan] Invalid UUID format:', scanId);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid scan ID format',
+        receivedId: scanId
+      });
+    }
 
     const scan = await faceScanService.getFaceScan(scanId);
 
     if (!scan) {
-      console.log('[getFaceScan] Scan not found:', scanId);
+      console.log('[getFaceScan] Scan not found in database:', scanId);
       return res.status(404).json({
         success: false,
-        error: 'Scan not found'
+        error: 'Scan not found',
+        scanId: scanId
       });
     }
 
     console.log('[getFaceScan] Found scan:', scan.id, 'status:', scan.status);
+    console.log('[getFaceScan] ====== END ======');
 
     res.json({
       success: true,
       data: scan
     });
   } catch (error: any) {
-    console.error('Get face scan error:', error);
+    console.error('[getFaceScan] ERROR:', error.message);
+    console.error('[getFaceScan] Stack:', error.stack);
     res.status(500).json({
       success: false,
       error: 'Failed to get face scan',

@@ -1095,58 +1095,91 @@
     }
 
     async pollFaceScanStatus(scanId) {
-      console.log('[Face Scan] Starting poll for scanId:', scanId);
+      console.log('[Face Scan] ====== POLL START ======');
+      console.log('[Face Scan] scanId:', scanId);
+      console.log('[Face Scan] scanId type:', typeof scanId);
+      console.log('[Face Scan] config.apiBaseUrl:', this.config.apiBaseUrl);
+
+      // Build the face scan API URL - handle both cases
+      let faceScanBaseUrl;
+      if (this.config.apiBaseUrl.includes('/api/vto')) {
+        faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+      } else {
+        // Fallback: extract base and append /api/face-scan
+        const baseUrl = this.config.apiBaseUrl.replace(/\/api\/.*$/, '');
+        faceScanBaseUrl = `${baseUrl}/api/face-scan`;
+      }
+
+      console.log('[Face Scan] faceScanBaseUrl:', faceScanBaseUrl);
+
+      let pollAttempts = 0;
+      const maxAttempts = 30; // 60 seconds max
 
       this.faceScanPollInterval = setInterval(async () => {
+        pollAttempts++;
         try {
-          // Face scan uses /api/face-scan instead of /api/vto
-          const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
           const pollUrl = `${faceScanBaseUrl}/${scanId}`;
-
-          console.log('[Face Scan] Polling:', pollUrl);
+          console.log(`[Face Scan] Poll attempt ${pollAttempts}/${maxAttempts}:`, pollUrl);
 
           const response = await fetch(pollUrl, {
+            method: 'GET',
             headers: {
-              'X-API-Key': this.config.apiKey
+              'X-API-Key': this.config.apiKey,
+              'Accept': 'application/json'
             }
           });
 
-          console.log('[Face Scan] Poll response status:', response.status);
+          console.log('[Face Scan] Poll response:', response.status, response.statusText);
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('[Face Scan] Poll error:', response.status, errorText);
-            throw new Error(`Request failed with status code ${response.status}`);
+            console.error('[Face Scan] Poll error body:', errorText);
+
+            // If 404, the scan doesn't exist - stop polling
+            if (response.status === 404) {
+              clearInterval(this.faceScanPollInterval);
+              this.showError(`Scan not found (ID: ${scanId}). Please try again.`);
+              return;
+            }
+
+            // For other errors, keep trying up to max attempts
+            if (pollAttempts >= maxAttempts) {
+              clearInterval(this.faceScanPollInterval);
+              this.showError(`Polling failed after ${maxAttempts} attempts: ${response.status}`);
+            }
+            return;
           }
 
           const data = await response.json();
-          console.log('[Face Scan] Poll data:', data);
+          console.log('[Face Scan] Poll data:', JSON.stringify(data));
 
           if (!data.success) {
             throw new Error(data.error || 'Failed to get scan status');
           }
 
           const scan = data.data;
+          console.log('[Face Scan] Scan status:', scan.status);
 
           if (scan.status === 'completed') {
             clearInterval(this.faceScanPollInterval);
             this.state.faceScan = scan;
-
-            // Complete all steps
             this.updateFaceScanStep(4, 'complete');
-
-            // Wait a moment for user to see completion
             setTimeout(() => {
               this.displayFaceResults(scan);
             }, 1000);
           } else if (scan.status === 'failed') {
             clearInterval(this.faceScanPollInterval);
             this.showError(scan.error_message || 'Face scan failed. Please try again.');
+          } else if (pollAttempts >= maxAttempts) {
+            clearInterval(this.faceScanPollInterval);
+            this.showError('Scan is taking too long. Please try again.');
           }
         } catch (error) {
-          console.error('Face scan poll error:', error);
-          clearInterval(this.faceScanPollInterval);
-          this.showError(error.message);
+          console.error('[Face Scan] Poll exception:', error);
+          if (pollAttempts >= maxAttempts) {
+            clearInterval(this.faceScanPollInterval);
+            this.showError(error.message || 'Polling failed');
+          }
         }
       }, 2000);
     }

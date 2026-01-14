@@ -81,6 +81,79 @@ router.get('/health', async (req, res) => {
   }
 });
 
+// Debug endpoint - list recent face scans (for troubleshooting)
+router.get('/debug/recent', async (req, res) => {
+  try {
+    const { pool } = require('../config/database');
+    const result = await pool.query(`
+      SELECT id, store_id, visitor_id, status, created_at, completed_at, error_message
+      FROM face_scans
+      ORDER BY created_at DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      success: true,
+      scans: result.rows.map((row: any) => ({
+        id: row.id,
+        storeId: row.store_id,
+        visitorId: row.visitor_id,
+        status: row.status,
+        createdAt: row.created_at,
+        completedAt: row.completed_at,
+        errorMessage: row.error_message
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Test endpoint - get latest scan (for debugging without needing scanId)
+router.get('/debug/latest', async (req, res) => {
+  try {
+    const { pool } = require('../config/database');
+    const result = await pool.query(`
+      SELECT fs.*, fa.skin_tone, fa.skin_undertone, fa.skin_score
+      FROM face_scans fs
+      LEFT JOIN face_analysis fa ON fs.id = fa.face_scan_id
+      ORDER BY fs.created_at DESC
+      LIMIT 1
+    `);
+
+    if (result.rows.length === 0) {
+      return res.json({ success: true, message: 'No scans found', scan: null });
+    }
+
+    const scan = result.rows[0];
+    res.json({
+      success: true,
+      scan: {
+        id: scan.id,
+        status: scan.status,
+        storeId: scan.store_id,
+        visitorId: scan.visitor_id,
+        createdAt: scan.created_at,
+        errorMessage: scan.error_message,
+        analysis: scan.skin_tone ? {
+          skinTone: scan.skin_tone,
+          skinUndertone: scan.skin_undertone,
+          skinScore: scan.skin_score
+        } : null
+      },
+      testPollUrl: `/api/face-scan/${scan.id}`
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Upload face scan images
 router.post('/upload', upload.array('images', 3), faceScanController.uploadFaceScan);
 
