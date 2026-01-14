@@ -26,6 +26,15 @@ const upload = multer({
  * These endpoints are called by widgets (require API key via widget auth)
  */
 
+// CORS preflight handler for all face scan routes
+router.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, x-api-key');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.sendStatus(200);
+});
+
 // Health check for face scan feature
 router.get('/health', async (req, res) => {
   try {

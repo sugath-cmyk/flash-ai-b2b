@@ -1031,19 +1031,27 @@
         }
 
         const data = await response.json();
-        console.log('[Face Scan] Upload response:', data);
+        console.log('[Face Scan] Upload response:', JSON.stringify(data, null, 2));
 
         if (!data.success) {
           throw new Error(data.error || 'Failed to upload face scan');
         }
 
-        this.state.faceScanId = data.data.scanId;
+        const scanId = data.data?.scanId || data.scanId;
+        console.log('[Face Scan] Extracted scanId:', scanId);
+
+        if (!scanId) {
+          console.error('[Face Scan] No scanId in response!', data);
+          throw new Error('No scan ID returned from server');
+        }
+
+        this.state.faceScanId = scanId;
 
         // Start progress animation
         this.animateFaceScanProgress();
 
         // Poll for results
-        this.pollFaceScanStatus(data.data.scanId);
+        this.pollFaceScanStatus(scanId);
       } catch (error) {
         console.error('Analyze face scan error:', error);
         this.showError(error.message || 'Failed to analyze face scan. Please try again.');
@@ -1087,18 +1095,32 @@
     }
 
     async pollFaceScanStatus(scanId) {
+      console.log('[Face Scan] Starting poll for scanId:', scanId);
+
       this.faceScanPollInterval = setInterval(async () => {
         try {
           // Face scan uses /api/face-scan instead of /api/vto
           const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+          const pollUrl = `${faceScanBaseUrl}/${scanId}`;
 
-          const response = await fetch(`${faceScanBaseUrl}/${scanId}`, {
+          console.log('[Face Scan] Polling:', pollUrl);
+
+          const response = await fetch(pollUrl, {
             headers: {
               'X-API-Key': this.config.apiKey
             }
           });
 
+          console.log('[Face Scan] Poll response status:', response.status);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[Face Scan] Poll error:', response.status, errorText);
+            throw new Error(`Request failed with status code ${response.status}`);
+          }
+
           const data = await response.json();
+          console.log('[Face Scan] Poll data:', data);
 
           if (!data.success) {
             throw new Error(data.error || 'Failed to get scan status');

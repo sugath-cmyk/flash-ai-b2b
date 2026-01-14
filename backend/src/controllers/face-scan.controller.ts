@@ -90,17 +90,25 @@ export async function uploadFaceScan(req: Request, res: Response) {
  * GET /api/face-scan/:scanId
  */
 export async function getFaceScan(req: Request, res: Response) {
+  // Set CORS headers for widget access
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, x-api-key');
+
   try {
     const { scanId } = req.params;
+    console.log('[getFaceScan] Fetching scan:', scanId);
 
     const scan = await faceScanService.getFaceScan(scanId);
 
     if (!scan) {
+      console.log('[getFaceScan] Scan not found:', scanId);
       return res.status(404).json({
         success: false,
         error: 'Scan not found'
       });
     }
+
+    console.log('[getFaceScan] Found scan:', scan.id, 'status:', scan.status);
 
     res.json({
       success: true,
