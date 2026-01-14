@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VTO Widget Test - Flash AI</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .product-image {
+      width: 100%;
+      height: 400px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+    }
+    .price {
+      font-size: 24px;
+      font-weight: 600;
+      color: #8B5CF6;
+      margin-bottom: 16px;
+    }
+    .description {
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .add-to-cart {
+      width: 100%;
+      padding: 16px;
+      background: #000;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .status {
+      margin-top: 24px;
+      padding: 16px;
+      background: #f3f4f6;
+      border-radius: 8px;
+    }
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .status-label {
+      color: #6b7280;
+    }
+    .status-value {
+      font-weight: 600;
+    }
+    .success {
+      color: #10b981;
+    }
+    .error {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="product-card">
+    <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800" alt="Product" class="product-image">
+    <h1>Premium Cotton T-Shirt</h1>
+    <div class="price">Rs. 1,500.00</div>
+    <div class="description">
+      Comfortable, breathable cotton t-shirt perfect for everyday wear.
+      Available in multiple sizes. Use our Virtual Try-On feature to find your perfect fit!
+    </div>
+    <button class="add-to-cart">Add to Cart</button>
+
+    <div class="status">
+      <h3 style="margin: 0 0 12px 0;">Integration Status</h3>
+      <div class="status-item">
+        <span class="status-label">Backend API:</span>
+        <span class="status-value" id="backend-status">Checking...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">ML Service:</span>
+        <span class="status-value" id="ml-status">Checking...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">VTO Endpoints:</span>
+        <span class="status-value" id="vto-status">Checking...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Widget:</span>
+        <span class="status-value" id="widget-status">Checking...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- VTO Widget Configuration -->
+  <script>
+    window.flashAIVTOConfig = {
+      storeId: '62130715-ff42-4160-934e-c663fc1e7872',
+      apiKey: 'YOUR_API_KEY_HERE', // Get from Flash AI dashboard
+      apiUrl: 'https://flash-ai-backend-rld7.onrender.com/api/vto',
+      primaryColor: '#8B5CF6',
+      buttonPosition: 'bottom-left',
+      productId: 'test-product-1'
+    };
+  </script>
+
+  <!-- VTO Widget Script -->
+  <script src="./vto-widget.js"></script>
+
+  <!-- Status Check Script -->
+  <script>
+    async function checkStatus() {
+      // Check Backend
+      try {
+        const backendRes = await fetch('https://flash-ai-backend-rld7.onrender.com/health');
+        const backendData = await backendRes.json();
+        document.getElementById('backend-status').innerHTML =
+          `<span class="success">✓ ${backendData.version}</span>`;
+      } catch (e) {
+        document.getElementById('backend-status').innerHTML =
+          '<span class="error">✗ Offline</span>';
+      }
+
+      // Check ML Service
+      try {
+        const mlRes = await fetch('https://flash-ai-ml-inference.onrender.com/health');
+        const mlData = await mlRes.json();
+        document.getElementById('ml-status').innerHTML =
+          `<span class="success">✓ ${mlData.version}</span>`;
+      } catch (e) {
+        document.getElementById('ml-status').innerHTML =
+          '<span class="error">✗ Offline</span>';
+      }
+
+      // Check VTO Endpoints
+      try {
+        const vtoRes = await fetch('https://flash-ai-backend-rld7.onrender.com/api/vto/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        if (vtoRes.status === 400 || vtoRes.status === 401) {
+          // Endpoints exist (auth error is expected)
+          document.getElementById('vto-status').innerHTML =
+            '<span class="success">✓ Available</span>';
+        } else {
+          document.getElementById('vto-status').innerHTML =
+            '<span class="error">✗ Not Found</span>';
+        }
+      } catch (e) {
+        document.getElementById('vto-status').innerHTML =
+          '<span class="error">✗ Error</span>';
+      }
+
+      // Check Widget
+      setTimeout(() => {
+        const vtoButton = document.getElementById('flashai-vto-button');
+        if (vtoButton) {
+          document.getElementById('widget-status').innerHTML =
+            '<span class="success">✓ Loaded</span>';
+        } else {
+          document.getElementById('widget-status').innerHTML =
+            '<span class="error">✗ Not Loaded</span>';
+        }
+      }, 1000);
+    }
+
+    checkStatus();
+  </script>
+</body>
+</html>

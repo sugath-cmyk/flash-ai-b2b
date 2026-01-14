@@ -7,7 +7,7 @@
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
     "build": "tsc && npm run copy-public && npm run copy-widget",
     "copy-public": "mkdir -p dist/public && cp -r src/public/* dist/public/",
-    "copy-widget": "mkdir -p dist/widget && cp -r ../widget/* dist/widget/",
+    "copy-widget": "mkdir -p dist/widget && cp -r src/widget/* dist/widget/",
     "start": "node dist/index.js",
     "migrate": "ts-node src/scripts/migrate.ts",
     "migrate:specific": "node run-migration.js",

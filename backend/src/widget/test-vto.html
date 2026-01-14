@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash AI Virtual Try-On - Test Page</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 60px;
+    }
+
+    .header h1 {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .header p {
+      font-size: 20px;
+      opacity: 0.9;
+    }
+
+    .demo-section {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .demo-section h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+    }
+
+    .demo-section p {
+      font-size: 16px;
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+
+    .product-card {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 300px;
+      background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .product-info h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .product-price {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 16px;
+    }
+
+    .product-sizes {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .size-badge {
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .inline-widget-demo {
+      margin-top: 20px;
+      padding: 20px;
+      background: #eff6ff;
+      border-radius: 8px;
+    }
+
+    .config-panel {
+      background: #f3f4f6;
+      padding: 24px;
+      border-radius: 8px;
+    }
+
+    .config-panel h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    .config-options {
+      display: grid;
+      gap: 16px;
+    }
+
+    .config-option {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .config-option label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .config-option input,
+    .config-option select {
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .config-option input[type="color"] {
+      width: 100px;
+      height: 40px;
+      cursor: pointer;
+    }
+
+    .btn-update {
+      margin-top: 16px;
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .btn-update:hover {
+      background: #5568d3;
+    }
+
+    .code-block {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    .code-block pre {
+      margin: 0;
+    }
+
+    .info-box {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin-top: 20px;
+    }
+
+    .info-box strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #92400e;
+    }
+
+    .info-box p {
+      color: #78350f;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 36px;
+      }
+
+      .header p {
+        font-size: 18px;
+      }
+
+      .demo-section {
+        padding: 24px 20px;
+      }
+
+      .product-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🎨 Virtual Try-On Widget</h1>
+      <p>Test the Flash AI Virtual Try-On experience</p>
+    </div>
+
+    <!-- Configuration Panel -->
+    <div class="demo-section">
+      <h2>⚙️ Widget Configuration</h2>
+      <p>Customize the widget appearance and behavior</p>
+
+      <div class="config-panel">
+        <h3>Settings</h3>
+        <div class="config-options">
+          <div class="config-option">
+            <label>Mode</label>
+            <select id="config-mode">
+              <option value="floating">Floating Button</option>
+              <option value="inline">Inline Widget</option>
+              <option value="both" selected>Both</option>
+            </select>
+          </div>
+
+          <div class="config-option">
+            <label>Button Position (for floating mode)</label>
+            <select id="config-position">
+              <option value="bottom-right" selected>Bottom Right</option>
+              <option value="bottom-left">Bottom Left</option>
+              <option value="top-right">Top Right</option>
+              <option value="top-left">Top Left</option>
+            </select>
+          </div>
+
+          <div class="config-option">
+            <label>Button Text</label>
+            <input type="text" id="config-text" value="Try On">
+          </div>
+
+          <div class="config-option">
+            <label>Primary Color</label>
+            <input type="color" id="config-color" value="#000000">
+          </div>
+        </div>
+
+        <button class="btn-update" onclick="updateWidget()">Update Widget</button>
+      </div>
+
+      <div class="info-box">
+        <strong>⚠️ Test Mode Active</strong>
+        <p>This is a test page. The widget is configured with mock API credentials. In production, you'll need to replace the API key with your store's actual API key.</p>
+      </div>
+
+      <div class="code-block">
+        <pre>&lt;!-- Add this to your website --&gt;
+&lt;script&gt;
+  window.FLASHAI_VTO_CONFIG = {
+    storeId: 'your-store-id',
+    apiKey: 'your-api-key',
+    apiBaseUrl: 'https://flash-ai-backend.onrender.com/api/vto',
+    mode: 'floating',
+    buttonPosition: 'bottom-right',
+    buttonText: 'Try On',
+    primaryColor: '#000000'
+  };
+&lt;/script&gt;
+&lt;script src="vto-widget.js"&gt;&lt;/script&gt;</pre>
+      </div>
+    </div>
+
+    <!-- Demo Products -->
+    <div class="demo-section">
+      <h2>🛍️ Demo Products</h2>
+      <p>Click on any product to test the virtual try-on experience</p>
+
+      <div class="product-grid">
+        <!-- Product 1 -->
+        <div class="product-card" data-product-id="product-001">
+          <div class="product-image">👕</div>
+          <div class="product-info">
+            <h3>Classic T-Shirt</h3>
+            <div class="product-price">$29.99</div>
+            <div class="product-sizes">
+              <span class="size-badge">XS</span>
+              <span class="size-badge">S</span>
+              <span class="size-badge">M</span>
+              <span class="size-badge">L</span>
+              <span class="size-badge">XL</span>
+            </div>
+            <!-- Inline widget placeholder -->
+            <div id="flashai-vto-inline"></div>
+          </div>
+        </div>
+
+        <!-- Product 2 -->
+        <div class="product-card" data-product-id="product-002">
+          <div class="product-image">👔</div>
+          <div class="product-info">
+            <h3>Button-Up Shirt</h3>
+            <div class="product-price">$49.99</div>
+            <div class="product-sizes">
+              <span class="size-badge">S</span>
+              <span class="size-badge">M</span>
+              <span class="size-badge">L</span>
+              <span class="size-badge">XL</span>
+            </div>
+            <div class="inline-widget-demo">
+              <p style="font-size: 14px; color: #666; margin-bottom: 12px;">
+                See the floating button in the bottom-right corner →
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product 3 -->
+        <div class="product-card" data-product-id="product-003">
+          <div class="product-image">🧥</div>
+          <div class="product-info">
+            <h3>Denim Jacket</h3>
+            <div class="product-price">$89.99</div>
+            <div class="product-sizes">
+              <span class="size-badge">XS</span>
+              <span class="size-badge">S</span>
+              <span class="size-badge">M</span>
+              <span class="size-badge">L</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="demo-section">
+      <h2>🚀 How It Works</h2>
+      <div style="display: grid; gap: 24px; margin-top: 24px;">
+        <div style="display: flex; gap: 16px; align-items: start;">
+          <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">1️⃣</div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Capture Body Scan</h3>
+            <p style="color: #666; font-size: 15px;">Take 3-5 photos from different angles using your device camera. Our AI will create your 3D body model.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: start;">
+          <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">2️⃣</div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">AI Processing</h3>
+            <p style="color: #666; font-size: 15px;">Our AI analyzes your photos, detects body pose, builds a 3D model, and extracts precise measurements (10-20 seconds).</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: start;">
+          <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">3️⃣</div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Virtual Try-On</h3>
+            <p style="color: #666; font-size: 15px;">See how clothes look on your 3D model, get AI-powered size recommendations, and shop with confidence!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load VTO Widget Styles -->
+  <link rel="stylesheet" href="vto-styles.css">
+
+  <!-- Load Three.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <!-- Load VTO 3D Renderer -->
+  <script src="vto-3d-renderer.js"></script>
+
+  <!-- Initialize VTO Widget -->
+  <script>
+    // Mock configuration for testing
+    window.FLASHAI_VTO_CONFIG = {
+      storeId: 'test-store-123',
+      apiKey: 'test-api-key-456',
+      apiBaseUrl: 'http://localhost:3000/api/vto', // Change to your backend URL
+      mode: 'both',
+      buttonPosition: 'bottom-right',
+      buttonText: 'Try On',
+      primaryColor: '#000000',
+      productId: 'product-001' // Will be updated based on product
+    };
+  </script>
+
+  <!-- Load VTO Widget -->
+  <script src="vto-widget.js"></script>
+
+  <!-- Configuration Update Script -->
+  <script>
+    function updateWidget() {
+      const mode = document.getElementById('config-mode').value;
+      const position = document.getElementById('config-position').value;
+      const text = document.getElementById('config-text').value;
+      const color = document.getElementById('config-color').value;
+
+      // Update configuration
+      window.FLASHAI_VTO_CONFIG.mode = mode;
+      window.FLASHAI_VTO_CONFIG.buttonPosition = position;
+      window.FLASHAI_VTO_CONFIG.buttonText = text;
+      window.FLASHAI_VTO_CONFIG.primaryColor = color;
+
+      // Reload page to apply changes
+      location.reload();
+    }
+
+    // Store configuration in localStorage for persistence
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedConfig = localStorage.getItem('vto-test-config');
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        document.getElementById('config-mode').value = config.mode || 'both';
+        document.getElementById('config-position').value = config.buttonPosition || 'bottom-right';
+        document.getElementById('config-text').value = config.buttonText || 'Try On';
+        document.getElementById('config-color').value = config.primaryColor || '#000000';
+
+        // Apply to widget config
+        Object.assign(window.FLASHAI_VTO_CONFIG, config);
+      }
+    });
+
+    // Save configuration before reload
+    window.addEventListener('beforeunload', () => {
+      const config = {
+        mode: document.getElementById('config-mode').value,
+        buttonPosition: document.getElementById('config-position').value,
+        buttonText: document.getElementById('config-text').value,
+        primaryColor: document.getElementById('config-color').value
+      };
+      localStorage.setItem('vto-test-config', JSON.stringify(config));
+    });
+
+    // Update product ID when clicking on products
+    document.querySelectorAll('.product-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('button') && !e.target.closest('#flashai-vto-inline')) {
+          const productId = card.dataset.productId;
+          if (window.FlashAI_VTO) {
+            window.FlashAI_VTO.config.productId = productId;
+            console.log('Updated product ID:', productId);
+          }
+        }
+      });
+    });
+
+    // Log widget status
+    console.log('🎨 Flash AI VTO Widget Test Page');
+    console.log('Configuration:', window.FLASHAI_VTO_CONFIG);
+    console.log('Widget loaded successfully!');
+  </script>
+</body>
+</html>
