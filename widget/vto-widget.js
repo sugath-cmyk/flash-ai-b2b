@@ -1000,8 +1000,13 @@
 
         // Face scan uses /api/face-scan instead of /api/vto
         const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+        const uploadUrl = `${faceScanBaseUrl}/upload`;
 
-        const response = await fetch(`${faceScanBaseUrl}/upload`, {
+        console.log('[Face Scan] Uploading to:', uploadUrl);
+        console.log('[Face Scan] Photos:', this.state.facePhotos.length);
+        console.log('[Face Scan] Visitor ID:', this.state.visitorId);
+
+        const response = await fetch(uploadUrl, {
           method: 'POST',
           headers: {
             'X-API-Key': this.config.apiKey
@@ -1009,12 +1014,24 @@
           body: formData
         });
 
+        console.log('[Face Scan] Response status:', response.status, response.statusText);
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+          const errorText = await response.text();
+          console.error('[Face Scan] Error response:', response.status, errorText);
+
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: 'Network error', details: errorText };
+          }
+
           throw new Error(errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
+        console.log('[Face Scan] Upload response:', data);
 
         if (!data.success) {
           throw new Error(data.error || 'Failed to upload face scan');
