@@ -24,13 +24,7 @@ CREATE TABLE IF NOT EXISTS face_scans (
 
   -- Timestamps
   created_at TIMESTAMP DEFAULT NOW(),
-  completed_at TIMESTAMP,
-
-  -- Indexes
-  INDEX idx_face_scans_store (store_id),
-  INDEX idx_face_scans_visitor (visitor_id),
-  INDEX idx_face_scans_status (status),
-  INDEX idx_face_scans_created (created_at DESC)
+  completed_at TIMESTAMP
 );
 
 -- Face analysis results (extracted features)
@@ -151,11 +145,7 @@ CREATE TABLE IF NOT EXISTS face_scan_recommendations (
   -- Ranking
   rank INTEGER, -- Order of recommendation
 
-  created_at TIMESTAMP DEFAULT NOW(),
-
-  INDEX idx_recommendations_scan (face_scan_id),
-  INDEX idx_recommendations_product (product_id),
-  INDEX idx_recommendations_rank (face_scan_id, rank)
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Face scan sessions (tracking user journey)
@@ -178,11 +168,7 @@ CREATE TABLE IF NOT EXISTS face_scan_sessions (
   session_data JSONB,
 
   created_at TIMESTAMP DEFAULT NOW(),
-  ended_at TIMESTAMP,
-
-  INDEX idx_face_sessions_store (store_id),
-  INDEX idx_face_sessions_scan (face_scan_id),
-  INDEX idx_face_sessions_created (created_at DESC)
+  ended_at TIMESTAMP
 );
 
 -- Face scan analytics events
@@ -198,11 +184,7 @@ CREATE TABLE IF NOT EXISTS face_scan_events (
   -- Event metadata
   metadata JSONB,
 
-  timestamp TIMESTAMP DEFAULT NOW(),
-
-  INDEX idx_face_events_store_timestamp (store_id, timestamp DESC),
-  INDEX idx_face_events_type (event_type),
-  INDEX idx_face_events_scan (face_scan_id)
+  timestamp TIMESTAMP DEFAULT NOW()
 );
 
 -- Widget settings extension for face scan
@@ -212,6 +194,24 @@ ADD COLUMN IF NOT EXISTS face_scan_mode VARCHAR(20) DEFAULT 'floating', -- float
 ADD COLUMN IF NOT EXISTS face_scan_position VARCHAR(20) DEFAULT 'bottom-right',
 ADD COLUMN IF NOT EXISTS face_scan_button_text VARCHAR(50) DEFAULT 'Find My Shade',
 ADD COLUMN IF NOT EXISTS face_scan_primary_color VARCHAR(7) DEFAULT '#8B5CF6';
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_face_scans_store ON face_scans(store_id);
+CREATE INDEX IF NOT EXISTS idx_face_scans_visitor ON face_scans(visitor_id);
+CREATE INDEX IF NOT EXISTS idx_face_scans_status ON face_scans(status);
+CREATE INDEX IF NOT EXISTS idx_face_scans_created ON face_scans(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_recommendations_scan ON face_scan_recommendations(face_scan_id);
+CREATE INDEX IF NOT EXISTS idx_recommendations_product ON face_scan_recommendations(product_id);
+CREATE INDEX IF NOT EXISTS idx_recommendations_rank ON face_scan_recommendations(face_scan_id, rank);
+
+CREATE INDEX IF NOT EXISTS idx_face_sessions_store ON face_scan_sessions(store_id);
+CREATE INDEX IF NOT EXISTS idx_face_sessions_scan ON face_scan_sessions(face_scan_id);
+CREATE INDEX IF NOT EXISTS idx_face_sessions_created ON face_scan_sessions(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_face_events_store_timestamp ON face_scan_events(store_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_face_events_type ON face_scan_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_face_events_scan ON face_scan_events(face_scan_id);
 
 -- Comments for documentation
 COMMENT ON TABLE face_scans IS 'Stores captured face photos and processing status';
