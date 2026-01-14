@@ -126,7 +126,7 @@ export async function startTryOnSession(req: Request, res: Response) {
       data: {
         sessionId: session.id,
         measurements: scan.measurements,
-        meshUrl: scan.mesh_url
+        meshUrl: scan.meshUrl
       }
     });
   } catch (error: any) {
