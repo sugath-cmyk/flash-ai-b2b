@@ -272,6 +272,42 @@ async def get_models_info():
         "face_scan": face_scan_service.get_model_info()
     }
 
+@app.get("/face-scan/test")
+async def face_scan_test():
+    """Test face scan with a synthetic image"""
+    import numpy as np
+    from PIL import Image
+    import io
+
+    try:
+        # Create a simple test image (white rectangle)
+        test_img = np.ones((480, 640, 3), dtype=np.uint8) * 200
+
+        # Convert to bytes (JPEG format)
+        pil_img = Image.fromarray(test_img)
+        buffer = io.BytesIO()
+        pil_img.save(buffer, format='JPEG')
+        img_bytes = buffer.getvalue()
+
+        print(f"[FaceScan Test] Created test image: {len(img_bytes)} bytes")
+
+        # Try to process it
+        result = await face_scan_service.analyze_face("test-scan-123", [img_bytes])
+
+        return {
+            "test": "completed",
+            "result_success": result.get("success", False),
+            "result_error": result.get("error"),
+            "has_analysis": bool(result.get("analysis")),
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "test": "failed",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 @app.get("/face-scan/debug")
 async def face_scan_debug():
     """Debug endpoint for face scan service"""
