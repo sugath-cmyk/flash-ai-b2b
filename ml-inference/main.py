@@ -24,7 +24,7 @@ load_dotenv()
 app = FastAPI(
     title="Flash AI VTO & Skin Analysis ML Service",
     description="ML inference service for virtual try-on, face scanning, and skin analysis",
-    version="1.0.0"
+    version="1.1.0"  # v1.1.0: Improved age estimation, wrinkle detection, lighting normalization, blur detection
 )
 
 # CORS middleware - allow requests from Node.js backend
@@ -103,7 +103,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "ml-inference",
-        "version": "1.0.9",  # Fixed FLOAT column type mismatches
+        "version": "1.1.0",  # v1.1.0: Improved age estimation, wrinkle detection, lighting & blur handling
         "models": {
             "pose_estimation": body_scan_service.is_ready(),
             "size_recommendation": size_rec_service.is_ready(),

@@ -36,16 +36,26 @@ class FaceScanService:
 
         self._ready = True
         self._model_info = {
-            "name": "FaceScan-v2",
-            "version": "2.0.0",
+            "name": "FaceScan-v3",
+            "version": "3.0.0",
             "capabilities": [
                 "skin_tone_detection",
                 "skin_analysis",
                 "problem_detection",
                 "age_estimation",
-                "face_shape_classification"
+                "face_shape_classification",
+                "lighting_normalization",
+                "blur_detection",
+                "image_quality_assessment"
             ],
-            "engine": "OpenCV" + (" + MediaPipe" if self.use_mediapipe else "")
+            "engine": "OpenCV" + (" + MediaPipe" if self.use_mediapipe else ""),
+            "improvements": [
+                "Multi-factor age estimation (10-90 range)",
+                "Direction-aware wrinkle detection",
+                "Lighting normalization for consistency",
+                "Blur detection with quality warnings",
+                "Regional wrinkle analysis (forehead, crow's feet, nasolabial)"
+            ]
         }
 
     def _init_face_detection(self):
@@ -161,6 +171,188 @@ class FaceScanService:
         self.LEFT_EYE = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246]
         self.RIGHT_EYE = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398]
 
+    def _normalize_lighting(self, img: np.ndarray, mask: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Normalize lighting conditions for consistent analysis.
+
+        This reduces the impact of:
+        - Uneven lighting (shadows, highlights)
+        - Camera flash/specular reflections
+        - White balance variations
+        - Over/under exposure
+
+        Args:
+            img: BGR image
+            mask: Optional face mask to focus normalization on face region
+
+        Returns:
+            Lighting-normalized BGR image
+        """
+        # Convert to LAB color space
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+        l_channel, a_channel, b_channel = cv2.split(lab)
+
+        # === Step 1: CLAHE on L channel for contrast normalization ===
+        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+        l_normalized = clahe.apply(l_channel)
+
+        # === Step 2: Reduce specular highlights ===
+        # Find very bright areas (likely flash/specular)
+        _, highlight_mask = cv2.threshold(l_channel, 240, 255, cv2.THRESH_BINARY)
+
+        # Reduce highlight intensity
+        if np.sum(highlight_mask) > 0:
+            # Blend with surrounding areas
+            highlight_reduction = cv2.GaussianBlur(l_normalized, (15, 15), 0)
+            l_normalized = np.where(
+                highlight_mask > 0,
+                np.clip(l_normalized * 0.7 + highlight_reduction * 0.3, 0, 255).astype(np.uint8),
+                l_normalized
+            )
+
+        # === Step 3: Shadow recovery ===
+        # Find very dark areas
+        _, shadow_mask = cv2.threshold(l_channel, 40, 255, cv2.THRESH_BINARY_INV)
+
+        if np.sum(shadow_mask) > 0:
+            # Lift shadows slightly
+            shadow_lift = cv2.add(l_normalized, np.ones_like(l_normalized) * 15)
+            l_normalized = np.where(
+                shadow_mask > 0,
+                np.clip(l_normalized * 0.6 + shadow_lift * 0.4, 0, 255).astype(np.uint8),
+                l_normalized
+            )
+
+        # === Step 4: Local normalization for uneven lighting ===
+        if mask is not None:
+            # Calculate local mean brightness in face region
+            kernel = np.ones((31, 31), np.float32) / (31 * 31)
+            local_mean = cv2.filter2D(l_normalized.astype(np.float32), -1, kernel)
+
+            # Target brightness (neutral gray)
+            target_brightness = 140
+
+            # Calculate correction factor
+            correction = target_brightness - local_mean
+            correction = np.clip(correction, -40, 40)  # Limit correction
+
+            # Apply correction only to face region
+            l_corrected = l_normalized.astype(np.float32) + correction
+            l_normalized = np.clip(l_corrected, 0, 255).astype(np.uint8)
+
+        # === Step 5: Merge and convert back ===
+        lab_normalized = cv2.merge([l_normalized, a_channel, b_channel])
+        img_normalized = cv2.cvtColor(lab_normalized, cv2.COLOR_LAB2BGR)
+
+        return img_normalized
+
+    def _detect_blur(self, img: np.ndarray, mask: np.ndarray) -> Dict:
+        """
+        Detect image blur using Laplacian variance method.
+
+        A blurry image will have low variance in the Laplacian.
+
+        Returns:
+            Dictionary with blur metrics
+        """
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # Apply mask to focus on face region
+        face_gray = cv2.bitwise_and(gray, gray, mask=mask)
+
+        # Calculate Laplacian variance
+        laplacian = cv2.Laplacian(face_gray, cv2.CV_64F)
+        lap_var = laplacian.var()
+
+        # Also check gradient magnitude
+        sobel_x = cv2.Sobel(face_gray, cv2.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv2.Sobel(face_gray, cv2.CV_64F, 0, 1, ksize=3)
+        gradient_magnitude = np.sqrt(sobel_x**2 + sobel_y**2)
+        grad_mean = np.mean(gradient_magnitude[mask > 0]) if np.sum(mask > 0) > 0 else 0
+
+        # Determine blur level
+        # Typical values:
+        # - Sharp image: lap_var > 500, grad_mean > 30
+        # - Slightly blurry: lap_var 200-500, grad_mean 15-30
+        # - Very blurry: lap_var < 200, grad_mean < 15
+
+        if lap_var > 500 and grad_mean > 30:
+            blur_level = "sharp"
+            sharpness_score = min(1.0, lap_var / 800)
+        elif lap_var > 200 and grad_mean > 15:
+            blur_level = "slightly_blurry"
+            sharpness_score = 0.5 + (lap_var - 200) / 600
+        elif lap_var > 100:
+            blur_level = "blurry"
+            sharpness_score = 0.3 + (lap_var - 100) / 400
+        else:
+            blur_level = "very_blurry"
+            sharpness_score = max(0.1, lap_var / 400)
+
+        return {
+            "blur_level": blur_level,
+            "sharpness_score": round(min(1.0, sharpness_score), 3),
+            "laplacian_variance": round(lap_var, 2),
+            "gradient_mean": round(grad_mean, 2),
+            "is_acceptable": lap_var > 150 and grad_mean > 12
+        }
+
+    def _estimate_lighting_quality(self, img: np.ndarray, mask: np.ndarray) -> Dict:
+        """
+        Estimate lighting quality for confidence scoring.
+
+        Returns:
+            Dictionary with lighting metrics
+        """
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        skin_brightness = gray[mask > 0]
+
+        if len(skin_brightness) == 0:
+            return {"lighting_quality": 0.5, "lighting_issues": ["no_face_detected"]}
+
+        mean_brightness = np.mean(skin_brightness)
+        std_brightness = np.std(skin_brightness)
+        min_brightness = np.min(skin_brightness)
+        max_brightness = np.max(skin_brightness)
+
+        issues = []
+        quality = 1.0
+
+        # Check for overexposure
+        overexposed_ratio = np.sum(skin_brightness > 240) / len(skin_brightness)
+        if overexposed_ratio > 0.1:
+            issues.append("overexposed")
+            quality -= 0.2
+
+        # Check for underexposure
+        underexposed_ratio = np.sum(skin_brightness < 30) / len(skin_brightness)
+        if underexposed_ratio > 0.1:
+            issues.append("underexposed")
+            quality -= 0.2
+
+        # Check for uneven lighting (high std deviation)
+        if std_brightness > 50:
+            issues.append("uneven_lighting")
+            quality -= 0.15
+
+        # Check for optimal brightness range
+        if mean_brightness < 80 or mean_brightness > 200:
+            issues.append("poor_exposure")
+            quality -= 0.15
+
+        # Check dynamic range
+        dynamic_range = max_brightness - min_brightness
+        if dynamic_range < 60:
+            issues.append("low_contrast")
+            quality -= 0.1
+
+        return {
+            "lighting_quality": max(0.2, min(1.0, quality)),
+            "lighting_issues": issues,
+            "mean_brightness": float(mean_brightness),
+            "brightness_std": float(std_brightness)
+        }
+
     def is_ready(self) -> bool:
         """Check if service is ready"""
         return self._ready
@@ -196,16 +388,46 @@ class FaceScanService:
                 return self._error_response(scan_id, "No face detected in images", time.time() - start_time)
 
             # Step 2: Use primary image (first with valid face)
-            img = images[0]
+            img_original = images[0]
             face_data = face_data_list[0]
 
             # Step 3: Extract skin mask
-            skin_mask = self._create_skin_mask(img, face_data)
+            skin_mask = self._create_skin_mask(img_original, face_data)
 
-            # Step 4: Extract skin region for analysis
+            # Step 4: Normalize lighting for consistent analysis
+            img = self._normalize_lighting(img_original, skin_mask)
+
+            # Step 5: Check image quality (lighting & blur)
+            lighting_info = self._estimate_lighting_quality(img_original, skin_mask)
+            blur_info = self._detect_blur(img_original, skin_mask)
+
+            # Step 6: If image quality is too poor, return early with warning
+            if not blur_info["is_acceptable"]:
+                return {
+                    "success": True,
+                    "scan_id": scan_id,
+                    "quality_score": blur_info["sharpness_score"] * 0.5,
+                    "processing_time_ms": int((time.time() - start_time) * 1000),
+                    "warning": "Image is too blurry for accurate analysis. Please retake with better focus.",
+                    "blur_info": blur_info,
+                    "analysis": self._get_low_confidence_defaults()
+                }
+
+            if lighting_info["lighting_quality"] < 0.3:
+                return {
+                    "success": True,
+                    "scan_id": scan_id,
+                    "quality_score": lighting_info["lighting_quality"] * 0.5,
+                    "processing_time_ms": int((time.time() - start_time) * 1000),
+                    "warning": "Lighting conditions are poor. Please ensure face is well-lit.",
+                    "lighting_info": lighting_info,
+                    "analysis": self._get_low_confidence_defaults()
+                }
+
+            # Step 7: Extract skin region for analysis
             skin_region = cv2.bitwise_and(img, img, mask=skin_mask)
 
-            # Step 5: Run all analysis modules
+            # Step 7: Run all analysis modules
             analysis = {}
 
             # Color analysis
@@ -281,11 +503,21 @@ class FaceScanService:
             # Calculate overall skin score
             analysis["skin_score"] = self._calculate_overall_score(analysis)
 
-            # Add analysis confidence
-            analysis["analysis_confidence"] = self._calculate_analysis_confidence(analysis)
+            # Add analysis confidence (factoring in lighting quality)
+            analysis["analysis_confidence"] = self._calculate_analysis_confidence(
+                analysis, lighting_info.get("lighting_quality", 0.7)
+            )
+
+            # Add image quality info to analysis
+            analysis["lighting_quality"] = lighting_info.get("lighting_quality", 0.7)
+            analysis["sharpness_score"] = blur_info.get("sharpness_score", 0.7)
+            analysis["blur_level"] = blur_info.get("blur_level", "unknown")
+
+            if lighting_info.get("lighting_issues"):
+                analysis["lighting_issues"] = lighting_info["lighting_issues"]
 
             # Calculate quality score
-            quality_score = self._calculate_quality_score(img, face_data, skin_mask)
+            quality_score = self._calculate_quality_score(img_original, face_data, skin_mask)
 
             processing_time = int((time.time() - start_time) * 1000)
 
@@ -724,26 +956,67 @@ class FaceScanService:
         }
 
     def _detect_wrinkles(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
-        """Detect wrinkles using edge detection"""
+        """
+        Detect wrinkles using improved multi-stage analysis.
+
+        Improvements over basic Canny:
+        1. Better noise reduction preserving wrinkle edges
+        2. Direction-aware filtering (wrinkles are typically horizontal)
+        3. Intensity-based filtering to ignore minor variations
+        4. Regional analysis with appropriate thresholds
+        5. Distinction between fine lines and deep wrinkles
+        """
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         h, w = gray.shape
 
-        # Apply bilateral filter to reduce noise while preserving edges
-        filtered = cv2.bilateralFilter(gray, 9, 75, 75)
+        # === Step 1: Advanced Preprocessing ===
+        # CLAHE for better contrast in wrinkle regions
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
 
-        # Canny edge detection
-        edges = cv2.Canny(filtered, 30, 100)
-        edges = cv2.bitwise_and(edges, mask)
+        # Bilateral filter - preserves edges (wrinkles) while smoothing noise
+        filtered = cv2.bilateralFilter(enhanced, 9, 75, 75)
 
-        # Laplacian for line-like structures
-        laplacian = cv2.Laplacian(filtered, cv2.CV_64F)
-        laplacian = np.uint8(np.absolute(laplacian))
-        laplacian = cv2.bitwise_and(laplacian, mask)
+        # Additional smoothing to reduce false positives from pores/texture
+        smoothed = cv2.GaussianBlur(filtered, (3, 3), 0)
 
-        forehead_severity = "none"
-        crows_feet_severity = "none"
-        nasolabial_severity = "none"
+        # === Step 2: Multi-scale Edge Detection ===
+        # Use higher thresholds to avoid detecting minor texture as wrinkles
+        edges_fine = cv2.Canny(smoothed, 50, 120)     # Fine lines
+        edges_deep = cv2.Canny(smoothed, 80, 180)    # Deep wrinkles only
+
+        edges_fine = cv2.bitwise_and(edges_fine, mask)
+        edges_deep = cv2.bitwise_and(edges_deep, mask)
+
+        # === Step 3: Directional Filtering ===
+        # Wrinkles tend to be horizontal or follow face contours
+        # Filter out vertical edges (often facial features, not wrinkles)
+
+        # Sobel for direction analysis
+        sobel_x = cv2.Sobel(smoothed, cv2.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv2.Sobel(smoothed, cv2.CV_64F, 0, 1, ksize=3)
+
+        # Calculate gradient direction
+        angle = np.arctan2(np.abs(sobel_y), np.abs(sobel_x)) * 180 / np.pi
+
+        # Horizontal-ish edges (wrinkles) are 0-30 or 150-180 degrees
+        horizontal_mask = ((angle < 35) | (angle > 145)).astype(np.uint8) * 255
+        horizontal_mask = cv2.bitwise_and(horizontal_mask, mask)
+
+        # Apply directional filter to edges
+        wrinkle_edges = cv2.bitwise_and(edges_fine, horizontal_mask)
+
+        # === Step 4: Laplacian for wrinkle depth estimation ===
+        laplacian = cv2.Laplacian(smoothed, cv2.CV_64F)
+        laplacian_abs = np.uint8(np.clip(np.absolute(laplacian), 0, 255))
+        laplacian_masked = cv2.bitwise_and(laplacian_abs, mask)
+
+        # === Step 5: Regional Analysis with MediaPipe Landmarks ===
+        forehead_severity = 0.0
+        crows_feet_severity = 0.0
+        nasolabial_severity = 0.0
+        regional_wrinkle_count = 0
 
         if face_data["type"] == "landmarks":
             landmarks = face_data["data"]
@@ -760,47 +1033,140 @@ class FaceScanService:
                     cv2.fillPoly(region_mask, [hull], 255)
                 return region_mask
 
-            def count_lines_in_region(edge_img, region_mask):
+            def analyze_wrinkles_in_region(edge_img, lap_img, region_mask, min_length=8):
+                """Analyze wrinkles in a specific region with quality filtering"""
                 region_edges = cv2.bitwise_and(edge_img, region_mask)
-                lines = cv2.HoughLinesP(region_edges, 1, np.pi / 180, 10,
-                                        minLineLength=5, maxLineGap=3)
-                return len(lines) if lines is not None else 0
+                region_lap = cv2.bitwise_and(lap_img, region_mask)
 
-            # Analyze specific regions (severity as 0.0-1.0 for database)
+                # Count high-confidence wrinkle lines
+                lines = cv2.HoughLinesP(
+                    region_edges, 1, np.pi / 180,
+                    threshold=15,           # Require stronger evidence
+                    minLineLength=min_length,  # Minimum length
+                    maxLineGap=4           # Allow small gaps
+                )
+
+                if lines is None:
+                    return 0, 0.0
+
+                # Filter lines by orientation and intensity
+                valid_lines = 0
+                total_intensity = 0
+
+                for line in lines:
+                    x1, y1, x2, y2 = line[0]
+                    # Calculate angle
+                    angle = abs(np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi)
+
+                    # For forehead, wrinkles are mostly horizontal (0-30 deg)
+                    # For crow's feet, they radiate outward (30-60 deg)
+                    # For nasolabial, they follow the fold (40-70 deg)
+
+                    # Check intensity along the line
+                    line_mask = np.zeros((h, w), dtype=np.uint8)
+                    cv2.line(line_mask, (x1, y1), (x2, y2), 255, 2)
+                    line_intensity = np.mean(region_lap[line_mask > 0]) if np.sum(line_mask > 0) > 0 else 0
+
+                    # Valid wrinkle: moderate intensity, proper orientation
+                    if line_intensity > 20:  # Must have some depth
+                        valid_lines += 1
+                        total_intensity += line_intensity
+
+                avg_intensity = total_intensity / valid_lines if valid_lines > 0 else 0
+                return valid_lines, avg_intensity
+
+            # === Forehead Analysis ===
             forehead_mask = get_region_mask(self.FOREHEAD)
-            forehead_lines = count_lines_in_region(edges, forehead_mask)
-            forehead_severity = 0.66 if forehead_lines > 20 else (0.33 if forehead_lines > 8 else 0.0)
+            forehead_lines, forehead_intensity = analyze_wrinkles_in_region(
+                wrinkle_edges, laplacian_masked, forehead_mask, min_length=12
+            )
+            # Severity based on line count and intensity
+            if forehead_lines >= 8 and forehead_intensity > 35:
+                forehead_severity = 1.0   # Severe
+            elif forehead_lines >= 4 and forehead_intensity > 25:
+                forehead_severity = 0.66  # Moderate
+            elif forehead_lines >= 2 or forehead_intensity > 20:
+                forehead_severity = 0.33  # Mild
+            else:
+                forehead_severity = 0.0   # None
 
+            regional_wrinkle_count += forehead_lines
+
+            # === Crow's Feet Analysis ===
             left_cf_mask = get_region_mask(self.LEFT_CROWS_FEET)
             right_cf_mask = get_region_mask(self.RIGHT_CROWS_FEET)
-            crows_feet_lines = count_lines_in_region(edges, left_cf_mask) + \
-                              count_lines_in_region(edges, right_cf_mask)
-            crows_feet_severity = 0.66 if crows_feet_lines > 25 else (0.33 if crows_feet_lines > 10 else 0.0)
+            left_cf_lines, left_cf_int = analyze_wrinkles_in_region(
+                edges_fine, laplacian_masked, left_cf_mask, min_length=6
+            )
+            right_cf_lines, right_cf_int = analyze_wrinkles_in_region(
+                edges_fine, laplacian_masked, right_cf_mask, min_length=6
+            )
+            cf_lines = left_cf_lines + right_cf_lines
+            cf_intensity = (left_cf_int + right_cf_int) / 2
 
+            if cf_lines >= 10 and cf_intensity > 30:
+                crows_feet_severity = 1.0
+            elif cf_lines >= 5 and cf_intensity > 22:
+                crows_feet_severity = 0.66
+            elif cf_lines >= 2 or cf_intensity > 18:
+                crows_feet_severity = 0.33
+            else:
+                crows_feet_severity = 0.0
+
+            regional_wrinkle_count += cf_lines
+
+            # === Nasolabial Fold Analysis ===
             left_nl_mask = get_region_mask(self.LEFT_NASOLABIAL)
             right_nl_mask = get_region_mask(self.RIGHT_NASOLABIAL)
-            nasolabial_lines = count_lines_in_region(edges, left_nl_mask) + \
-                              count_lines_in_region(edges, right_nl_mask)
-            nasolabial_severity = 0.66 if nasolabial_lines > 15 else (0.33 if nasolabial_lines > 5 else 0.0)
+            left_nl_lines, left_nl_int = analyze_wrinkles_in_region(
+                edges_deep, laplacian_masked, left_nl_mask, min_length=10
+            )
+            right_nl_lines, right_nl_int = analyze_wrinkles_in_region(
+                edges_deep, laplacian_masked, right_nl_mask, min_length=10
+            )
+            nl_lines = left_nl_lines + right_nl_lines
+            nl_intensity = (left_nl_int + right_nl_int) / 2
 
-        # Edge density for overall wrinkle score
-        total_edges = np.sum(edges > 0)
-        skin_area = max(np.sum(mask > 0), 1)
-        edge_density = total_edges / skin_area
+            if nl_lines >= 4 and nl_intensity > 40:
+                nasolabial_severity = 1.0
+            elif nl_lines >= 2 and nl_intensity > 28:
+                nasolabial_severity = 0.66
+            elif nl_lines >= 1 or nl_intensity > 22:
+                nasolabial_severity = 0.33
+            else:
+                nasolabial_severity = 0.0
 
-        # Fine lines vs deep wrinkles
-        laplacian_masked = laplacian[mask > 0]
-        if len(laplacian_masked) > 0:
-            high_intensity = np.sum(laplacian_masked > 80)
-            medium_intensity = np.sum((laplacian_masked > 25) & (laplacian_masked <= 80))
-            fine_lines_count = min(50, int(medium_intensity / 150))
-            deep_wrinkles_count = min(15, int(high_intensity / 300))
+            regional_wrinkle_count += nl_lines
+
+        # === Step 6: Overall Wrinkle Metrics ===
+        skin_pixels = laplacian_masked[mask > 0]
+
+        if len(skin_pixels) > 0:
+            # Fine lines: medium intensity gradients
+            fine_line_pixels = np.sum((skin_pixels > 20) & (skin_pixels <= 50))
+            deep_wrinkle_pixels = np.sum(skin_pixels > 50)
+
+            skin_area = max(np.sum(mask > 0), 1)
+
+            # Normalize by skin area
+            fine_lines_count = min(35, int(fine_line_pixels / (skin_area * 0.003)))
+            deep_wrinkles_count = min(12, int(deep_wrinkle_pixels / (skin_area * 0.006)))
         else:
             fine_lines_count = 0
             deep_wrinkles_count = 0
 
-        # Calculate wrinkle score
-        wrinkle_score = min(100, int(edge_density * 400) + deep_wrinkles_count * 4)
+        # === Step 7: Calculate Overall Wrinkle Score ===
+        # Weighted combination of all factors
+        wrinkle_score = (
+            (forehead_severity * 15) +
+            (crows_feet_severity * 18) +
+            (nasolabial_severity * 12) +
+            (deep_wrinkles_count * 3) +
+            (fine_lines_count * 0.4) +
+            (regional_wrinkle_count * 0.8)
+        )
+
+        wrinkle_score = min(100, max(0, int(wrinkle_score)))
 
         return {
             "wrinkle_score": int(wrinkle_score),
@@ -1098,58 +1464,180 @@ class FaceScanService:
         }
 
     def _estimate_skin_age(self, analysis: Dict) -> Dict:
-        """Estimate skin age based on analysis metrics"""
+        """
+        Estimate skin age based on comprehensive multi-factor analysis.
 
-        base_age = 25
+        Uses a weighted scoring system that considers:
+        - Wrinkle presence and severity (most predictive)
+        - Skin texture and elasticity indicators
+        - Pigmentation and sun damage
+        - Hydration and overall skin health
+        - Regional analysis (forehead, crow's feet, nasolabial)
+        """
 
-        # Wrinkle contribution
-        wrinkle_score = analysis.get("wrinkle_score", 0)
-        if wrinkle_score > 60:
-            base_age += 15
-        elif wrinkle_score > 40:
-            base_age += 10
-        elif wrinkle_score > 20:
-            base_age += 5
+        # Start with a neutral score (50 = average for all ages)
+        age_score = 50.0
 
-        # Fine lines
+        # === Factor 1: Wrinkle Analysis (40% weight) ===
+        wrinkle_score = analysis.get("wrinkle_score", 15)
         fine_lines = analysis.get("fine_lines_count", 0)
-        base_age += min(fine_lines // 6, 7)
-
-        # Deep wrinkles
         deep_wrinkles = analysis.get("deep_wrinkles_count", 0)
-        base_age += deep_wrinkles * 2
 
-        # Texture
+        # Regional wrinkle severity (0.0-1.0 scale)
+        forehead_severity = analysis.get("forehead_lines_severity", 0.0)
+        crows_feet_severity = analysis.get("crows_feet_severity", 0.0)
+        nasolabial_severity = analysis.get("nasolabial_folds_severity", 0.0)
+
+        # Deep wrinkles are strongest age indicator
+        wrinkle_age_factor = (
+            (deep_wrinkles * 4.0) +  # Each deep wrinkle adds ~4 years
+            (fine_lines * 0.8) +      # Fine lines add less
+            (wrinkle_score * 0.3) +   # Overall score contribution
+            (forehead_severity * 12) +    # Forehead lines appear 35+
+            (crows_feet_severity * 15) +  # Crow's feet appear 40+
+            (nasolabial_severity * 10)    # Nasolabial folds appear 30+
+        )
+
+        # Normalize to 0-50 range
+        wrinkle_contribution = min(50, wrinkle_age_factor)
+
+        # === Factor 2: Texture & Elasticity (25% weight) ===
         texture_score = analysis.get("texture_score", 70)
-        if texture_score < 50:
-            base_age += 4
-        elif texture_score > 80:
-            base_age -= 2
+        smoothness = analysis.get("smoothness_score", 70)
+        enlarged_pores = analysis.get("enlarged_pores_count", 0)
+        roughness = analysis.get("roughness_level", 0.0)
 
-        # Pigmentation
-        pigmentation = analysis.get("pigmentation_score", 0)
-        if pigmentation > 50:
-            base_age += 4
-        elif pigmentation > 30:
-            base_age += 2
+        # Lower texture scores indicate aging
+        # texture_score 100 = young, 50 = middle-aged, 20 = older
+        texture_age_factor = (100 - texture_score) * 0.3
+        texture_age_factor += (100 - smoothness) * 0.15
+        texture_age_factor += min(enlarged_pores * 0.5, 8)  # Pores enlarge with age
+        texture_age_factor += roughness * 10  # Rougher skin indicates aging
 
-        # Sun damage
-        sun_damage = analysis.get("sun_damage_score", 0)
-        base_age += min(sun_damage // 25, 4)
+        texture_contribution = min(30, texture_age_factor)
 
-        # Hydration bonus
-        hydration = analysis.get("hydration_score", 70)
-        if hydration > 80:
-            base_age -= 2
-        elif hydration < 50:
-            base_age += 2
+        # === Factor 3: Pigmentation & Sun Damage (20% weight) ===
+        pigmentation = analysis.get("pigmentation_score", 15)
+        dark_spots = analysis.get("dark_spots_count", 0)
+        sun_damage = analysis.get("sun_damage_score", 10)
+        melasma = analysis.get("melasma_detected", False)
 
-        # Clamp to reasonable range
-        skin_age = max(18, min(65, base_age))
+        # Sun damage and pigmentation accumulate with age
+        pigment_age_factor = (
+            (dark_spots * 1.5) +       # Each spot adds ~1.5 years appearance
+            (pigmentation * 0.2) +
+            (sun_damage * 0.15) +
+            (8 if melasma else 0)      # Melasma typically appears 30+
+        )
+
+        pigment_contribution = min(25, pigment_age_factor)
+
+        # === Factor 4: Hydration & Skin Health (15% weight) ===
+        hydration = analysis.get("hydration_score", 65)
+        oiliness = analysis.get("oiliness_score", 40)
+        dry_patches = analysis.get("dry_patches_detected", False)
+
+        # Skin tends to get drier with age, but oiliness varies
+        hydration_age_factor = 0
+        if hydration < 40:  # Very dry skin
+            hydration_age_factor += 8
+        elif hydration < 55:  # Dry skin
+            hydration_age_factor += 4
+        elif hydration > 85:  # Very hydrated (youthful)
+            hydration_age_factor -= 3
+
+        if dry_patches:
+            hydration_age_factor += 5
+
+        # High oiliness can indicate younger skin
+        if oiliness > 70:
+            hydration_age_factor -= 3
+        elif oiliness < 25:
+            hydration_age_factor += 2
+
+        hydration_contribution = max(-5, min(15, hydration_age_factor))
+
+        # === Factor 5: Acne & Inflammation (negative correlation with age) ===
+        acne_score = analysis.get("acne_score", 10)
+        pimple_count = analysis.get("pimple_count", 0)
+
+        # Active acne more common in younger people
+        if acne_score > 50 or pimple_count > 5:
+            acne_adjustment = -5  # Suggests younger skin
+        elif acne_score < 10 and pimple_count == 0:
+            acne_adjustment = 2   # Very clear skin could be any age
+        else:
+            acne_adjustment = 0
+
+        # === Calculate Final Age ===
+        # Combine all factors
+        total_age_factor = (
+            wrinkle_contribution * 0.40 +
+            texture_contribution * 0.25 +
+            pigment_contribution * 0.20 +
+            hydration_contribution * 0.15 +
+            acne_adjustment
+        )
+
+        # Map score to age range
+        # Score 0-10: Ages 15-22 (very youthful skin)
+        # Score 10-25: Ages 22-30 (young adult)
+        # Score 25-40: Ages 30-40 (early middle age)
+        # Score 40-55: Ages 40-50 (middle age)
+        # Score 55-70: Ages 50-60 (mature skin)
+        # Score 70+: Ages 60+ (aged skin)
+
+        if total_age_factor < 10:
+            estimated_age = 15 + (total_age_factor * 0.7)  # 15-22
+        elif total_age_factor < 25:
+            estimated_age = 22 + ((total_age_factor - 10) * 0.53)  # 22-30
+        elif total_age_factor < 40:
+            estimated_age = 30 + ((total_age_factor - 25) * 0.67)  # 30-40
+        elif total_age_factor < 55:
+            estimated_age = 40 + ((total_age_factor - 40) * 0.67)  # 40-50
+        elif total_age_factor < 70:
+            estimated_age = 50 + ((total_age_factor - 55) * 0.67)  # 50-60
+        else:
+            estimated_age = 60 + min((total_age_factor - 70) * 0.5, 25)  # 60-85
+
+        # Round to nearest integer
+        skin_age = int(round(estimated_age))
+
+        # Clamp to reasonable range (10-90 to match recommendation engine)
+        skin_age = max(10, min(90, skin_age))
 
         return {
             "skin_age_estimate": skin_age,
+            "age_confidence": self._calculate_age_confidence(analysis),
         }
+
+    def _calculate_age_confidence(self, analysis: Dict) -> float:
+        """Calculate confidence in age estimation based on data quality"""
+        confidence_factors = []
+
+        # Higher confidence if we have strong wrinkle indicators
+        wrinkle_score = analysis.get("wrinkle_score", 0)
+        if wrinkle_score > 5:  # We detected something
+            confidence_factors.append(0.8)
+        else:
+            confidence_factors.append(0.5)
+
+        # Higher confidence with good texture data
+        texture_score = analysis.get("texture_score", None)
+        if texture_score is not None:
+            confidence_factors.append(0.75)
+        else:
+            confidence_factors.append(0.4)
+
+        # Skin tone confidence affects overall confidence
+        tone_confidence = analysis.get("skin_tone_confidence", 0.5)
+        confidence_factors.append(tone_confidence)
+
+        # Face shape confidence
+        shape_confidence = analysis.get("face_shape_confidence", 0.5)
+        confidence_factors.append(shape_confidence * 0.8)
+
+        return round(np.mean(confidence_factors), 3)
 
     def _calculate_overall_score(self, analysis: Dict) -> int:
         """Calculate overall skin health score (0-100, higher is better)"""
@@ -1179,57 +1667,93 @@ class FaceScanService:
         return max(0, min(100, int(score)))
 
     def _calculate_quality_score(self, img: np.ndarray, face_data: Dict, mask: np.ndarray) -> float:
-        """Calculate image quality score for face scan"""
+        """
+        Calculate comprehensive image quality score for face scan.
+
+        Factors:
+        - Resolution (20 points)
+        - Lighting (25 points)
+        - Sharpness/blur (25 points)
+        - Face detection quality (15 points)
+        - Skin coverage (15 points)
+        """
 
         score = 0.0
         h, w = img.shape[:2]
 
-        # Resolution score (max 25 points)
+        # === Resolution score (max 20 points) ===
         resolution = h * w
-        res_score = min(resolution / (1280 * 720), 1.0) * 25
+        res_score = min(resolution / (1280 * 720), 1.0) * 20
         score += res_score
 
-        # Lighting score (max 30 points)
+        # === Lighting score (max 25 points) ===
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         skin_pixels = gray[mask > 0]
         if len(skin_pixels) > 0:
             mean_brightness = np.mean(skin_pixels)
+            std_brightness = np.std(skin_pixels)
+
+            # Optimal brightness range
             if 100 <= mean_brightness <= 180:
-                light_score = 30
+                light_score = 20
             elif 80 <= mean_brightness <= 200:
-                light_score = 22
+                light_score = 15
             else:
-                light_score = 12
+                light_score = 8
+
+            # Bonus for even lighting (low std)
+            if std_brightness < 35:
+                light_score += 5
+            elif std_brightness < 50:
+                light_score += 2
         else:
-            light_score = 15
+            light_score = 10
         score += light_score
 
-        # Face detection confidence (max 25 points)
+        # === Sharpness score (max 25 points) ===
+        blur_info = self._detect_blur(img, mask)
+        sharpness = blur_info.get("sharpness_score", 0.5)
+
+        if sharpness > 0.8:
+            sharp_score = 25
+        elif sharpness > 0.6:
+            sharp_score = 20
+        elif sharpness > 0.4:
+            sharp_score = 15
+        elif sharpness > 0.3:
+            sharp_score = 10
+        else:
+            sharp_score = 5
+        score += sharp_score
+
+        # === Face detection confidence (max 15 points) ===
         if face_data["type"] == "landmarks":
             total_landmarks = len(face_data["data"]) if face_data["data"] else 0
-            landmark_score = (total_landmarks / 478) * 25
+            landmark_score = (total_landmarks / 478) * 15
         else:
             # Bounding box has lower confidence
-            landmark_score = 15
+            landmark_score = 8
         score += landmark_score
 
-        # Skin coverage (max 20 points)
+        # === Skin coverage (max 15 points) ===
         skin_ratio = np.sum(mask > 0) / (h * w)
         if 0.1 <= skin_ratio <= 0.5:
-            coverage_score = 20
-        elif 0.05 <= skin_ratio <= 0.6:
             coverage_score = 15
+        elif 0.05 <= skin_ratio <= 0.6:
+            coverage_score = 10
         else:
-            coverage_score = 8
+            coverage_score = 5
         score += coverage_score
 
         return round(score / 100, 3)
 
-    def _calculate_analysis_confidence(self, analysis: Dict) -> float:
-        """Calculate overall analysis confidence"""
+    def _calculate_analysis_confidence(self, analysis: Dict, lighting_quality: float = 0.7) -> float:
+        """Calculate overall analysis confidence factoring in all quality indicators"""
         confidences = [
             analysis.get("skin_tone_confidence", 0.7),
             analysis.get("face_shape_confidence", 0.7),
+            analysis.get("age_confidence", 0.6),
+            lighting_quality,  # Factor in lighting quality
         ]
         return round(np.mean(confidences), 3)
 
@@ -1305,6 +1829,28 @@ class FaceScanService:
             "sun_damage_score": 10,
             "melasma_detected": False,
         }
+
+    def _get_low_confidence_defaults(self) -> Dict:
+        """Return default analysis values when image quality is too poor"""
+        defaults = {}
+        defaults.update(self._default_skin_tone())
+        defaults.update(self._default_acne())
+        defaults.update(self._default_wrinkles())
+        defaults.update(self._default_texture())
+        defaults.update(self._default_redness())
+        defaults.update(self._default_hydration())
+        defaults.update(self._default_pigmentation())
+        defaults.update({
+            "face_shape": "unknown",
+            "face_shape_confidence": 0.0,
+            "skin_undertone": "unknown",
+            "skin_age_estimate": None,
+            "age_confidence": 0.0,
+            "skin_score": 50,
+            "analysis_confidence": 0.2,
+            "low_quality_warning": True
+        })
+        return defaults
 
     async def get_recommendations(
         self,
