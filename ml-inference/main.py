@@ -103,7 +103,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "ml-inference",
-        "version": "1.1.2",  # v1.1.2: Fix numpy type compatibility (remove deprecated bool8)
+        "version": "1.1.3",  # v1.1.3: Relax image quality thresholds for better webcam support
         "models": {
             "pose_estimation": body_scan_service.is_ready(),
             "size_recommendation": size_rec_service.is_ready(),

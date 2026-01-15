@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 1.2.0 (Face Scan with 3 angles)
+ * Version: 1.3.0 (Skin Summary & Improved Analysis)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 1.2.0 - Face Scan with 3 angles');
+  console.log('[Flash AI Widget] Version 1.3.0 - Skin Summary & Improved Analysis');
 
   // ==========================================================================
   // Main Widget Class
@@ -510,6 +510,17 @@
                 <div class="flashai-vto-detail-row">
                   <span>Hydration Level:</span>
                   <strong id="flashai-vto-hydration-level">--</strong>
+                </div>
+              </div>
+
+              <!-- Customer-Friendly Skin Summary -->
+              <div class="flashai-vto-skin-summary" id="flashai-vto-skin-summary">
+                <h3>Your Skin Summary</h3>
+                <div class="flashai-vto-summary-concerns" id="flashai-vto-summary-concerns">
+                  <!-- Dynamically populated -->
+                </div>
+                <div class="flashai-vto-summary-tips" id="flashai-vto-summary-tips">
+                  <!-- Dynamically populated -->
                 </div>
               </div>
 
@@ -1206,6 +1217,9 @@
         if (undertoneElem) undertoneElem.textContent = this.capitalizeFirst(scan.analysis.skin_undertone) || 'N/A';
         if (ageElem) ageElem.textContent = scan.analysis.skin_age_estimate ? `~${scan.analysis.skin_age_estimate} years` : 'N/A';
         if (hydrationElem) hydrationElem.textContent = this.capitalizeFirst(scan.analysis.hydration_level) || 'N/A';
+
+        // Generate customer-friendly skin summary
+        this.generateSkinSummary(scan.analysis);
       }
 
       // Load product recommendations
@@ -1310,6 +1324,153 @@
           }
         });
       });
+    }
+
+    generateSkinSummary(analysis) {
+      console.log('[SkinSummary] Generating summary for:', analysis);
+
+      const concernsContainer = document.getElementById('flashai-vto-summary-concerns');
+      const tipsContainer = document.getElementById('flashai-vto-summary-tips');
+
+      console.log('[SkinSummary] Containers found:', { concerns: !!concernsContainer, tips: !!tipsContainer });
+
+      if (!concernsContainer || !tipsContainer) {
+        console.warn('[SkinSummary] Container elements not found!');
+        return;
+      }
+
+      // Analyze and prioritize concerns based on scores
+      const concerns = [];
+      const tips = [];
+
+      // Check each metric and create customer-friendly messages
+      // Pigmentation
+      if (analysis.pigmentation_score > 40) {
+        concerns.push({
+          icon: '☀️',
+          title: 'Sun Damage & Dark Spots',
+          severity: analysis.pigmentation_score > 60 ? 'high' : 'moderate',
+          description: analysis.dark_spots_count > 5
+            ? `We detected ${analysis.dark_spots_count} dark spots that could benefit from brightening care.`
+            : 'Some uneven skin tone that brightening products can help improve.'
+        });
+        tips.push('Use SPF 30+ daily to prevent further sun damage');
+        tips.push('Look for Vitamin C or Niacinamide to brighten dark spots');
+      }
+
+      // Acne
+      if (analysis.acne_score > 30) {
+        const blemishCount = (analysis.whitehead_count || 0) + (analysis.blackhead_count || 0) + (analysis.pimple_count || 0);
+        concerns.push({
+          icon: '🎯',
+          title: 'Blemishes & Breakouts',
+          severity: analysis.acne_score > 50 ? 'high' : 'moderate',
+          description: blemishCount > 0
+            ? `${blemishCount} active blemishes detected. Targeted treatment can help clear your skin.`
+            : 'Some congestion detected that gentle exfoliation can help with.'
+        });
+        tips.push('Try Salicylic Acid or Tea Tree for blemish control');
+        tips.push('Keep skin clean but avoid over-washing');
+      }
+
+      // Wrinkles & Fine Lines
+      if (analysis.wrinkle_score > 25) {
+        concerns.push({
+          icon: '✨',
+          title: 'Fine Lines & Wrinkles',
+          severity: analysis.wrinkle_score > 50 ? 'high' : 'moderate',
+          description: analysis.deep_wrinkles_count > 0
+            ? `Some expression lines and ${analysis.deep_wrinkles_count} deeper wrinkles detected.`
+            : 'Early signs of fine lines that anti-aging care can address.'
+        });
+        tips.push('Retinol is excellent for reducing fine lines');
+        tips.push('Hydration helps plump skin and minimize wrinkle appearance');
+      }
+
+      // Texture
+      if (analysis.texture_score < 60) {
+        concerns.push({
+          icon: '💎',
+          title: 'Uneven Texture',
+          severity: analysis.texture_score < 40 ? 'high' : 'moderate',
+          description: analysis.enlarged_pores_count > 10
+            ? `Enlarged pores and rough texture detected. Exfoliation can help smooth your skin.`
+            : 'Some texture irregularities that gentle exfoliation can improve.'
+        });
+        tips.push('AHA/BHA exfoliants help smooth skin texture');
+        tips.push('Niacinamide helps minimize pore appearance');
+      }
+
+      // Redness & Sensitivity
+      if (analysis.redness_score > 35) {
+        concerns.push({
+          icon: '🌸',
+          title: 'Redness & Sensitivity',
+          severity: analysis.redness_score > 55 ? 'high' : 'moderate',
+          description: analysis.rosacea_indicators
+            ? 'Signs of persistent redness detected. Gentle, calming products are recommended.'
+            : 'Some skin sensitivity and redness that soothing ingredients can help calm.'
+        });
+        tips.push('Centella (Cica) and Aloe are great for calming redness');
+        tips.push('Avoid harsh ingredients and fragrance');
+      }
+
+      // Hydration
+      const hydrationLevel = (analysis.hydration_level || '').toLowerCase();
+      if (hydrationLevel === 'dry' || analysis.hydration_score < 45) {
+        concerns.push({
+          icon: '💧',
+          title: 'Dehydrated Skin',
+          severity: analysis.hydration_score < 35 ? 'high' : 'moderate',
+          description: analysis.dry_patches_detected
+            ? 'Dry patches and dehydration detected. Your skin is craving moisture!'
+            : 'Your skin could use more hydration for a healthy, plump appearance.'
+        });
+        tips.push('Hyaluronic Acid provides deep, long-lasting hydration');
+        tips.push('Use a rich moisturizer, especially at night');
+      } else if (hydrationLevel === 'oily' || analysis.oiliness_score > 65) {
+        concerns.push({
+          icon: '🧴',
+          title: 'Excess Oil',
+          severity: analysis.oiliness_score > 80 ? 'high' : 'moderate',
+          description: 'Your skin produces more oil, especially in the T-zone. Oil-control products can help balance.'
+        });
+        tips.push('Use oil-free, non-comedogenic products');
+        tips.push('Niacinamide helps regulate oil production');
+      }
+
+      // If skin is in good condition
+      if (concerns.length === 0) {
+        concerns.push({
+          icon: '✅',
+          title: 'Great Skin Health!',
+          severity: 'good',
+          description: 'Your skin looks healthy! Focus on maintaining with good skincare basics.'
+        });
+        tips.push('Continue with sun protection and hydration');
+        tips.push('A simple routine is best for healthy skin');
+      }
+
+      // Render concerns
+      concernsContainer.innerHTML = concerns.map(concern => `
+        <div class="flashai-vto-concern-card ${concern.severity}">
+          <div class="flashai-vto-concern-icon">${concern.icon}</div>
+          <div class="flashai-vto-concern-content">
+            <h4>${concern.title}</h4>
+            <p>${concern.description}</p>
+          </div>
+        </div>
+      `).join('');
+
+      // Render tips (top 3)
+      tipsContainer.innerHTML = `
+        <h4>💡 Skincare Tips for You</h4>
+        <ul>
+          ${tips.slice(0, 4).map(tip => `<li>${tip}</li>`).join('')}
+        </ul>
+      `;
+
+      console.log('[SkinSummary] Rendered', concerns.length, 'concerns and', tips.length, 'tips');
     }
 
     shopRecommendedProducts() {

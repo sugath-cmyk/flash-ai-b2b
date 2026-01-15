@@ -294,7 +294,8 @@ class FaceScanService:
             "sharpness_score": round(min(1.0, sharpness_score), 3),
             "laplacian_variance": float(lap_var),
             "gradient_mean": float(grad_mean),
-            "is_acceptable": bool(lap_var > 150 and grad_mean > 12)  # Convert numpy.bool to Python bool
+            # Relaxed thresholds: was lap_var > 150 and grad_mean > 12, now more lenient for webcams
+            "is_acceptable": bool(lap_var > 50 and grad_mean > 5)  # Convert numpy.bool to Python bool
         }
 
     def _estimate_lighting_quality(self, img: np.ndarray, mask: np.ndarray) -> Dict:
@@ -435,7 +436,8 @@ class FaceScanService:
                     "analysis": self._get_low_confidence_defaults()
                 })
 
-            if lighting_info["lighting_quality"] < 0.3:
+            # Relaxed threshold: was 0.3, now 0.15 to be more lenient with webcam images
+            if lighting_info["lighting_quality"] < 0.15:
                 return self._convert_to_python_types({
                     "success": True,
                     "scan_id": scan_id,
