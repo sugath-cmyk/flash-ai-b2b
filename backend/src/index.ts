@@ -68,7 +68,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.0.2', // Face scan widget display fix
+    version: '1.0.3', // Force rebuild with recommendation engine
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
