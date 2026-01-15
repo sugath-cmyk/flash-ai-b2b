@@ -242,11 +242,12 @@ export async function getProductRecommendations(scanId: string, storeId: string)
     throw new Error('Face scan not completed');
   }
 
-  // Get store products
+  // Get store products from extracted_products table
   const productsResult = await pool.query(
-    `SELECT product_id, title, description, product_type, tags, price, image_url, variants
-     FROM products
-     WHERE store_id = $1 AND status = 'active'
+    `SELECT external_id as product_id, title, description, product_type, tags, price,
+            images->0->>'src' as image_url, variants
+     FROM extracted_products
+     WHERE store_id = $1
      ORDER BY created_at DESC
      LIMIT 100`,
     [storeId]
