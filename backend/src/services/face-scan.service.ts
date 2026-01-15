@@ -235,28 +235,37 @@ export async function processFaceScan(scanId: string, files: Express.Multer.File
 
 // Get product recommendations based on face analysis
 export async function getProductRecommendations(scanId: string, storeId: string) {
-  // Get face analysis
-  const scan = await getFaceScan(scanId);
+  try {
+    // Get face analysis
+    const scan = await getFaceScan(scanId);
 
-  if (!scan || scan.status !== 'completed') {
-    throw new Error('Face scan not completed');
-  }
+    if (!scan || scan.status !== 'completed') {
+      console.log('Face scan not completed, returning empty recommendations');
+      return [];
+    }
 
-  // Get store products from extracted_products table
-  const productsResult = await pool.query(
-    `SELECT external_id as product_id, title, description, product_type, tags, price,
-            images->0->>'src' as image_url, variants
-     FROM extracted_products
-     WHERE store_id = $1
-     ORDER BY created_at DESC
-     LIMIT 100`,
-    [storeId]
-  );
+    // Get store products from extracted_products table
+    const productsResult = await pool.query(
+      `SELECT external_id as product_id, title, description, product_type, tags, price,
+              images->0->>'src' as image_url, variants
+       FROM extracted_products
+       WHERE store_id = $1
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [storeId]
+    );
 
-  const products = productsResult.rows;
+    const products = productsResult.rows;
+    console.log(`Found ${products.length} products for store ${storeId}`);
 
-  // Match products based on face analysis
-  const recommendations = matchProducts(scan, products);
+    if (products.length === 0) {
+      console.log('No products found, returning empty recommendations');
+      return [];
+    }
+
+    // Match products based on face analysis
+    const recommendations = matchProducts(scan, products);
+    console.log(`Generated ${recommendations.length} recommendations`);
 
   // Save recommendations to database
   for (let i = 0; i < recommendations.length; i++) {
@@ -282,7 +291,12 @@ export async function getProductRecommendations(scanId: string, storeId: string)
     );
   }
 
-  return recommendations;
+    return recommendations;
+  } catch (error: any) {
+    console.error('Error getting recommendations:', error.message);
+    // Return empty array instead of crashing
+    return [];
+  }
 }
 
 // Match products based on detailed skin analysis
