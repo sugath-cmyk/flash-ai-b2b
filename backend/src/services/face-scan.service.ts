@@ -54,13 +54,66 @@ export async function getFaceScan(scanId: string) {
        fa.hydration_score,
        fa.hydration_level,
        fa.oiliness_score,
-       fa.skin_age_estimate
+       fa.skin_age_estimate,
+       fa.dark_spots_count,
+       fa.whitehead_count,
+       fa.blackhead_count,
+       fa.pimple_count,
+       fa.fine_lines_count,
+       fa.deep_wrinkles_count,
+       fa.pore_size_average,
+       fa.sensitivity_level
      FROM face_scans fs
      LEFT JOIN face_analysis fa ON fs.id = fa.face_scan_id
      WHERE fs.id = $1`,
     [scanId]
   );
-  return result.rows[0];
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  // Restructure to nest analysis fields under 'analysis' key
+  // This matches the widget's expected format: scan.analysis.skin_score
+  return {
+    id: row.id,
+    store_id: row.store_id,
+    visitor_id: row.visitor_id,
+    user_id: row.user_id,
+    status: row.status,
+    front_image_url: row.front_image_url,
+    left_profile_url: row.left_profile_url,
+    right_profile_url: row.right_profile_url,
+    quality_score: row.quality_score,
+    processing_time_ms: row.processing_time_ms,
+    error_message: row.error_message,
+    created_at: row.created_at,
+    completed_at: row.completed_at,
+    // Nest all analysis fields under 'analysis'
+    analysis: row.skin_score !== null ? {
+      skin_score: row.skin_score,
+      skin_tone: row.skin_tone,
+      skin_undertone: row.skin_undertone,
+      skin_hex_color: row.skin_hex_color,
+      face_shape: row.face_shape,
+      pigmentation_score: row.pigmentation_score,
+      acne_score: row.acne_score,
+      wrinkle_score: row.wrinkle_score,
+      texture_score: row.texture_score,
+      redness_score: row.redness_score,
+      hydration_score: row.hydration_score,
+      hydration_level: row.hydration_level,
+      oiliness_score: row.oiliness_score,
+      skin_age_estimate: row.skin_age_estimate,
+      dark_spots_count: row.dark_spots_count,
+      whitehead_count: row.whitehead_count,
+      blackhead_count: row.blackhead_count,
+      pimple_count: row.pimple_count,
+      fine_lines_count: row.fine_lines_count,
+      deep_wrinkles_count: row.deep_wrinkles_count,
+      pore_size_average: row.pore_size_average,
+      sensitivity_level: row.sensitivity_level
+    } : null
+  };
 }
 
 // Update face scan
@@ -239,8 +292,8 @@ export async function getProductRecommendations(scanId: string, storeId: string)
     // Get face analysis
     const scan = await getFaceScan(scanId);
 
-    if (!scan || scan.status !== 'completed') {
-      console.log('Face scan not completed, returning empty recommendations');
+    if (!scan || scan.status !== 'completed' || !scan.analysis) {
+      console.log('Face scan not completed or no analysis, returning empty recommendations');
       return [];
     }
 
@@ -263,8 +316,8 @@ export async function getProductRecommendations(scanId: string, storeId: string)
       return [];
     }
 
-    // Match products based on face analysis
-    const recommendations = matchProducts(scan, products);
+    // Match products based on face analysis (pass analysis object)
+    const recommendations = matchProducts(scan.analysis, products);
     console.log(`Generated ${recommendations.length} recommendations`);
 
   // Save recommendations to database
@@ -299,6 +352,27 @@ export async function getProductRecommendations(scanId: string, storeId: string)
   }
 }
 
+// Ingredient database with benefits for personalized recommendations
+const INGREDIENT_BENEFITS: Record<string, { keywords: string[], benefit: string, concerns: string[] }> = {
+  'vitamin_c': { keywords: ['vitamin c', 'ascorbic acid', 'l-ascorbic'], benefit: 'Brightens skin & fades dark spots', concerns: ['pigmentation', 'dullness'] },
+  'niacinamide': { keywords: ['niacinamide', 'vitamin b3'], benefit: 'Minimizes pores & evens tone', concerns: ['pores', 'pigmentation', 'redness'] },
+  'retinol': { keywords: ['retinol', 'retinoid', 'vitamin a'], benefit: 'Reduces wrinkles & boosts cell turnover', concerns: ['aging', 'wrinkles', 'texture'] },
+  'hyaluronic_acid': { keywords: ['hyaluronic acid', 'sodium hyaluronate'], benefit: 'Intense hydration & plumping', concerns: ['dehydration', 'dryness', 'aging'] },
+  'salicylic_acid': { keywords: ['salicylic acid', 'bha', 'beta hydroxy'], benefit: 'Unclogs pores & fights acne', concerns: ['acne', 'blackheads', 'oily'] },
+  'glycolic_acid': { keywords: ['glycolic acid', 'aha', 'alpha hydroxy'], benefit: 'Exfoliates & brightens', concerns: ['texture', 'dullness', 'aging'] },
+  'centella': { keywords: ['centella', 'cica', 'tiger grass', 'madecassoside'], benefit: 'Soothes & repairs skin barrier', concerns: ['redness', 'sensitivity', 'acne'] },
+  'ceramide': { keywords: ['ceramide', 'ceramides'], benefit: 'Restores skin barrier', concerns: ['dryness', 'sensitivity', 'aging'] },
+  'peptides': { keywords: ['peptide', 'peptides', 'matrixyl'], benefit: 'Boosts collagen & firms skin', concerns: ['aging', 'wrinkles', 'elasticity'] },
+  'tea_tree': { keywords: ['tea tree', 'melaleuca'], benefit: 'Antibacterial & anti-inflammatory', concerns: ['acne', 'blemishes'] },
+  'azelaic_acid': { keywords: ['azelaic acid'], benefit: 'Fights acne & fades marks', concerns: ['acne', 'pigmentation', 'redness'] },
+  'arbutin': { keywords: ['arbutin', 'alpha arbutin'], benefit: 'Brightens & fades dark spots', concerns: ['pigmentation', 'dark spots'] },
+  'bakuchiol': { keywords: ['bakuchiol'], benefit: 'Natural retinol alternative', concerns: ['aging', 'wrinkles', 'sensitivity'] },
+  'tranexamic_acid': { keywords: ['tranexamic acid'], benefit: 'Targets stubborn pigmentation', concerns: ['pigmentation', 'melasma'] },
+  'zinc': { keywords: ['zinc', 'zinc oxide'], benefit: 'Protects & controls oil', concerns: ['acne', 'oily', 'sun damage'] },
+  'squalane': { keywords: ['squalane', 'squalene'], benefit: 'Lightweight moisture & softening', concerns: ['dryness', 'texture'] },
+  'aloe': { keywords: ['aloe', 'aloe vera'], benefit: 'Calms & hydrates', concerns: ['redness', 'sensitivity', 'dryness'] }
+};
+
 // Match products based on detailed skin analysis
 function matchProducts(scan: any, products: any[]) {
   const recommendations: any[] = [];
@@ -309,6 +383,16 @@ function matchProducts(scan: any, products: any[]) {
   const skinUndertone = scan.skin_undertone?.toLowerCase();
   const faceShape = scan.face_shape?.toLowerCase();
   const hydrationLevel = scan.hydration_level?.toLowerCase();
+
+  // Determine primary concerns for this user
+  const userConcerns: string[] = [];
+  if (concerns.pigmentation && concerns.pigmentation.severity > 30) userConcerns.push('pigmentation');
+  if (concerns.acne && concerns.acne.severity > 25) userConcerns.push('acne');
+  if (concerns.wrinkles && concerns.wrinkles.severity > 30) userConcerns.push('aging', 'wrinkles');
+  if (concerns.texture && concerns.texture.score < 60) userConcerns.push('texture', 'pores');
+  if (concerns.redness && concerns.redness.severity > 30) userConcerns.push('redness', 'sensitivity');
+  if (hydrationLevel === 'dry') userConcerns.push('dryness', 'dehydration');
+  if (hydrationLevel === 'oily' || (scan.oiliness_score && scan.oiliness_score > 70)) userConcerns.push('oily');
 
   for (const product of products) {
     const title = (product.title || '').toLowerCase();
@@ -322,6 +406,20 @@ function matchProducts(scan: any, products: any[]) {
     let reasons: string[] = [];
     let type = 'general';
     let ingredientsMatch: string[] = [];
+    let ingredientBenefits: string[] = [];
+
+    // Check for beneficial ingredients based on user's concerns
+    for (const [ingredientKey, data] of Object.entries(INGREDIENT_BENEFITS)) {
+      const hasIngredient = data.keywords.some(kw => combined.includes(kw));
+      if (hasIngredient) {
+        const relevantToConcern = data.concerns.some(c => userConcerns.includes(c));
+        if (relevantToConcern) {
+          score += 12; // Bonus for matching concern-relevant ingredient
+          ingredientsMatch.push(data.keywords[0].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
+          ingredientBenefits.push(data.benefit);
+        }
+      }
+    }
 
     // === TARGETED SKINCARE RECOMMENDATIONS ===
 
@@ -481,9 +579,15 @@ function matchProducts(scan: any, products: any[]) {
       }
     }
 
-    // Add ingredient information to reason
+    // Add ingredient information to reason with benefits
     if (ingredientsMatch.length > 0) {
-      reasons.push(`Key ingredients: ${ingredientsMatch.join(', ')}`);
+      // Remove duplicates
+      const uniqueIngredients = [...new Set(ingredientsMatch)];
+      const uniqueBenefits = [...new Set(ingredientBenefits)];
+      reasons.push(`Key ingredients: ${uniqueIngredients.slice(0, 3).join(', ')}`);
+      if (uniqueBenefits.length > 0) {
+        reasons.push(`Benefits: ${uniqueBenefits.slice(0, 2).join('; ')}`);
+      }
     }
 
     // Add to recommendations if score is above threshold
@@ -496,7 +600,8 @@ function matchProducts(scan: any, products: any[]) {
         confidence: Math.min(score / 100, 0.98),
         type: type,
         reason: reasons.join('. '),
-        ingredients: ingredientsMatch
+        ingredients: [...new Set(ingredientsMatch)],
+        ingredientBenefits: [...new Set(ingredientBenefits)]
       });
     }
   }
@@ -504,8 +609,26 @@ function matchProducts(scan: any, products: any[]) {
   // Sort by confidence score
   recommendations.sort((a, b) => b.confidence - a.confidence);
 
-  // Return top 12 recommendations
-  return recommendations.slice(0, 12);
+  // Return top 12 recommendations, ensuring variety in types
+  const result: any[] = [];
+  const typesSeen = new Set<string>();
+
+  // First pass: get one of each type
+  for (const rec of recommendations) {
+    if (!typesSeen.has(rec.type) && result.length < 12) {
+      result.push(rec);
+      typesSeen.add(rec.type);
+    }
+  }
+
+  // Second pass: fill remaining slots with highest confidence
+  for (const rec of recommendations) {
+    if (!result.includes(rec) && result.length < 12) {
+      result.push(rec);
+    }
+  }
+
+  return result;
 }
 
 // Extract primary skin concerns from analysis

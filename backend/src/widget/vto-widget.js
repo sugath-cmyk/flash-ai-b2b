@@ -1095,91 +1095,58 @@
     }
 
     async pollFaceScanStatus(scanId) {
-      console.log('[Face Scan] ====== POLL START ======');
-      console.log('[Face Scan] scanId:', scanId);
-      console.log('[Face Scan] scanId type:', typeof scanId);
-      console.log('[Face Scan] config.apiBaseUrl:', this.config.apiBaseUrl);
-
-      // Build the face scan API URL - handle both cases
-      let faceScanBaseUrl;
-      if (this.config.apiBaseUrl.includes('/api/vto')) {
-        faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
-      } else {
-        // Fallback: extract base and append /api/face-scan
-        const baseUrl = this.config.apiBaseUrl.replace(/\/api\/.*$/, '');
-        faceScanBaseUrl = `${baseUrl}/api/face-scan`;
-      }
-
-      console.log('[Face Scan] faceScanBaseUrl:', faceScanBaseUrl);
-
-      let pollAttempts = 0;
-      const maxAttempts = 30; // 60 seconds max
+      console.log('[Face Scan] Starting poll for scanId:', scanId);
 
       this.faceScanPollInterval = setInterval(async () => {
-        pollAttempts++;
         try {
+          // Face scan uses /api/face-scan instead of /api/vto
+          const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
           const pollUrl = `${faceScanBaseUrl}/${scanId}`;
-          console.log(`[Face Scan] Poll attempt ${pollAttempts}/${maxAttempts}:`, pollUrl);
+
+          console.log('[Face Scan] Polling:', pollUrl);
 
           const response = await fetch(pollUrl, {
-            method: 'GET',
             headers: {
-              'X-API-Key': this.config.apiKey,
-              'Accept': 'application/json'
+              'X-API-Key': this.config.apiKey
             }
           });
 
-          console.log('[Face Scan] Poll response:', response.status, response.statusText);
+          console.log('[Face Scan] Poll response status:', response.status);
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('[Face Scan] Poll error body:', errorText);
-
-            // If 404, the scan doesn't exist - stop polling
-            if (response.status === 404) {
-              clearInterval(this.faceScanPollInterval);
-              this.showError(`Scan not found (ID: ${scanId}). Please try again.`);
-              return;
-            }
-
-            // For other errors, keep trying up to max attempts
-            if (pollAttempts >= maxAttempts) {
-              clearInterval(this.faceScanPollInterval);
-              this.showError(`Polling failed after ${maxAttempts} attempts: ${response.status}`);
-            }
-            return;
+            console.error('[Face Scan] Poll error:', response.status, errorText);
+            throw new Error(`Request failed with status code ${response.status}`);
           }
 
           const data = await response.json();
-          console.log('[Face Scan] Poll data:', JSON.stringify(data));
+          console.log('[Face Scan] Poll data:', data);
 
           if (!data.success) {
             throw new Error(data.error || 'Failed to get scan status');
           }
 
           const scan = data.data;
-          console.log('[Face Scan] Scan status:', scan.status);
 
           if (scan.status === 'completed') {
             clearInterval(this.faceScanPollInterval);
             this.state.faceScan = scan;
+
+            // Complete all steps
             this.updateFaceScanStep(4, 'complete');
+
+            // Wait a moment for user to see completion
             setTimeout(() => {
               this.displayFaceResults(scan);
             }, 1000);
           } else if (scan.status === 'failed') {
             clearInterval(this.faceScanPollInterval);
             this.showError(scan.error_message || 'Face scan failed. Please try again.');
-          } else if (pollAttempts >= maxAttempts) {
-            clearInterval(this.faceScanPollInterval);
-            this.showError('Scan is taking too long. Please try again.');
           }
         } catch (error) {
-          console.error('[Face Scan] Poll exception:', error);
-          if (pollAttempts >= maxAttempts) {
-            clearInterval(this.faceScanPollInterval);
-            this.showError(error.message || 'Polling failed');
-          }
+          console.error('Face scan poll error:', error);
+          clearInterval(this.faceScanPollInterval);
+          this.showError(error.message);
         }
       }, 2000);
     }
@@ -1204,12 +1171,16 @@
       // Update metrics
       const metrics = ['pigmentation', 'acne', 'wrinkle', 'texture', 'redness', 'hydration'];
       metrics.forEach(metric => {
-        const scoreElem = document.getElementById(`flashai-vto-${metric}-score`);
-        const barElem = document.getElementById(`flashai-vto-${metric}-bar`);
+        // Use the correct selectors based on actual HTML structure
+        const metricCard = document.getElementById(`flashai-vto-metric-${metric === 'wrinkle' ? 'wrinkles' : metric}`);
+        if (!metricCard) return;
+
+        const barElem = metricCard.querySelector('.flashai-vto-metric-fill');
+        const scoreElem = metricCard.querySelector('.flashai-vto-metric-value');
 
         if (scoreElem && barElem && scan.analysis) {
           const score = scan.analysis[`${metric}_score`] || 0;
-          scoreElem.textContent = score;
+          scoreElem.textContent = `${score}%`;
           barElem.style.width = `${score}%`;
 
           // Color based on score (inverse for some metrics)
@@ -1229,12 +1200,12 @@
         const toneElem = document.getElementById('flashai-vto-skin-tone');
         const undertoneElem = document.getElementById('flashai-vto-skin-undertone');
         const ageElem = document.getElementById('flashai-vto-skin-age');
-        const hydrationElem = document.getElementById('flashai-vto-skin-hydration');
+        const hydrationElem = document.getElementById('flashai-vto-hydration-level');
 
-        if (toneElem) toneElem.textContent = scan.analysis.skin_tone || 'N/A';
-        if (undertoneElem) undertoneElem.textContent = scan.analysis.skin_undertone || 'N/A';
-        if (ageElem) ageElem.textContent = scan.analysis.skin_age_estimate || 'N/A';
-        if (hydrationElem) hydrationElem.textContent = scan.analysis.hydration_level || 'N/A';
+        if (toneElem) toneElem.textContent = this.capitalizeFirst(scan.analysis.skin_tone) || 'N/A';
+        if (undertoneElem) undertoneElem.textContent = this.capitalizeFirst(scan.analysis.skin_undertone) || 'N/A';
+        if (ageElem) ageElem.textContent = scan.analysis.skin_age_estimate ? `~${scan.analysis.skin_age_estimate} years` : 'N/A';
+        if (hydrationElem) hydrationElem.textContent = this.capitalizeFirst(scan.analysis.hydration_level) || 'N/A';
       }
 
       // Load product recommendations
@@ -1281,26 +1252,48 @@
       if (!container) return;
 
       if (!recommendations || recommendations.length === 0) {
-        container.innerHTML = '<p class="flashai-vto-no-products">No recommendations available</p>';
+        container.innerHTML = '<p class="flashai-vto-no-products">No recommendations available yet. Check back soon!</p>';
         return;
       }
 
+      // Group recommendations by type for better UX
+      const typeLabels = {
+        'pigmentation_treatment': '🎯 For Dark Spots',
+        'pigmentation_prevention': '☀️ Sun Protection',
+        'acne_treatment': '✨ For Blemishes',
+        'anti_aging': '⏳ Anti-Aging',
+        'hydration': '💧 Hydration',
+        'oil_control': '🧴 Oil Control',
+        'redness_relief': '🌸 Calming',
+        'texture_improvement': '💎 Texture',
+        'skin_tone_match': '🎨 Your Shade',
+        'complementary': '💄 Color Match',
+        'general': '✨ For You'
+      };
+
       container.innerHTML = `
-        <h3>Recommended for Your Skin</h3>
         <div class="flashai-vto-product-grid">
-          ${recommendations.slice(0, 6).map(rec => `
-            <div class="flashai-vto-product-card">
-              <img src="${rec.product_image_url || ''}" alt="${rec.product_title || 'Product'}">
-              <div class="flashai-vto-product-info">
-                <h4>${rec.product_title || 'Product'}</h4>
-                <p class="flashai-vto-product-reason">${rec.reason || ''}</p>
-                <div class="flashai-vto-product-footer">
-                  <span class="flashai-vto-product-price">$${rec.product_price || '0.00'}</span>
-                  <span class="flashai-vto-product-confidence">${Math.round((rec.confidence_score || 0) * 100)}% match</span>
+          ${recommendations.slice(0, 8).map(rec => {
+            const typeLabel = typeLabels[rec.recommendation_type] || typeLabels['general'];
+            const ingredients = rec.reason && rec.reason.includes('Key ingredients:')
+              ? rec.reason.split('Key ingredients:')[1]?.split('.')[0]?.trim()
+              : '';
+            return `
+              <div class="flashai-vto-product-card" data-product-id="${rec.product_id}">
+                <div class="flashai-vto-product-type-badge">${typeLabel}</div>
+                <img src="${rec.product_image_url || ''}" alt="${rec.product_title || 'Product'}" onerror="this.style.display='none'">
+                <div class="flashai-vto-product-info">
+                  <h4>${rec.product_title || 'Product'}</h4>
+                  <p class="flashai-vto-product-reason">${rec.reason?.split('.')[0] || ''}</p>
+                  ${ingredients ? `<p class="flashai-vto-product-ingredients">🧪 ${ingredients}</p>` : ''}
+                  <div class="flashai-vto-product-footer">
+                    <span class="flashai-vto-product-price">$${rec.product_price || '0.00'}</span>
+                    <span class="flashai-vto-product-confidence">${Math.round((rec.confidence_score || 0) * 100)}% match</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       `;
 
@@ -1574,6 +1567,11 @@
         localStorage.setItem('flashai_vto_visitor_id', visitorId);
       }
       return visitorId;
+    }
+
+    capitalizeFirst(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     }
 
     extractProductId() {
