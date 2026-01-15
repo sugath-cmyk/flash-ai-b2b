@@ -27,6 +27,9 @@
   ],
   "author": "Flash AI Team",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "axios": "^1.13.2",

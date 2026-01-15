@@ -1,3 +1,6 @@
+// Startup diagnostic - log immediately before any imports might fail
+console.log('🔧 Backend starting... Node:', process.version, 'PID:', process.pid);
+
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -129,6 +132,7 @@ app.get('/widget/vto-styles.css', (req, res) => {
 });
 
 // API Routes
+console.log('📡 Registering API routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
