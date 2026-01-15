@@ -196,12 +196,36 @@ export async function updateFaceScan(scanId: string, data: {
 
 // Save face analysis results
 export async function saveFaceAnalysis(scanId: string, analysis: any) {
-  // Build dynamic query based on available analysis fields
-  const fields = Object.keys(analysis);
+  // Define allowed database columns to prevent errors from new ML fields
+  const ALLOWED_COLUMNS = new Set([
+    'skin_score', 'skin_tone', 'skin_undertone', 'skin_hex_color',
+    'face_shape', 'eye_color', 'hair_color',
+    'face_width_cm', 'face_length_cm', 'eye_spacing_cm',
+    'pigmentation_score', 'dark_spots_count', 'dark_spots_severity',
+    'sun_damage_score', 'melasma_detected', 'hyperpigmentation_areas',
+    'acne_score', 'whitehead_count', 'blackhead_count', 'pimple_count',
+    'inflammation_level', 'acne_locations',
+    'wrinkle_score', 'fine_lines_count', 'deep_wrinkles_count',
+    'forehead_lines_severity', 'crows_feet_severity', 'nasolabial_folds_severity',
+    'wrinkle_areas',
+    'texture_score', 'pore_size_average', 'enlarged_pores_count',
+    'roughness_level', 'smoothness_score', 'texture_map',
+    'redness_score', 'sensitivity_level', 'irritation_detected',
+    'rosacea_indicators', 'redness_areas',
+    'hydration_score', 'hydration_level', 'oiliness_score',
+    't_zone_oiliness', 'dry_patches_detected', 'hydration_map',
+    'skin_age_estimate', 'skin_firmness_score',
+    'under_eye_darkness', 'puffiness_score',
+    'skin_tone_confidence', 'face_shape_confidence', 'analysis_confidence',
+    'problem_areas_overlay', 'heatmap_data', 'metadata'
+  ]);
+
+  // Filter to only include allowed database columns
+  const fields = Object.keys(analysis).filter(field => ALLOWED_COLUMNS.has(field));
 
   // Handle empty analysis - nothing to save
   if (fields.length === 0) {
-    console.warn('saveFaceAnalysis called with empty analysis, skipping');
+    console.warn('saveFaceAnalysis called with empty or no valid analysis fields, skipping');
     return null;
   }
 
