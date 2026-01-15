@@ -103,7 +103,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "ml-inference",
-        "version": "1.1.0",  # v1.1.0: Improved age estimation, wrinkle detection, lighting & blur handling
+        "version": "1.1.1",  # v1.1.1: Fix numpy.bool serialization, improved type conversion
         "models": {
             "pose_estimation": body_scan_service.is_ready(),
             "size_recommendation": size_rec_service.is_ready(),

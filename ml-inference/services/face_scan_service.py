@@ -292,9 +292,9 @@ class FaceScanService:
         return {
             "blur_level": blur_level,
             "sharpness_score": round(min(1.0, sharpness_score), 3),
-            "laplacian_variance": round(lap_var, 2),
-            "gradient_mean": round(grad_mean, 2),
-            "is_acceptable": lap_var > 150 and grad_mean > 12
+            "laplacian_variance": float(lap_var),
+            "gradient_mean": float(grad_mean),
+            "is_acceptable": bool(lap_var > 150 and grad_mean > 12)  # Convert numpy.bool to Python bool
         }
 
     def _estimate_lighting_quality(self, img: np.ndarray, mask: np.ndarray) -> Dict:
@@ -353,6 +353,28 @@ class FaceScanService:
             "brightness_std": float(std_brightness)
         }
 
+    def _convert_to_python_types(self, obj):
+        """
+        Recursively convert numpy types to Python native types for JSON serialization.
+        Fixes 'numpy.bool' object is not iterable' and similar errors.
+        """
+        if isinstance(obj, dict):
+            return {key: self._convert_to_python_types(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_to_python_types(item) for item in obj]
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.bool_, np.bool8)):
+            return bool(obj)
+        elif isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, np.float64, np.float32, np.float16)):
+            return float(obj)
+        elif isinstance(obj, np.str_):
+            return str(obj)
+        else:
+            return obj
+
     def is_ready(self) -> bool:
         """Check if service is ready"""
         return self._ready
@@ -403,7 +425,7 @@ class FaceScanService:
 
             # Step 6: If image quality is too poor, return early with warning
             if not blur_info["is_acceptable"]:
-                return {
+                return self._convert_to_python_types({
                     "success": True,
                     "scan_id": scan_id,
                     "quality_score": blur_info["sharpness_score"] * 0.5,
@@ -411,10 +433,10 @@ class FaceScanService:
                     "warning": "Image is too blurry for accurate analysis. Please retake with better focus.",
                     "blur_info": blur_info,
                     "analysis": self._get_low_confidence_defaults()
-                }
+                })
 
             if lighting_info["lighting_quality"] < 0.3:
-                return {
+                return self._convert_to_python_types({
                     "success": True,
                     "scan_id": scan_id,
                     "quality_score": lighting_info["lighting_quality"] * 0.5,
@@ -422,7 +444,7 @@ class FaceScanService:
                     "warning": "Lighting conditions are poor. Please ensure face is well-lit.",
                     "lighting_info": lighting_info,
                     "analysis": self._get_low_confidence_defaults()
-                }
+                })
 
             # Step 7: Extract skin region for analysis
             skin_region = cv2.bitwise_and(img, img, mask=skin_mask)
@@ -521,13 +543,14 @@ class FaceScanService:
 
             processing_time = int((time.time() - start_time) * 1000)
 
-            return {
+            # Convert all numpy types to Python native types for JSON serialization
+            return self._convert_to_python_types({
                 "success": True,
                 "scan_id": scan_id,
                 "quality_score": quality_score,
                 "processing_time_ms": processing_time,
                 "analysis": analysis
-            }
+            })
 
         except Exception as e:
             return self._error_response(scan_id, str(e), time.time() - start_time)
