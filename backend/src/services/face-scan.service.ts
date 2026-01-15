@@ -299,7 +299,8 @@ function matchProducts(scan: any, products: any[]) {
   for (const product of products) {
     const title = (product.title || '').toLowerCase();
     const description = (product.description || '').toLowerCase();
-    const tags = (product.tags || '').toLowerCase();
+    // tags is an array (TEXT[]), join it into a string
+    const tags = Array.isArray(product.tags) ? product.tags.join(' ').toLowerCase() : '';
     const productType = (product.product_type || '').toLowerCase();
     const combined = `${title} ${description} ${tags}`;
 
