@@ -1,5 +1,10 @@
 import { pool } from '../config/database';
 import axios from 'axios';
+import {
+  getPersonalizedRecommendations,
+  SkinProfile,
+  FACTOR_COUNT
+} from './recommendation-engine';
 import FormData from 'form-data';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'https://flash-ai-ml-inference.onrender.com';
@@ -316,9 +321,43 @@ export async function getProductRecommendations(scanId: string, storeId: string)
       return [];
     }
 
-    // Match products based on face analysis (pass analysis object)
-    const recommendations = matchProducts(scan.analysis, products);
-    console.log(`Generated ${recommendations.length} recommendations`);
+    // Build skin profile from analysis for the recommendation engine
+    const skinProfile: SkinProfile = {
+      skinType: determineSkinType(scan.analysis),
+      concerns: extractConcernsList(scan.analysis),
+      skinTone: scan.analysis.skin_tone || 'medium',
+      skinUndertone: scan.analysis.skin_undertone || 'neutral',
+      age: scan.analysis.skin_age_estimate || 30,
+      sensitivity: scan.analysis.sensitivity_level || 30,
+      hydrationLevel: scan.analysis.hydration_level || 'normal',
+      oilinessScore: scan.analysis.oiliness_score || 50,
+      pigmentationScore: scan.analysis.pigmentation_score || 0,
+      acneScore: scan.analysis.acne_score || 0,
+      wrinkleScore: scan.analysis.wrinkle_score || 0,
+      textureScore: scan.analysis.texture_score || 70,
+      rednessScore: scan.analysis.redness_score || 0
+    };
+
+    console.log(`Using recommendation engine with ${FACTOR_COUNT.total}+ factors`);
+
+    // Get personalized recommendations using the advanced engine
+    const engineRecommendations = getPersonalizedRecommendations(products, skinProfile, [], 12);
+
+    // Transform to match expected format
+    const recommendations = engineRecommendations.map(rec => ({
+      productId: rec.productId,
+      title: rec.title,
+      imageUrl: rec.imageUrl,
+      price: rec.price,
+      confidence: rec.confidence,
+      type: rec.type,
+      reason: rec.reason,
+      ingredients: rec.matchedIngredients,
+      ingredientBenefits: rec.benefits,
+      concernsAddressed: rec.concernsAddressed
+    }));
+
+    console.log(`Generated ${recommendations.length} personalized recommendations`);
 
   // Save recommendations to database
   for (let i = 0; i < recommendations.length; i++) {
@@ -352,7 +391,74 @@ export async function getProductRecommendations(scanId: string, storeId: string)
   }
 }
 
-// Ingredient database with benefits for personalized recommendations
+// Helper function to determine skin type from analysis
+function determineSkinType(analysis: any): string {
+  const oiliness = analysis.oiliness_score || 50;
+  const hydration = analysis.hydration_score || 50;
+  const hydrationLevel = (analysis.hydration_level || '').toLowerCase();
+
+  if (oiliness > 70) return 'oily';
+  if (oiliness > 55 && hydration < 60) return 'combination';
+  if (hydrationLevel === 'dry' || hydration < 40) return 'dry';
+  if (analysis.sensitivity_level > 60 || analysis.redness_score > 50) return 'sensitive';
+  return 'normal';
+}
+
+// Helper function to extract concerns list from analysis scores
+function extractConcernsList(analysis: any): string[] {
+  const concerns: string[] = [];
+
+  // Pigmentation concerns
+  if (analysis.pigmentation_score > 30) {
+    concerns.push('pigmentation');
+    if (analysis.dark_spots_count > 5) concerns.push('dark_spots');
+  }
+
+  // Acne concerns
+  if (analysis.acne_score > 25) {
+    concerns.push('acne');
+    if ((analysis.whitehead_count || 0) + (analysis.blackhead_count || 0) > 5) {
+      concerns.push('blackheads');
+    }
+    if (analysis.pimple_count > 3) concerns.push('inflammatory_acne');
+  }
+
+  // Aging concerns
+  if (analysis.wrinkle_score > 30) {
+    concerns.push('aging');
+    if (analysis.fine_lines_count > 10) concerns.push('fine_lines');
+    if (analysis.deep_wrinkles_count > 3) concerns.push('deep_wrinkles');
+  }
+
+  // Texture concerns
+  if (analysis.texture_score < 60) {
+    concerns.push('texture');
+    if (analysis.pore_size_average > 0.5) concerns.push('enlarged_pores');
+  }
+
+  // Redness concerns
+  if (analysis.redness_score > 30) {
+    concerns.push('redness');
+    if (analysis.redness_score > 50) concerns.push('sensitivity');
+  }
+
+  // Hydration concerns
+  const hydrationLevel = (analysis.hydration_level || '').toLowerCase();
+  if (hydrationLevel === 'dry' || analysis.hydration_score < 40) {
+    concerns.push('dryness');
+  } else if (hydrationLevel === 'oily' || analysis.oiliness_score > 70) {
+    concerns.push('oiliness');
+  }
+
+  // Dullness
+  if (analysis.skin_score < 50) {
+    concerns.push('dullness');
+  }
+
+  return concerns.length > 0 ? concerns : ['general'];
+}
+
+// Legacy ingredient database (kept for backward compatibility)
 const INGREDIENT_BENEFITS: Record<string, { keywords: string[], benefit: string, concerns: string[] }> = {
   'vitamin_c': { keywords: ['vitamin c', 'ascorbic acid', 'l-ascorbic'], benefit: 'Brightens skin & fades dark spots', concerns: ['pigmentation', 'dullness'] },
   'niacinamide': { keywords: ['niacinamide', 'vitamin b3'], benefit: 'Minimizes pores & evens tone', concerns: ['pores', 'pigmentation', 'redness'] },
