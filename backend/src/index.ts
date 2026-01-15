@@ -33,6 +33,13 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
+// DIAGNOSTIC ENDPOINT - Register FIRST before any middleware
+// This helps diagnose if routes are being registered at all
+app.get('/ping', (req, res) => {
+  res.send('pong-v1.0.3');
+});
+console.log('✅ Diagnostic /ping endpoint registered');
+
 // Middleware
 // Configure helmet with relaxed CSP for widget endpoints
 app.use(helmet({
