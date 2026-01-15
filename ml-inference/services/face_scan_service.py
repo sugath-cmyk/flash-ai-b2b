@@ -364,11 +364,11 @@ class FaceScanService:
             return [self._convert_to_python_types(item) for item in obj]
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, (np.bool_, np.bool8)):
+        elif isinstance(obj, np.bool_):
             return bool(obj)
-        elif isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+        elif isinstance(obj, np.integer):  # Covers all numpy integer types
             return int(obj)
-        elif isinstance(obj, (np.floating, np.float64, np.float32, np.float16)):
+        elif isinstance(obj, np.floating):  # Covers all numpy float types
             return float(obj)
         elif isinstance(obj, np.str_):
             return str(obj)
