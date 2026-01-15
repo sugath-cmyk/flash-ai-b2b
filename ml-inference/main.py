@@ -103,7 +103,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "ml-inference",
-        "version": "1.0.8",  # Fixed numpy type serialization
+        "version": "1.0.9",  # Fixed FLOAT column type mismatches
         "models": {
             "pose_estimation": body_scan_service.is_ready(),
             "size_recommendation": size_rec_service.is_ready(),

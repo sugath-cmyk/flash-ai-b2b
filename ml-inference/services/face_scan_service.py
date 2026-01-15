@@ -706,21 +706,21 @@ class FaceScanService:
         total_blemishes = blackhead_count + pimple_count * 2 + whitehead_count
         acne_score = min(100, total_blemishes * 2)
 
-        # Determine inflammation level
+        # Determine inflammation level (0.0-1.0 scale for database)
         red_pixel_ratio = np.sum(red_mask > 0) / skin_area
         if red_pixel_ratio > 0.12:
-            inflammation = "moderate"
+            inflammation = 0.66  # moderate
         elif red_pixel_ratio > 0.04:
-            inflammation = "mild"
+            inflammation = 0.33  # mild
         else:
-            inflammation = "none"
+            inflammation = 0.0  # none
 
         return {
             "acne_score": int(acne_score),
             "whitehead_count": int(whitehead_count),
             "blackhead_count": int(blackhead_count),
             "pimple_count": int(pimple_count),
-            "inflammation_level": inflammation,
+            "inflammation_level": float(inflammation),
         }
 
     def _detect_wrinkles(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
@@ -766,22 +766,22 @@ class FaceScanService:
                                         minLineLength=5, maxLineGap=3)
                 return len(lines) if lines is not None else 0
 
-            # Analyze specific regions
+            # Analyze specific regions (severity as 0.0-1.0 for database)
             forehead_mask = get_region_mask(self.FOREHEAD)
             forehead_lines = count_lines_in_region(edges, forehead_mask)
-            forehead_severity = "moderate" if forehead_lines > 20 else ("mild" if forehead_lines > 8 else "none")
+            forehead_severity = 0.66 if forehead_lines > 20 else (0.33 if forehead_lines > 8 else 0.0)
 
             left_cf_mask = get_region_mask(self.LEFT_CROWS_FEET)
             right_cf_mask = get_region_mask(self.RIGHT_CROWS_FEET)
             crows_feet_lines = count_lines_in_region(edges, left_cf_mask) + \
                               count_lines_in_region(edges, right_cf_mask)
-            crows_feet_severity = "moderate" if crows_feet_lines > 25 else ("mild" if crows_feet_lines > 10 else "none")
+            crows_feet_severity = 0.66 if crows_feet_lines > 25 else (0.33 if crows_feet_lines > 10 else 0.0)
 
             left_nl_mask = get_region_mask(self.LEFT_NASOLABIAL)
             right_nl_mask = get_region_mask(self.RIGHT_NASOLABIAL)
             nasolabial_lines = count_lines_in_region(edges, left_nl_mask) + \
                               count_lines_in_region(edges, right_nl_mask)
-            nasolabial_severity = "moderate" if nasolabial_lines > 15 else ("mild" if nasolabial_lines > 5 else "none")
+            nasolabial_severity = 0.66 if nasolabial_lines > 15 else (0.33 if nasolabial_lines > 5 else 0.0)
 
         # Edge density for overall wrinkle score
         total_edges = np.sum(edges > 0)
@@ -806,9 +806,9 @@ class FaceScanService:
             "wrinkle_score": int(wrinkle_score),
             "fine_lines_count": int(fine_lines_count),
             "deep_wrinkles_count": int(deep_wrinkles_count),
-            "forehead_lines_severity": forehead_severity,
-            "crows_feet_severity": crows_feet_severity,
-            "nasolabial_folds_severity": nasolabial_severity,
+            "forehead_lines_severity": float(forehead_severity),
+            "crows_feet_severity": float(crows_feet_severity),
+            "nasolabial_folds_severity": float(nasolabial_severity),
         }
 
     def _analyze_texture(self, img: np.ndarray, mask: np.ndarray) -> Dict:
@@ -854,25 +854,21 @@ class FaceScanService:
 
         enlarged_pores = min(enlarged_pores, 50)
 
-        # Classify pore size
+        # Classify pore size (as float 0.0-1.0 for database, represents mm)
         if pore_sizes:
-            avg_pore_area = np.mean(pore_sizes)
-            if avg_pore_area > 20:
-                pore_size = "large"
-            elif avg_pore_area > 10:
-                pore_size = "medium"
-            else:
-                pore_size = "small"
+            avg_pore_area = float(np.mean(pore_sizes))
+            # Convert area to approximate mm (normalized)
+            pore_size = min(1.0, avg_pore_area / 30.0)  # 30 px² → ~1mm
         else:
-            pore_size = "small"
+            pore_size = 0.1  # small default
 
-        # Determine roughness level
+        # Determine roughness level (0.0-1.0 scale for database)
         if mean_variance > 400:
-            roughness = "rough"
+            roughness = 1.0  # rough
         elif mean_variance > 150:
-            roughness = "slightly_rough"
+            roughness = 0.5  # slightly_rough
         else:
-            roughness = "smooth"
+            roughness = 0.0  # smooth
 
         # Calculate texture score (higher = smoother)
         smoothness_score = max(0, min(100, 100 - int(mean_variance / 4)))
@@ -880,9 +876,9 @@ class FaceScanService:
 
         return {
             "texture_score": int(texture_score),
-            "pore_size_average": pore_size,
+            "pore_size_average": float(pore_size),
             "enlarged_pores_count": int(enlarged_pores),
-            "roughness_level": roughness,
+            "roughness_level": float(roughness),
             "smoothness_score": int(smoothness_score),
         }
 
@@ -992,13 +988,13 @@ class FaceScanService:
                 t_zone_mean = np.mean(t_zone_brightness)
                 t_zone_shine = np.sum((shine_mask > 0) & (t_zone_combined > 0)) / max(np.sum(t_zone_combined > 0), 1)
 
-        # T-zone oiliness classification
+        # T-zone oiliness (0.0-1.0 scale for database)
         if t_zone_shine > 0.12:
-            t_zone_oiliness = "high"
+            t_zone_oiliness = 1.0  # high
         elif t_zone_shine > 0.04:
-            t_zone_oiliness = "normal"
+            t_zone_oiliness = 0.5  # normal
         else:
-            t_zone_oiliness = "low"
+            t_zone_oiliness = 0.0  # low
 
         # Oiliness score
         oiliness_score = min(100, int(shine_ratio * 180 + brightness_std / 3))
@@ -1026,7 +1022,7 @@ class FaceScanService:
             "hydration_score": int(hydration_score),
             "hydration_level": hydration_level,
             "oiliness_score": int(oiliness_score),
-            "t_zone_oiliness": t_zone_oiliness,
+            "t_zone_oiliness": float(t_zone_oiliness),
             "dry_patches_detected": dry_patches,
         }
 
@@ -1077,15 +1073,15 @@ class FaceScanService:
         dark_ratio = total_dark_area / skin_area
         pigmentation_score = min(100, int(dark_ratio * 400 + dark_spots_count * 2.5))
 
-        # Severity classification
+        # Severity classification (0.0-1.0 scale for database)
         if dark_spots_count > 12 or dark_ratio > 0.08:
-            severity = "severe"
+            severity = 1.0  # severe
         elif dark_spots_count > 6 or dark_ratio > 0.04:
-            severity = "moderate"
+            severity = 0.66  # moderate
         elif dark_spots_count > 2:
-            severity = "mild"
+            severity = 0.33  # mild
         else:
-            severity = "none"
+            severity = 0.0  # none
 
         # Sun damage score
         sun_damage_score = int(min(100, int(std_lightness * 1.8 + dark_spots_count * 1.5)))
@@ -1096,7 +1092,7 @@ class FaceScanService:
         return {
             "pigmentation_score": int(pigmentation_score),
             "dark_spots_count": int(dark_spots_count),
-            "dark_spots_severity": severity,
+            "dark_spots_severity": float(severity),
             "sun_damage_score": sun_damage_score,
             "melasma_detected": melasma_detected,
         }
@@ -1262,7 +1258,7 @@ class FaceScanService:
             "whitehead_count": 0,
             "blackhead_count": 0,
             "pimple_count": 0,
-            "inflammation_level": "none",
+            "inflammation_level": 0.0,  # 0.0-1.0 scale
         }
 
     def _default_wrinkles(self) -> Dict:
@@ -1270,17 +1266,17 @@ class FaceScanService:
             "wrinkle_score": 15,
             "fine_lines_count": 0,
             "deep_wrinkles_count": 0,
-            "forehead_lines_severity": "none",
-            "crows_feet_severity": "none",
-            "nasolabial_folds_severity": "none",
+            "forehead_lines_severity": 0.0,  # 0.0-1.0 scale
+            "crows_feet_severity": 0.0,
+            "nasolabial_folds_severity": 0.0,
         }
 
     def _default_texture(self) -> Dict:
         return {
             "texture_score": 70,
-            "pore_size_average": "medium",
+            "pore_size_average": 0.3,  # mm approximation
             "enlarged_pores_count": 0,
-            "roughness_level": "smooth",
+            "roughness_level": 0.0,  # 0.0-1.0 scale
             "smoothness_score": 70,
         }
 
@@ -1297,7 +1293,7 @@ class FaceScanService:
             "hydration_score": 65,
             "hydration_level": "normal",
             "oiliness_score": 40,
-            "t_zone_oiliness": "normal",
+            "t_zone_oiliness": 0.5,  # 0.0-1.0 scale
             "dry_patches_detected": False,
         }
 
@@ -1305,7 +1301,7 @@ class FaceScanService:
         return {
             "pigmentation_score": 15,
             "dark_spots_count": 0,
-            "dark_spots_severity": "none",
+            "dark_spots_severity": 0.0,  # 0.0-1.0 scale
             "sun_damage_score": 10,
             "melasma_detected": False,
         }
