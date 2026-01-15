@@ -68,7 +68,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.0.1', // Widget management system deployed
+    version: '1.0.2', // Face scan widget display fix
     features: {
       queryAnalytics: true,
       brandControllerExists: typeof brandController !== 'undefined',
