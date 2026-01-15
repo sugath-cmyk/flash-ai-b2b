@@ -916,6 +916,182 @@ export const INGREDIENTS_DATABASE: Record<string, IngredientData> = {
     synergies: ['zinc_oxide'],
     conflicts: [],
     ageRange: { min: 0, max: 100 }
+  },
+
+  // === GENTLE INGREDIENTS FOR ALL AGES (especially young and elderly) ===
+  'colloidal_oatmeal': {
+    name: 'Colloidal Oatmeal',
+    aliases: ['colloidal oatmeal', 'oatmeal', 'avena sativa'],
+    category: 'soothing',
+    benefits: ['soothing', 'anti-itch', 'barrier protection', 'moisturizing'],
+    concerns: ['sensitivity', 'eczema', 'irritation', 'dryness', 'itching'],
+    skinTypes: ['sensitive', 'dry', 'all'],
+    concentration: { min: 0.5, max: 3, optimal: 1 },
+    ph: { min: 4, max: 7 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'low',
+    synergies: ['ceramides', 'panthenol', 'aloe_vera'],
+    conflicts: [],
+    ageRange: { min: 0, max: 100 }
+  },
+  'shea_butter': {
+    name: 'Shea Butter',
+    aliases: ['shea butter', 'butyrospermum parkii', 'karite'],
+    category: 'emollient',
+    benefits: ['deep moisturizing', 'barrier protection', 'anti-inflammatory'],
+    concerns: ['dryness', 'barrier_damage', 'aging'],
+    skinTypes: ['dry', 'normal', 'mature'],
+    concentration: { min: 1, max: 50, optimal: 10 },
+    ph: { min: 0, max: 14 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'low',
+    synergies: ['ceramides', 'squalane'],
+    conflicts: [],
+    ageRange: { min: 0, max: 100 }
+  },
+  'petrolatum': {
+    name: 'Petrolatum',
+    aliases: ['petrolatum', 'petroleum jelly', 'vaseline', 'mineral jelly'],
+    category: 'occlusive',
+    benefits: ['ultimate barrier protection', 'moisture lock', 'healing'],
+    concerns: ['severe_dryness', 'barrier_damage', 'wound_healing', 'cracked_skin'],
+    skinTypes: ['dry', 'very_dry', 'damaged'],
+    concentration: { min: 1, max: 100, optimal: 30 },
+    ph: { min: 0, max: 14 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'low',
+    synergies: ['ceramides', 'glycerin'],
+    conflicts: [],
+    ageRange: { min: 0, max: 100 }
+  },
+  'lanolin': {
+    name: 'Lanolin',
+    aliases: ['lanolin', 'wool wax', 'wool fat'],
+    category: 'emollient',
+    benefits: ['intense moisturizing', 'barrier repair', 'softening'],
+    concerns: ['severe_dryness', 'cracked_skin', 'chapped_lips'],
+    skinTypes: ['dry', 'very_dry'],
+    concentration: { min: 1, max: 30, optimal: 10 },
+    ph: { min: 0, max: 14 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'medium',
+    synergies: ['petrolatum', 'glycerin'],
+    conflicts: [],
+    ageRange: { min: 0, max: 100 }
+  },
+  'mineral_oil': {
+    name: 'Mineral Oil',
+    aliases: ['mineral oil', 'paraffinum liquidum', 'liquid paraffin'],
+    category: 'occlusive',
+    benefits: ['moisture sealing', 'gentle', 'non-reactive'],
+    concerns: ['dryness', 'barrier_protection'],
+    skinTypes: ['dry', 'sensitive'],
+    concentration: { min: 1, max: 50, optimal: 10 },
+    ph: { min: 0, max: 14 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'low',
+    synergies: ['petrolatum'],
+    conflicts: [],
+    ageRange: { min: 0, max: 100 }
+  },
+  'chamomile': {
+    name: 'Chamomile Extract',
+    aliases: ['chamomile', 'chamomilla recutita', 'matricaria', 'bisabolol'],
+    category: 'soothing',
+    benefits: ['calming', 'anti-inflammatory', 'gentle'],
+    concerns: ['sensitivity', 'redness', 'irritation'],
+    skinTypes: ['sensitive', 'all'],
+    concentration: { min: 0.1, max: 2, optimal: 0.5 },
+    ph: { min: 4, max: 7 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'low',
+    synergies: ['aloe_vera', 'centella_asiatica'],
+    conflicts: [],
+    ageRange: { min: 0, max: 100 }
+  },
+  'calendula': {
+    name: 'Calendula Extract',
+    aliases: ['calendula', 'calendula officinalis', 'marigold'],
+    category: 'soothing',
+    benefits: ['healing', 'anti-inflammatory', 'gentle', 'soothing'],
+    concerns: ['irritation', 'sensitivity', 'wound_healing', 'diaper_rash'],
+    skinTypes: ['sensitive', 'all'],
+    concentration: { min: 0.1, max: 2, optimal: 0.5 },
+    ph: { min: 4, max: 7 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'low',
+    synergies: ['chamomile', 'aloe_vera'],
+    conflicts: [],
+    ageRange: { min: 0, max: 100 }
+  },
+
+  // === TEEN-SPECIFIC ACNE INGREDIENTS ===
+  'witch_hazel': {
+    name: 'Witch Hazel',
+    aliases: ['witch hazel', 'hamamelis', 'hamamelis virginiana'],
+    category: 'astringent',
+    benefits: ['pore tightening', 'oil control', 'soothing'],
+    concerns: ['oiliness', 'pores', 'mild_acne'],
+    skinTypes: ['oily', 'combination'],
+    concentration: { min: 1, max: 15, optimal: 5 },
+    ph: { min: 3, max: 5 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: true,
+    sensitivityRisk: 'low',
+    synergies: ['niacinamide', 'salicylic_acid'],
+    conflicts: [],
+    ageRange: { min: 10, max: 60 }
+  },
+
+  // === MATURE SKIN SPECIFIC ===
+  'phytoestrogens': {
+    name: 'Phytoestrogens',
+    aliases: ['phytoestrogen', 'soy isoflavones', 'red clover', 'genistein'],
+    category: 'hormone_support',
+    benefits: ['menopause skin support', 'firming', 'hydration boost'],
+    concerns: ['menopause_skin', 'loss_of_firmness', 'dryness'],
+    skinTypes: ['mature', 'dry'],
+    concentration: { min: 0.1, max: 2, optimal: 0.5 },
+    ph: { min: 5, max: 7 },
+    timeOfUse: 'both',
+    photosensitive: false,
+    pregnancySafe: false,
+    sensitivityRisk: 'low',
+    synergies: ['peptides', 'ceramides'],
+    conflicts: [],
+    ageRange: { min: 40, max: 100 }
+  },
+  'dmae': {
+    name: 'DMAE',
+    aliases: ['dmae', 'dimethylaminoethanol', 'deanol'],
+    category: 'firming',
+    benefits: ['firming', 'lifting', 'tightening'],
+    concerns: ['sagging', 'loss_of_firmness', 'aging'],
+    skinTypes: ['mature', 'all'],
+    concentration: { min: 0.5, max: 3, optimal: 1 },
+    ph: { min: 5, max: 7 },
+    timeOfUse: 'morning',
+    photosensitive: false,
+    pregnancySafe: false,
+    sensitivityRisk: 'low',
+    synergies: ['peptides', 'vitamin_c'],
+    conflicts: [],
+    ageRange: { min: 35, max: 80 }
   }
 };
 
@@ -1004,7 +1180,27 @@ export const SKIN_CONCERNS: Record<string, Partial<SkinConcern>> = {
   // === DARK CIRCLES ===
   'dark_circles': { category: 'eye', primaryIngredients: ['caffeine', 'vitamin_c', 'retinol'], secondaryIngredients: ['niacinamide', 'peptides', 'arbutin'], avoidIngredients: ['heavy_creams'], productTypes: ['eye_cream', 'eye_serum'], priority: 6 },
   'under_eye_bags': { category: 'eye', primaryIngredients: ['caffeine', 'peptides'], secondaryIngredients: ['retinol', 'vitamin_c'], avoidIngredients: [], productTypes: ['eye_cream', 'eye_gel'], priority: 5 },
-  'eye_wrinkles': { category: 'eye', primaryIngredients: ['retinol', 'peptides', 'vitamin_c'], secondaryIngredients: ['hyaluronic_acid', 'caffeine'], avoidIngredients: [], productTypes: ['eye_cream', 'eye_serum'], priority: 6 }
+  'eye_wrinkles': { category: 'eye', primaryIngredients: ['retinol', 'peptides', 'vitamin_c'], secondaryIngredients: ['hyaluronic_acid', 'caffeine'], avoidIngredients: [], productTypes: ['eye_cream', 'eye_serum'], priority: 6 },
+
+  // === YOUNG SKIN CONCERNS (10-19) ===
+  'teen_acne': { category: 'acne', primaryIngredients: ['salicylic_acid', 'niacinamide', 'zinc', 'tea_tree'], secondaryIngredients: ['centella_asiatica', 'aloe_vera'], avoidIngredients: ['retinol', 'strong_acids'], productTypes: ['cleanser', 'spot_treatment', 'gentle_serum'], priority: 8 },
+  'puberty_oiliness': { category: 'oiliness', primaryIngredients: ['niacinamide', 'zinc', 'salicylic_acid', 'witch_hazel'], secondaryIngredients: ['clay', 'green_tea'], avoidIngredients: ['heavy_oils'], productTypes: ['cleanser', 'toner', 'lightweight_moisturizer'], priority: 7 },
+  'first_breakouts': { category: 'acne', primaryIngredients: ['salicylic_acid', 'tea_tree', 'niacinamide'], secondaryIngredients: ['zinc', 'centella_asiatica'], avoidIngredients: ['benzoyl_peroxide_high', 'retinol'], productTypes: ['cleanser', 'spot_treatment'], priority: 7 },
+  'school_stress_skin': { category: 'sensitivity', primaryIngredients: ['centella_asiatica', 'niacinamide', 'aloe_vera'], secondaryIngredients: ['chamomile', 'green_tea'], avoidIngredients: ['strong_actives'], productTypes: ['serum', 'moisturizer'], priority: 5 },
+
+  // === MATURE SKIN CONCERNS (50+) ===
+  'menopause_skin': { category: 'aging', primaryIngredients: ['phytoestrogens', 'ceramides', 'hyaluronic_acid', 'peptides'], secondaryIngredients: ['squalane', 'niacinamide'], avoidIngredients: ['alcohol', 'harsh_actives'], productTypes: ['serum', 'cream', 'oil'], priority: 8 },
+  'thinning_skin': { category: 'aging', primaryIngredients: ['peptides', 'ceramides', 'centella_asiatica'], secondaryIngredients: ['hyaluronic_acid', 'panthenol'], avoidIngredients: ['strong_retinol', 'harsh_exfoliants'], productTypes: ['serum', 'cream'], priority: 8 },
+  'age_related_dryness': { category: 'hydration', primaryIngredients: ['ceramides', 'squalane', 'hyaluronic_acid', 'glycerin'], secondaryIngredients: ['shea_butter', 'petrolatum'], avoidIngredients: ['alcohol', 'astringents'], productTypes: ['cream', 'oil', 'balm'], priority: 9 },
+  'mature_sensitivity': { category: 'sensitivity', primaryIngredients: ['ceramides', 'centella_asiatica', 'oatmeal', 'panthenol'], secondaryIngredients: ['allantoin', 'chamomile'], avoidIngredients: ['retinol', 'acids', 'fragrance'], productTypes: ['gentle_cream', 'balm'], priority: 8 },
+  'crepe_skin': { category: 'aging', primaryIngredients: ['peptides', 'ceramides', 'hyaluronic_acid'], secondaryIngredients: ['squalane', 'shea_butter'], avoidIngredients: ['harsh_actives'], productTypes: ['body_cream', 'arm_cream'], priority: 6 },
+  'liver_spots': { category: 'pigmentation', primaryIngredients: ['vitamin_c', 'niacinamide', 'arbutin'], secondaryIngredients: ['licorice', 'kojic_acid'], avoidIngredients: [], productTypes: ['serum', 'spot_treatment'], priority: 5 },
+
+  // === ELDERLY SKIN CONCERNS (70+) ===
+  'fragile_skin': { category: 'sensitivity', primaryIngredients: ['ceramides', 'petrolatum', 'panthenol', 'allantoin'], secondaryIngredients: ['oatmeal', 'aloe_vera'], avoidIngredients: ['all_actives', 'fragrance', 'alcohol'], productTypes: ['gentle_cream', 'balm', 'protective'], priority: 10 },
+  'skin_tears': { category: 'sensitivity', primaryIngredients: ['petrolatum', 'zinc_oxide', 'panthenol'], secondaryIngredients: ['allantoin', 'ceramides'], avoidIngredients: ['actives', 'adhesives'], productTypes: ['barrier_cream', 'protective'], priority: 10 },
+  'extreme_dryness': { category: 'hydration', primaryIngredients: ['petrolatum', 'lanolin', 'ceramides', 'glycerin'], secondaryIngredients: ['shea_butter', 'mineral_oil'], avoidIngredients: ['alcohol', 'astringents'], productTypes: ['heavy_cream', 'ointment', 'balm'], priority: 9 },
+  'comfort_priority': { category: 'sensitivity', primaryIngredients: ['petrolatum', 'ceramides', 'oatmeal', 'panthenol'], secondaryIngredients: ['allantoin', 'glycerin'], avoidIngredients: ['everything_active'], productTypes: ['simple_cream', 'balm'], priority: 10 }
 };
 
 // =============================================================================
@@ -1138,16 +1334,137 @@ export const ENVIRONMENTAL_FACTORS: Record<string, { boostIngredients: string[];
 };
 
 // =============================================================================
-// AGE-SPECIFIC RECOMMENDATIONS
+// AGE-SPECIFIC RECOMMENDATIONS (Ages 10-90+)
 // =============================================================================
 
-export const AGE_RECOMMENDATIONS: Record<string, { priorities: string[]; ingredients: string[]; avoidIngredients: string[] }> = {
-  'teens': { priorities: ['acne', 'oil_control', 'gentle'], ingredients: ['salicylic_acid', 'niacinamide', 'zinc', 'gentle_cleanser'], avoidIngredients: ['retinol', 'strong_acids'] },
-  '20s': { priorities: ['prevention', 'hydration', 'acne'], ingredients: ['vitamin_c', 'hyaluronic_acid', 'niacinamide', 'spf'], avoidIngredients: [] },
-  '30s': { priorities: ['prevention', 'early_aging', 'pigmentation'], ingredients: ['retinol', 'vitamin_c', 'peptides', 'spf'], avoidIngredients: [] },
-  '40s': { priorities: ['aging', 'firmness', 'pigmentation'], ingredients: ['retinol', 'peptides', 'vitamin_c', 'hyaluronic_acid'], avoidIngredients: [] },
-  '50s': { priorities: ['aging', 'hydration', 'firmness'], ingredients: ['retinol', 'peptides', 'ceramides', 'hyaluronic_acid'], avoidIngredients: [] },
-  '60s_plus': { priorities: ['hydration', 'barrier', 'gentle_actives'], ingredients: ['peptides', 'ceramides', 'gentle_retinoid', 'hyaluronic_acid'], avoidIngredients: ['harsh_actives'] }
+export const AGE_RECOMMENDATIONS: Record<string, { priorities: string[]; ingredients: string[]; avoidIngredients: string[]; description: string }> = {
+  // CHILDREN & PRE-TEENS (10-12)
+  'pre_teens': {
+    priorities: ['gentle_cleansing', 'basic_hydration', 'sun_protection'],
+    ingredients: ['gentle_cleanser', 'aloe_vera', 'glycerin', 'zinc_oxide', 'ceramides', 'oatmeal'],
+    avoidIngredients: ['retinol', 'aha', 'bha', 'vitamin_c', 'niacinamide', 'strong_actives', 'fragrance', 'essential_oils'],
+    description: 'Gentle basics only - cleanse, moisturize, protect'
+  },
+
+  // EARLY TEENS (13-15)
+  'early_teens': {
+    priorities: ['acne_prevention', 'oil_control', 'gentle_care', 'sun_protection'],
+    ingredients: ['salicylic_acid', 'niacinamide', 'zinc', 'gentle_cleanser', 'aloe_vera', 'tea_tree', 'centella_asiatica'],
+    avoidIngredients: ['retinol', 'strong_aha', 'benzoyl_peroxide_high', 'vitamin_c_high'],
+    description: 'Gentle acne prevention, low concentrations only'
+  },
+
+  // LATE TEENS (16-19)
+  'late_teens': {
+    priorities: ['acne_treatment', 'oil_control', 'hydration', 'sun_protection'],
+    ingredients: ['salicylic_acid', 'benzoyl_peroxide', 'niacinamide', 'zinc', 'hyaluronic_acid', 'tea_tree', 'azelaic_acid', 'centella_asiatica'],
+    avoidIngredients: ['retinol', 'strong_aha', 'anti_aging'],
+    description: 'Active acne treatment, building good habits'
+  },
+
+  // EARLY 20s (20-24)
+  'early_20s': {
+    priorities: ['prevention', 'hydration', 'acne', 'brightening', 'sun_protection'],
+    ingredients: ['vitamin_c', 'hyaluronic_acid', 'niacinamide', 'spf', 'salicylic_acid', 'azelaic_acid', 'centella_asiatica'],
+    avoidIngredients: [],
+    description: 'Prevention focus, establishing routines'
+  },
+
+  // LATE 20s (25-29)
+  'late_20s': {
+    priorities: ['prevention', 'early_aging', 'hydration', 'brightening'],
+    ingredients: ['vitamin_c', 'retinol', 'hyaluronic_acid', 'niacinamide', 'peptides', 'spf', 'bakuchiol'],
+    avoidIngredients: [],
+    description: 'Introduce retinol, prevention of first signs'
+  },
+
+  // EARLY 30s (30-34)
+  'early_30s': {
+    priorities: ['anti_aging', 'pigmentation', 'hydration', 'firmness'],
+    ingredients: ['retinol', 'vitamin_c', 'peptides', 'hyaluronic_acid', 'niacinamide', 'glycolic_acid', 'spf'],
+    avoidIngredients: [],
+    description: 'Active anti-aging begins'
+  },
+
+  // LATE 30s (35-39)
+  'late_30s': {
+    priorities: ['anti_aging', 'firmness', 'pigmentation', 'hydration'],
+    ingredients: ['retinol', 'vitamin_c', 'peptides', 'hyaluronic_acid', 'glycolic_acid', 'niacinamide', 'ceramides', 'egf'],
+    avoidIngredients: [],
+    description: 'Comprehensive anti-aging approach'
+  },
+
+  // EARLY 40s (40-44)
+  'early_40s': {
+    priorities: ['aging', 'firmness', 'pigmentation', 'hydration', 'barrier'],
+    ingredients: ['retinol', 'peptides', 'vitamin_c', 'hyaluronic_acid', 'ceramides', 'niacinamide', 'glycolic_acid', 'egf'],
+    avoidIngredients: [],
+    description: 'Intensified anti-aging, focus on firmness'
+  },
+
+  // LATE 40s (45-49)
+  'late_40s': {
+    priorities: ['aging', 'firmness', 'hydration', 'barrier', 'menopause_support'],
+    ingredients: ['retinol', 'peptides', 'ceramides', 'hyaluronic_acid', 'vitamin_c', 'squalane', 'niacinamide', 'phytoestrogens'],
+    avoidIngredients: [],
+    description: 'Hormonal changes, increased hydration needs'
+  },
+
+  // EARLY 50s (50-54)
+  'early_50s': {
+    priorities: ['aging', 'hydration', 'firmness', 'barrier_repair', 'menopause_support'],
+    ingredients: ['retinol', 'peptides', 'ceramides', 'hyaluronic_acid', 'squalane', 'niacinamide', 'bakuchiol'],
+    avoidIngredients: ['harsh_exfoliants'],
+    description: 'Focus on hydration and barrier, gentler actives'
+  },
+
+  // LATE 50s (55-59)
+  'late_50s': {
+    priorities: ['hydration', 'barrier', 'firmness', 'gentle_actives'],
+    ingredients: ['peptides', 'ceramides', 'hyaluronic_acid', 'squalane', 'bakuchiol', 'gentle_retinoid', 'niacinamide', 'vitamin_e'],
+    avoidIngredients: ['strong_acids', 'harsh_retinol'],
+    description: 'Gentle but effective, prioritize comfort'
+  },
+
+  // EARLY 60s (60-64)
+  'early_60s': {
+    priorities: ['hydration', 'barrier', 'comfort', 'gentle_firming'],
+    ingredients: ['peptides', 'ceramides', 'hyaluronic_acid', 'squalane', 'bakuchiol', 'niacinamide', 'panthenol', 'beta_glucan'],
+    avoidIngredients: ['strong_acids', 'high_retinol', 'alcohol'],
+    description: 'Comfort-first approach, rich hydration'
+  },
+
+  // LATE 60s (65-69)
+  'late_60s': {
+    priorities: ['hydration', 'barrier', 'comfort', 'soothing'],
+    ingredients: ['ceramides', 'hyaluronic_acid', 'squalane', 'peptides', 'panthenol', 'allantoin', 'beta_glucan', 'centella_asiatica'],
+    avoidIngredients: ['strong_actives', 'acids', 'retinol', 'fragrance'],
+    description: 'Gentle nourishment, minimal irritation'
+  },
+
+  // 70s (70-79)
+  '70s': {
+    priorities: ['hydration', 'barrier_protection', 'comfort', 'soothing', 'gentle_care'],
+    ingredients: ['ceramides', 'hyaluronic_acid', 'squalane', 'glycerin', 'panthenol', 'allantoin', 'shea_butter', 'oatmeal'],
+    avoidIngredients: ['actives', 'acids', 'retinol', 'fragrance', 'alcohol', 'essential_oils'],
+    description: 'Ultra-gentle, focus on skin comfort and protection'
+  },
+
+  // 80s (80-89)
+  '80s': {
+    priorities: ['hydration', 'protection', 'comfort', 'barrier'],
+    ingredients: ['ceramides', 'glycerin', 'squalane', 'petrolatum', 'panthenol', 'allantoin', 'oatmeal', 'shea_butter'],
+    avoidIngredients: ['all_actives', 'acids', 'retinoids', 'fragrance', 'alcohol'],
+    description: 'Simple, protective, ultra-hydrating care'
+  },
+
+  // 90+ (90+)
+  '90_plus': {
+    priorities: ['protection', 'comfort', 'hydration', 'barrier'],
+    ingredients: ['ceramides', 'glycerin', 'petrolatum', 'panthenol', 'allantoin', 'lanolin', 'mineral_oil'],
+    avoidIngredients: ['all_actives', 'acids', 'retinoids', 'fragrance', 'alcohol', 'essential_oils'],
+    description: 'Simplest routine, maximum protection and comfort'
+  }
 };
 
 // =============================================================================
@@ -1371,13 +1688,24 @@ export function calculateProductScore(
     }
   }
 
-  // 5. AGE RECOMMENDATIONS (up to 10 points)
-  let ageGroup = 'teens';
-  if (profile.age >= 20 && profile.age < 30) ageGroup = '20s';
-  else if (profile.age >= 30 && profile.age < 40) ageGroup = '30s';
-  else if (profile.age >= 40 && profile.age < 50) ageGroup = '40s';
-  else if (profile.age >= 50 && profile.age < 60) ageGroup = '50s';
-  else if (profile.age >= 60) ageGroup = '60s_plus';
+  // 5. AGE RECOMMENDATIONS (up to 10 points) - Full range 10-90+
+  let ageGroup = 'early_20s'; // default
+  if (profile.age >= 10 && profile.age < 13) ageGroup = 'pre_teens';
+  else if (profile.age >= 13 && profile.age < 16) ageGroup = 'early_teens';
+  else if (profile.age >= 16 && profile.age < 20) ageGroup = 'late_teens';
+  else if (profile.age >= 20 && profile.age < 25) ageGroup = 'early_20s';
+  else if (profile.age >= 25 && profile.age < 30) ageGroup = 'late_20s';
+  else if (profile.age >= 30 && profile.age < 35) ageGroup = 'early_30s';
+  else if (profile.age >= 35 && profile.age < 40) ageGroup = 'late_30s';
+  else if (profile.age >= 40 && profile.age < 45) ageGroup = 'early_40s';
+  else if (profile.age >= 45 && profile.age < 50) ageGroup = 'late_40s';
+  else if (profile.age >= 50 && profile.age < 55) ageGroup = 'early_50s';
+  else if (profile.age >= 55 && profile.age < 60) ageGroup = 'late_50s';
+  else if (profile.age >= 60 && profile.age < 65) ageGroup = 'early_60s';
+  else if (profile.age >= 65 && profile.age < 70) ageGroup = 'late_60s';
+  else if (profile.age >= 70 && profile.age < 80) ageGroup = '70s';
+  else if (profile.age >= 80 && profile.age < 90) ageGroup = '80s';
+  else if (profile.age >= 90) ageGroup = '90_plus';
 
   const ageRec = AGE_RECOMMENDATIONS[ageGroup];
   if (ageRec) {
