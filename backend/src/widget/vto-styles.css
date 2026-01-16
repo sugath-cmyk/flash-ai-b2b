@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On Widget Styles
- * Version: 2.0.0 - Premium Design System
+ * Version: 2.1.0 - Interactive Face Analysis with Visual Overlays
  * Mobile-first, compact single-screen layout
  */
 
@@ -746,6 +746,310 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--flashai-gray-800);
+}
+
+/* ==========================================================================
+   Interactive Face Analysis Layout (v1.4.0)
+   ========================================================================== */
+
+.flashai-vto-results-title {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+  color: var(--flashai-gray-900);
+}
+
+/* Analysis Container - Side by side layout */
+.flashai-vto-analysis-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* Face Display with Overlay */
+.flashai-vto-face-display {
+  position: relative;
+  border-radius: var(--flashai-radius-lg);
+  overflow: hidden;
+  background: var(--flashai-gray-100);
+  aspect-ratio: 3/4;
+}
+
+#flashai-vto-face-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#flashai-vto-face-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Analysis Panel */
+.flashai-vto-analysis-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flashai-vto-score-section {
+  text-align: center;
+}
+
+.flashai-vto-score-section .flashai-vto-skin-score-circle {
+  margin: 0 auto 8px;
+  width: 90px;
+  height: 90px;
+}
+
+.flashai-vto-skin-age-label {
+  font-size: 12px;
+  color: var(--flashai-gray-600);
+}
+
+.flashai-vto-skin-age-label strong {
+  color: var(--flashai-gray-900);
+  font-weight: 700;
+}
+
+/* Attribute Cards - Horizontal Scroll */
+.flashai-vto-attributes-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.flashai-vto-attributes-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.flashai-vto-attribute-card {
+  flex: 0 0 72px;
+  scroll-snap-align: start;
+  padding: 10px 8px;
+  background: var(--flashai-gray-50);
+  border-radius: var(--flashai-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.flashai-vto-attribute-card:hover {
+  background: var(--flashai-gray-100);
+}
+
+.flashai-vto-attribute-card.active {
+  background: var(--flashai-gray-900);
+  border-color: var(--flashai-primary);
+}
+
+.flashai-vto-attribute-card.active .flashai-vto-attr-name {
+  color: #fff;
+}
+
+.flashai-vto-attribute-card.active .flashai-vto-progress-value {
+  color: #fff;
+}
+
+.flashai-vto-attr-name {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--flashai-gray-700);
+  margin-bottom: 6px;
+  display: block;
+  line-height: 1.2;
+}
+
+/* Circular Progress Indicator */
+.flashai-vto-circular-progress {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  margin: 0 auto;
+}
+
+.flashai-vto-circular-progress svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.flashai-vto-progress-ring {
+  transition: stroke-dashoffset 0.8s ease, stroke 0.3s ease;
+  stroke-linecap: round;
+}
+
+.flashai-vto-progress-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--flashai-gray-800);
+}
+
+/* Compact Skin Details */
+.flashai-vto-skin-details-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background: var(--flashai-gray-50);
+  border-radius: var(--flashai-radius-sm);
+}
+
+.flashai-vto-detail-item {
+  flex: 1;
+  min-width: 60px;
+  text-align: center;
+}
+
+.flashai-vto-detail-item span {
+  display: block;
+  font-size: 9px;
+  color: var(--flashai-gray-500);
+  margin-bottom: 2px;
+}
+
+.flashai-vto-detail-item strong {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--flashai-gray-800);
+}
+
+/* Skin Summary Section */
+.flashai-vto-skin-summary {
+  background: linear-gradient(145deg, var(--flashai-gray-50) 0%, #fff 100%);
+  border: 1px solid var(--flashai-gray-200);
+  border-radius: var(--flashai-radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.flashai-vto-skin-summary h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--flashai-gray-900);
+  margin-bottom: 12px;
+}
+
+.flashai-vto-summary-concerns {
+  margin-bottom: 12px;
+}
+
+.flashai-vto-concern-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: var(--flashai-radius-sm);
+  margin-bottom: 8px;
+  border-left: 3px solid var(--flashai-warning);
+}
+
+.flashai-vto-concern-card.high {
+  border-left-color: var(--flashai-danger);
+}
+
+.flashai-vto-concern-card.moderate {
+  border-left-color: var(--flashai-warning);
+}
+
+.flashai-vto-concern-icon {
+  font-size: 18px;
+}
+
+.flashai-vto-concern-content h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--flashai-gray-800);
+  margin-bottom: 2px;
+}
+
+.flashai-vto-concern-content p {
+  font-size: 11px;
+  color: var(--flashai-gray-600);
+  line-height: 1.4;
+}
+
+.flashai-vto-summary-tips {
+  padding-top: 12px;
+  border-top: 1px solid var(--flashai-gray-200);
+}
+
+.flashai-vto-summary-tips h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--flashai-gray-700);
+  margin-bottom: 8px;
+}
+
+.flashai-vto-tip-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 11px;
+  color: var(--flashai-gray-600);
+}
+
+.flashai-vto-tip-item::before {
+  content: '✓';
+  color: var(--flashai-success);
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   Responsive - Mobile Layout for Interactive Analysis
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .flashai-vto-analysis-container {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .flashai-vto-face-display {
+    aspect-ratio: 4/3;
+    max-height: 200px;
+  }
+
+  .flashai-vto-score-section .flashai-vto-skin-score-circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .flashai-vto-attribute-card {
+    flex: 0 0 64px;
+    padding: 8px 6px;
+  }
+
+  .flashai-vto-circular-progress {
+    width: 38px;
+    height: 38px;
+  }
+
+  .flashai-vto-attr-name {
+    font-size: 8px;
+  }
+
+  .flashai-vto-progress-value {
+    font-size: 9px;
+  }
 }
 
 /* Recommendations Section */

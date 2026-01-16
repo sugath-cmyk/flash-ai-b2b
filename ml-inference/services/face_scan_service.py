@@ -517,6 +517,13 @@ class FaceScanService:
             except Exception:
                 analysis.update(self._default_pigmentation())
 
+            # Dark circles detection
+            try:
+                dark_circles_result = self._detect_dark_circles(img, skin_mask, face_data)
+                analysis.update(dark_circles_result)
+            except Exception:
+                analysis.update(self._default_dark_circles())
+
             # Skin age estimation
             try:
                 age_result = self._estimate_skin_age(analysis)
@@ -539,6 +546,13 @@ class FaceScanService:
 
             if lighting_info.get("lighting_issues"):
                 analysis["lighting_issues"] = lighting_info["lighting_issues"]
+
+            # Extract face outline coordinates for overlay drawing
+            try:
+                face_outline = self._extract_face_outline(face_data, img.shape)
+                analysis["face_outline"] = face_outline
+            except Exception:
+                analysis["face_outline"] = []
 
             # Calculate quality score
             quality_score = self._calculate_quality_score(img_original, face_data, skin_mask)
@@ -913,6 +927,7 @@ class FaceScanService:
         blackhead_count = 0
         pimple_count = 0
         whitehead_count = 0
+        acne_locations = []  # Store locations for overlay
 
         min_area = 15
         max_area = 400
@@ -930,6 +945,17 @@ class FaceScanService:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
                     if circularity > 0.3:
                         blackhead_count += 1
+                        # Get centroid for location
+                        M = cv2.moments(cnt)
+                        if M["m00"] > 0:
+                            cx = M["m10"] / M["m00"] / w  # Normalized x
+                            cy = M["m01"] / M["m00"] / h  # Normalized y
+                            acne_locations.append({
+                                "x": round(cx, 3),
+                                "y": round(cy, 3),
+                                "type": "blackhead",
+                                "size": "small" if area < 50 else "medium"
+                            })
 
         # Detect pimples using red mask
         contours_red, _ = cv2.findContours(
@@ -940,6 +966,17 @@ class FaceScanService:
             area = cv2.contourArea(cnt)
             if min_area * max(area_scale, 0.5) < area < max_area * 2 * max(area_scale, 0.5):
                 pimple_count += 1
+                # Get centroid for location
+                M = cv2.moments(cnt)
+                if M["m00"] > 0:
+                    cx = M["m10"] / M["m00"] / w
+                    cy = M["m01"] / M["m00"] / h
+                    acne_locations.append({
+                        "x": round(cx, 3),
+                        "y": round(cy, 3),
+                        "type": "pimple",
+                        "size": "small" if area < 100 else "large"
+                    })
 
         # Detect whiteheads (bright spots)
         _, thresh_bright = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)
@@ -953,6 +990,17 @@ class FaceScanService:
             area = cv2.contourArea(cnt)
             if min_area * max(area_scale, 0.5) < area < max_area * max(area_scale, 0.5):
                 whitehead_count += 1
+                # Get centroid for location
+                M = cv2.moments(cnt)
+                if M["m00"] > 0:
+                    cx = M["m10"] / M["m00"] / w
+                    cy = M["m01"] / M["m00"] / h
+                    acne_locations.append({
+                        "x": round(cx, 3),
+                        "y": round(cy, 3),
+                        "type": "whitehead",
+                        "size": "small"
+                    })
 
         # Cap counts to reasonable values
         blackhead_count = min(blackhead_count, 25)
@@ -972,12 +1020,16 @@ class FaceScanService:
         else:
             inflammation = 0.0  # none
 
+        # Limit locations to max 20 for performance
+        acne_locations = acne_locations[:20]
+
         return {
             "acne_score": int(acne_score),
             "whitehead_count": int(whitehead_count),
             "blackhead_count": int(blackhead_count),
             "pimple_count": int(pimple_count),
             "inflammation_level": float(inflammation),
+            "acne_locations": acne_locations,
         }
 
     def _detect_wrinkles(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
@@ -1193,6 +1245,26 @@ class FaceScanService:
 
         wrinkle_score = min(100, max(0, int(wrinkle_score)))
 
+        # Build wrinkle regions with bounding boxes (normalized coordinates)
+        wrinkle_regions = {
+            "forehead": {
+                "severity": float(forehead_severity),
+                "bbox": [0.25, 0.08, 0.75, 0.22]  # top portion of face
+            },
+            "left_crows_feet": {
+                "severity": float(crows_feet_severity),
+                "bbox": [0.05, 0.25, 0.25, 0.42]  # outer left eye area
+            },
+            "right_crows_feet": {
+                "severity": float(crows_feet_severity),
+                "bbox": [0.75, 0.25, 0.95, 0.42]  # outer right eye area
+            },
+            "nasolabial": {
+                "severity": float(nasolabial_severity),
+                "bbox": [0.28, 0.50, 0.72, 0.78]  # nose-to-mouth folds
+            }
+        }
+
         return {
             "wrinkle_score": int(wrinkle_score),
             "fine_lines_count": int(fine_lines_count),
@@ -1200,6 +1272,7 @@ class FaceScanService:
             "forehead_lines_severity": float(forehead_severity),
             "crows_feet_severity": float(crows_feet_severity),
             "nasolabial_folds_severity": float(nasolabial_severity),
+            "wrinkle_regions": wrinkle_regions,
         }
 
     def _analyze_texture(self, img: np.ndarray, mask: np.ndarray) -> Dict:
@@ -1230,9 +1303,11 @@ class FaceScanService:
 
         # Count and measure pores
         contours, _ = cv2.findContours(pore_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        h, w = gray.shape
 
         pore_sizes = []
         enlarged_pores = 0
+        enlarged_pores_locations = []  # Store locations of enlarged pores
         skin_area = max(np.sum(mask > 0), 1)
         area_scale = skin_area / 100000
 
@@ -1242,6 +1317,15 @@ class FaceScanService:
                 pore_sizes.append(area)
                 if area > 25 * max(area_scale, 0.5):
                     enlarged_pores += 1
+                    # Get centroid for enlarged pores only
+                    M = cv2.moments(cnt)
+                    if M["m00"] > 0 and len(enlarged_pores_locations) < 15:
+                        cx = M["m10"] / M["m00"] / w
+                        cy = M["m01"] / M["m00"] / h
+                        enlarged_pores_locations.append({
+                            "x": round(cx, 3),
+                            "y": round(cy, 3)
+                        })
 
         enlarged_pores = min(enlarged_pores, 50)
 
@@ -1271,6 +1355,11 @@ class FaceScanService:
             "enlarged_pores_count": int(enlarged_pores),
             "roughness_level": float(roughness),
             "smoothness_score": int(smoothness_score),
+            "enlarged_pores_locations": enlarged_pores_locations,
+            # T-zone region for pores highlight
+            "pores_region": {
+                "bbox": [0.35, 0.15, 0.65, 0.75]  # nose/forehead/chin T-zone
+            }
         }
 
     def _analyze_redness(self, img: np.ndarray, mask: np.ndarray) -> Dict:
@@ -1316,11 +1405,32 @@ class FaceScanService:
         # Rosacea indicators
         rosacea_indicators = bool(intense_ratio > 0.18 and red_ratio > 0.35)
 
+        # Build redness regions for overlay
+        redness_regions = []
+        if red_ratio > 0.15:
+            redness_regions.append({
+                "region": "cheeks",
+                "bbox": [0.10, 0.35, 0.40, 0.65],  # left cheek
+                "intensity": round(red_ratio, 2)
+            })
+            redness_regions.append({
+                "region": "cheeks",
+                "bbox": [0.60, 0.35, 0.90, 0.65],  # right cheek
+                "intensity": round(red_ratio, 2)
+            })
+        if intense_ratio > 0.05:
+            redness_regions.append({
+                "region": "nose",
+                "bbox": [0.38, 0.40, 0.62, 0.70],  # nose area
+                "intensity": round(intense_ratio, 2)
+            })
+
         return {
             "redness_score": int(redness_score),
             "sensitivity_level": sensitivity,
             "irritation_detected": irritation_detected,
             "rosacea_indicators": rosacea_indicators,
+            "redness_regions": redness_regions,
         }
 
     def _analyze_hydration(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
@@ -1443,9 +1553,11 @@ class FaceScanService:
         dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_CLOSE, kernel)
 
         contours, _ = cv2.findContours(dark_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        h, w = l_channel.shape
 
         dark_spots_count = 0
         total_dark_area = 0
+        dark_spots_locations = []  # Store locations for overlay
         skin_area = max(np.sum(mask > 0), 1)
         area_scale = skin_area / 100000
 
@@ -1457,6 +1569,16 @@ class FaceScanService:
                 total_dark_area += area
                 if area > 400 * max(area_scale, 0.5):
                     large_patches += 1
+                # Get centroid for location
+                M = cv2.moments(cnt)
+                if M["m00"] > 0 and len(dark_spots_locations) < 15:
+                    cx = M["m10"] / M["m00"] / w
+                    cy = M["m01"] / M["m00"] / h
+                    dark_spots_locations.append({
+                        "x": round(cx, 3),
+                        "y": round(cy, 3),
+                        "size": round(area / skin_area * 1000, 3)  # Normalized size
+                    })
 
         dark_spots_count = min(dark_spots_count, 25)
 
@@ -1486,7 +1608,101 @@ class FaceScanService:
             "dark_spots_severity": float(severity),
             "sun_damage_score": sun_damage_score,
             "melasma_detected": melasma_detected,
+            "dark_spots_locations": dark_spots_locations,
         }
+
+    def _detect_dark_circles(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
+        """
+        Detect dark circles under the eyes by comparing under-eye darkness
+        to cheek brightness as a reference.
+
+        Returns:
+            Dictionary with dark_circles_score, severity for each eye, and region coords
+        """
+        try:
+            h, w = img.shape[:2]
+            lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+            l_channel = lab[:, :, 0]
+
+            landmarks = face_data.get("landmarks", [])
+            if not landmarks:
+                return self._default_dark_circles()
+
+            def get_region_mask_and_bbox(region_indices):
+                """Create mask and get bounding box for a region"""
+                points = []
+                for idx in region_indices:
+                    if idx < len(landmarks):
+                        lm = landmarks[idx]
+                        x, y = int(lm.x * w), int(lm.y * h)
+                        points.append([x, y])
+
+                if len(points) < 3:
+                    return None, None
+
+                points = np.array(points, dtype=np.int32)
+                region_mask = np.zeros((h, w), dtype=np.uint8)
+                cv2.fillConvexPoly(region_mask, points, 255)
+
+                # Get normalized bounding box
+                x_coords = [p[0] / w for p in points]
+                y_coords = [p[1] / h for p in points]
+                bbox = [min(x_coords), min(y_coords), max(x_coords), max(y_coords)]
+
+                return region_mask, bbox
+
+            # Analyze left under-eye
+            left_mask, left_bbox = get_region_mask_and_bbox(self.LEFT_UNDER_EYE)
+            left_darkness = 0.0
+            if left_mask is not None:
+                left_pixels = l_channel[left_mask > 0]
+                if len(left_pixels) > 0:
+                    left_darkness = 255 - np.mean(left_pixels)  # Invert: higher = darker
+
+            # Analyze right under-eye
+            right_mask, right_bbox = get_region_mask_and_bbox(self.RIGHT_UNDER_EYE)
+            right_darkness = 0.0
+            if right_mask is not None:
+                right_pixels = l_channel[right_mask > 0]
+                if len(right_pixels) > 0:
+                    right_darkness = 255 - np.mean(right_pixels)
+
+            # Get cheek brightness as reference
+            left_cheek_mask, _ = get_region_mask_and_bbox(self.LEFT_CHEEK)
+            right_cheek_mask, _ = get_region_mask_and_bbox(self.RIGHT_CHEEK)
+            cheek_brightness = 128  # default
+            if left_cheek_mask is not None and right_cheek_mask is not None:
+                cheek_mask = cv2.bitwise_or(left_cheek_mask, right_cheek_mask)
+                cheek_pixels = l_channel[cheek_mask > 0]
+                if len(cheek_pixels) > 0:
+                    cheek_brightness = 255 - np.mean(cheek_pixels)
+
+            # Calculate dark circle severity relative to cheeks
+            # If under-eye is darker than cheeks, there are dark circles
+            left_severity = max(0, (left_darkness - cheek_brightness) / 50)  # Normalize
+            right_severity = max(0, (right_darkness - cheek_brightness) / 50)
+
+            # Clamp to 0-1 range
+            left_severity = min(1.0, left_severity)
+            right_severity = min(1.0, right_severity)
+
+            # Overall score (0-100, higher = worse dark circles)
+            avg_severity = (left_severity + right_severity) / 2
+            dark_circles_score = int(avg_severity * 100)
+
+            return {
+                "dark_circles_score": dark_circles_score,
+                "dark_circles_left_severity": round(left_severity, 2),
+                "dark_circles_right_severity": round(right_severity, 2),
+                "dark_circles_regions": {
+                    "left_eye": {"bbox": left_bbox, "severity": round(left_severity, 2)} if left_bbox else None,
+                    "right_eye": {"bbox": right_bbox, "severity": round(right_severity, 2)} if right_bbox else None,
+                }
+            }
+
+        except Exception as e:
+            print(f"Dark circles detection error: {e}")
+            return self._default_dark_circles()
 
     def _estimate_skin_age(self, analysis: Dict) -> Dict:
         """
@@ -1855,6 +2071,45 @@ class FaceScanService:
             "melasma_detected": False,
         }
 
+    def _default_dark_circles(self) -> Dict:
+        return {
+            "dark_circles_score": 20,
+            "dark_circles_left_severity": 0.2,
+            "dark_circles_right_severity": 0.2,
+            "dark_circles_regions": {
+                "left_eye": None,
+                "right_eye": None,
+            }
+        }
+
+    def _extract_face_outline(self, face_data: Dict, img_shape: tuple) -> List[List[float]]:
+        """
+        Extract face outline coordinates from landmarks for overlay drawing.
+
+        Returns:
+            List of [x, y] normalized coordinates (0.0-1.0) forming the face outline
+        """
+        if face_data.get("type") != "landmarks":
+            return []
+
+        landmarks = face_data.get("landmarks", [])
+        if not landmarks:
+            return []
+
+        h, w = img_shape[:2]
+        face_outline = []
+
+        # Use FACE_OVAL indices to extract outline points
+        for idx in self.FACE_OVAL:
+            if idx < len(landmarks):
+                lm = landmarks[idx]
+                # Normalize to 0.0-1.0 range
+                x = round(float(lm.x), 4)
+                y = round(float(lm.y), 4)
+                face_outline.append([x, y])
+
+        return face_outline
+
     def _get_low_confidence_defaults(self) -> Dict:
         """Return default analysis values when image quality is too poor"""
         defaults = {}
@@ -1865,6 +2120,7 @@ class FaceScanService:
         defaults.update(self._default_redness())
         defaults.update(self._default_hydration())
         defaults.update(self._default_pigmentation())
+        defaults.update(self._default_dark_circles())
         defaults.update({
             "face_shape": "unknown",
             "face_shape_confidence": 0.0,
