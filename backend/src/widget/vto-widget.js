@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 1.6.0 (Single Face Image with Interactive Markers)
+ * Version: 1.7.0 (Clean Numbered Pins with Issue List)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 1.6.0 - Single Face Image with Interactive Markers');
+  console.log('[Flash AI Widget] Version 1.7.0 - Clean Numbered Pins with Issue List');
 
   // ==========================================================================
   // Main Widget Class
@@ -409,61 +409,61 @@
             </div>
           </div>
 
-          <!-- Face Scan Step 3: Results (Single Face Image with Markers) -->
+          <!-- Face Scan Step 3: Results (Clean Numbered Pin Design) -->
           <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
 
-              <!-- Main Face Display with All Markers -->
-              <div class="flashai-vto-main-face-section">
-                <div class="flashai-vto-face-image-container">
-                  <img id="flashai-vto-face-image" alt="Your face scan" />
-                  <canvas id="flashai-vto-face-overlay"></canvas>
-                  <!-- Marker labels will be added dynamically -->
-                  <div id="flashai-vto-marker-labels"></div>
+              <!-- Header with Score -->
+              <div class="flashai-vto-results-header-row">
+                <div class="flashai-vto-score-mini">
+                  <svg viewBox="0 0 80 80" class="flashai-vto-score-ring">
+                    <circle cx="40" cy="40" r="36" fill="none" stroke="#e5e7eb" stroke-width="6"></circle>
+                    <circle id="flashai-vto-score-circle" cx="40" cy="40" r="36" fill="none" stroke="${this.config.primaryColor}" stroke-width="6" stroke-dasharray="226.2" stroke-dashoffset="226.2" stroke-linecap="round" transform="rotate(-90 40 40)"></circle>
+                  </svg>
+                  <span id="flashai-vto-skin-score" class="flashai-vto-score-number">--</span>
                 </div>
+                <div class="flashai-vto-results-title">
+                  <h2>Skin Analysis</h2>
+                  <p>Age: <strong id="flashai-vto-skin-age">--</strong> • Tone: <strong id="flashai-vto-skin-tone">--</strong></p>
+                </div>
+              </div>
 
-                <!-- Skin Score Badge -->
-                <div class="flashai-vto-score-badge">
-                  <div class="flashai-vto-skin-score-circle">
-                    <svg viewBox="0 0 120 120">
-                      <circle cx="60" cy="60" r="54" fill="none" stroke="#e0e0e0" stroke-width="12"></circle>
-                      <circle id="flashai-vto-score-circle" cx="60" cy="60" r="54" fill="none" stroke="${this.config.primaryColor}" stroke-width="12" stroke-dasharray="339.3" stroke-dashoffset="339.3" transform="rotate(-90 60 60)"></circle>
-                    </svg>
-                    <div class="flashai-vto-score-text">
-                      <span id="flashai-vto-skin-score">--</span>
-                      <span class="flashai-vto-score-label">Score</span>
+              <!-- Face Image with Numbered Pins -->
+              <div class="flashai-vto-analysis-main">
+                <div class="flashai-vto-face-container">
+                  <img id="flashai-vto-face-image" alt="Your face scan" />
+                  <div id="flashai-vto-pins-container"></div>
+                </div>
+              </div>
+
+              <!-- Issues List (Numbered to match pins) -->
+              <div class="flashai-vto-issues-section">
+                <h3 class="flashai-vto-issues-title">Detected Concerns</h3>
+                <div class="flashai-vto-issues-list" id="flashai-vto-issues-list">
+                  <!-- Dynamically generated -->
+                </div>
+              </div>
+
+              <!-- Expanded Detail (shown when issue selected) -->
+              <div class="flashai-vto-issue-detail" id="flashai-vto-issue-detail" style="display:none;">
+                <div class="flashai-vto-detail-close" id="flashai-vto-detail-close">×</div>
+                <div class="flashai-vto-detail-content">
+                  <div class="flashai-vto-detail-top">
+                    <span class="flashai-vto-detail-num" id="flashai-vto-detail-num">1</span>
+                    <div class="flashai-vto-detail-info">
+                      <h4 id="flashai-vto-detail-title">Issue Name</h4>
+                      <span class="flashai-vto-detail-severity" id="flashai-vto-detail-severity">Moderate</span>
                     </div>
                   </div>
-                  <div class="flashai-vto-score-info">
-                    <span>Age: <strong id="flashai-vto-skin-age">--</strong></span>
-                    <span>Tone: <strong id="flashai-vto-skin-tone">--</strong></span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Instruction Text -->
-              <p class="flashai-vto-tap-instruction">Tap an attribute below to see where it's detected on your face</p>
-
-              <!-- Attribute Cards (No images, just info) -->
-              <div class="flashai-vto-attribute-list" id="flashai-vto-attribute-cards">
-                <!-- Cards will be dynamically generated -->
-              </div>
-
-              <!-- Selected Attribute Detail Panel -->
-              <div class="flashai-vto-detail-panel" id="flashai-vto-detail-panel" style="display:none;">
-                <div class="flashai-vto-detail-header">
-                  <span class="flashai-vto-detail-icon" id="flashai-vto-detail-icon"></span>
-                  <h3 id="flashai-vto-detail-title"></h3>
-                  <span class="flashai-vto-detail-score" id="flashai-vto-detail-score"></span>
-                </div>
-                <div class="flashai-vto-detail-body">
-                  <div class="flashai-vto-detail-section">
-                    <h4>What We Found</h4>
-                    <p id="flashai-vto-detail-problem"></p>
-                  </div>
-                  <div class="flashai-vto-detail-section solution">
-                    <h4>Recommended Solution</h4>
-                    <p id="flashai-vto-detail-solution"></p>
+                  <div class="flashai-vto-detail-sections">
+                    <div class="flashai-vto-detail-block">
+                      <span class="flashai-vto-detail-label">Problem</span>
+                      <p id="flashai-vto-detail-problem">Description...</p>
+                    </div>
+                    <div class="flashai-vto-detail-block solution">
+                      <span class="flashai-vto-detail-label">Solution</span>
+                      <p id="flashai-vto-detail-solution">Recommendation...</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -481,6 +481,8 @@
                 <div id="flashai-vto-skin-summary"></div>
                 <div id="flashai-vto-summary-concerns"></div>
                 <div id="flashai-vto-summary-tips"></div>
+                <div id="flashai-vto-detail-icon"></div>
+                <div id="flashai-vto-detail-score"></div>
               </div>
 
               <div class="flashai-vto-recommendations-section">
@@ -592,6 +594,11 @@
 
       modal.querySelector('#flashai-vto-shop-recommended').addEventListener('click', () => {
         this.shopRecommendedProducts();
+      });
+
+      // Detail panel close button
+      modal.querySelector('#flashai-vto-detail-close').addEventListener('click', () => {
+        this.closeIssueDetail();
       });
     }
 
@@ -1126,9 +1133,10 @@
     }
 
     displayFaceResults(scan) {
-      // Store analysis for overlay drawing
+      // Store analysis
       this.state.currentAnalysis = scan.analysis;
-      this.state.selectedAttribute = null;
+      this.state.selectedIssue = null;
+      this.state.detectedIssues = [];
 
       // Update skin score
       const scoreElement = document.getElementById('flashai-vto-skin-score');
@@ -1136,32 +1144,29 @@
         scoreElement.textContent = scan.analysis?.skin_score || '--';
       }
 
-      // Update progress circle
+      // Update progress circle (r=36 for new smaller circle)
       const scoreCircle = document.getElementById('flashai-vto-score-circle');
       if (scoreCircle && scan.analysis?.skin_score) {
         const score = scan.analysis.skin_score;
-        const circumference = 2 * Math.PI * 54; // r=54
+        const circumference = 2 * Math.PI * 36;
         const offset = circumference - (score / 100) * circumference;
-        scoreCircle.style.strokeDasharray = `${circumference} ${circumference}`;
         scoreCircle.style.strokeDashoffset = offset;
       }
 
       // Update skin details
       if (scan.analysis) {
         const toneElem = document.getElementById('flashai-vto-skin-tone');
-        const undertoneElem = document.getElementById('flashai-vto-skin-undertone');
         const ageElem = document.getElementById('flashai-vto-skin-age');
 
         if (toneElem) toneElem.textContent = this.capitalizeFirst(scan.analysis.skin_tone) || 'N/A';
-        if (undertoneElem) undertoneElem.textContent = this.capitalizeFirst(scan.analysis.skin_undertone) || 'N/A';
         if (ageElem) ageElem.textContent = scan.analysis.skin_age_estimate ? `~${scan.analysis.skin_age_estimate}` : 'N/A';
       }
 
-      // Set up main face image and canvas
-      this.initMainFaceDisplay();
+      // Set up face image
+      this.initFaceImage();
 
-      // Generate simple attribute cards (no images)
-      this.generateAttributeCards(scan.analysis);
+      // Generate detected issues with numbered pins
+      this.generateDetectedIssues(scan.analysis);
 
       // Load product recommendations
       this.loadProductRecommendations(scan.id);
@@ -1170,219 +1175,196 @@
       this.showStep('face-results');
     }
 
-    initMainFaceDisplay() {
+    initFaceImage() {
       const faceImg = document.getElementById('flashai-vto-face-image');
-      const canvas = document.getElementById('flashai-vto-face-overlay');
+      if (!faceImg || !this.state.faceImageData) return;
 
-      if (!faceImg || !canvas || !this.state.faceImageData) return;
-
-      // Set face image
       faceImg.src = this.state.faceImageData;
 
-      // Wait for image to load then set up canvas
       faceImg.onload = () => {
-        // Set canvas size to match image
-        canvas.width = faceImg.offsetWidth;
-        canvas.height = faceImg.offsetHeight;
-
-        // Draw all markers initially
-        this.drawAllMarkersOnFace();
-
-        // Add marker labels
-        this.addMarkerLabels();
+        this.renderPins();
       };
     }
 
-    drawAllMarkersOnFace() {
-      const canvas = document.getElementById('flashai-vto-face-overlay');
-      if (!canvas) return;
-
-      const ctx = canvas.getContext('2d');
-      const analysis = this.state.currentAnalysis;
-      const w = canvas.width;
-      const h = canvas.height;
-
+    generateDetectedIssues(analysis) {
       if (!analysis) return;
 
-      ctx.clearRect(0, 0, w, h);
+      const issues = [];
+      const attrs = this.getAttributeDefinitions();
 
-      // Draw face outline
-      this.drawFaceOutlineOnCanvas(ctx, analysis, w, h);
+      // Define issue detection with positions on face
+      const issueConfigs = [
+        { key: 'redness', threshold: 30, position: { x: 75, y: 45 }, region: 'Cheeks' },
+        { key: 'dark_circles', threshold: 30, position: { x: 28, y: 38 }, region: 'Under Eyes' },
+        { key: 'wrinkles', threshold: 20, position: { x: 50, y: 15 }, region: 'Forehead' },
+        { key: 'acne', threshold: 20, position: { x: 65, y: 58 }, region: 'Chin & Cheeks' },
+        { key: 'pigmentation', threshold: 20, position: { x: 35, y: 52 }, region: 'Cheeks' },
+        { key: 'pores', threshold: 25, scoreKey: 'pores_score', position: { x: 50, y: 48 }, region: 'T-Zone' },
+        { key: 'oiliness', threshold: 40, position: { x: 50, y: 25 }, region: 'T-Zone' },
+        { key: 'hydration', threshold: 50, isInverse: true, position: { x: 42, y: 65 }, region: 'Full Face' }
+      ];
 
-      // Draw all problem markers with labels
-      // Acne spots (red/yellow dots)
-      if (analysis.acne_locations?.length > 0) {
-        this.drawAcneOverlay(ctx, analysis, w, h);
-      }
+      issueConfigs.forEach(config => {
+        const attr = attrs[config.key];
+        if (!attr) return;
 
-      // Dark circles (purple highlights)
-      if (analysis.dark_circles_regions) {
-        this.drawDarkCirclesOverlay(ctx, analysis, w, h);
-      }
+        const score = attr.getScore(analysis);
+        const meetsThreshold = config.isInverse ? score < config.threshold : score >= config.threshold;
 
-      // Wrinkle regions
-      if (analysis.wrinkle_regions) {
-        this.drawWrinklesOverlay(ctx, analysis, w, h);
-      }
+        if (meetsThreshold) {
+          // Determine severity
+          let severity, severityLabel;
+          if (attr.isGood) {
+            severity = score > 70 ? 'good' : score > 40 ? 'moderate' : 'concern';
+            severityLabel = score > 70 ? 'Good' : score > 40 ? 'Moderate' : 'Needs Care';
+          } else {
+            severity = score < 30 ? 'good' : score < 60 ? 'moderate' : 'concern';
+            severityLabel = score < 30 ? 'Mild' : score < 60 ? 'Moderate' : 'Significant';
+          }
 
-      // Pigmentation spots
-      if (analysis.dark_spots_locations?.length > 0) {
-        this.drawPigmentationOverlay(ctx, analysis, w, h);
-      }
+          issues.push({
+            key: config.key,
+            name: attr.name,
+            icon: attr.icon,
+            score: Math.round(score),
+            severity,
+            severityLabel,
+            region: config.region,
+            position: config.position,
+            problem: attr.getProblem(analysis, score),
+            solution: attr.getSolution(analysis, score)
+          });
+        }
+      });
 
-      // Redness regions
-      if (analysis.redness_regions?.length > 0) {
-        this.drawRednessOverlay(ctx, analysis, w, h);
-      }
+      // Sort by severity (concern first)
+      const severityOrder = { concern: 0, moderate: 1, good: 2 };
+      issues.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
-      // Pores (enlarged)
-      if (analysis.enlarged_pores_locations?.length > 0) {
-        this.drawPoresOverlay(ctx, analysis, w, h);
-      }
+      this.state.detectedIssues = issues;
+      this.renderIssuesList();
     }
 
-    addMarkerLabels() {
-      const labelsContainer = document.getElementById('flashai-vto-marker-labels');
-      if (!labelsContainer) return;
+    renderPins() {
+      const container = document.getElementById('flashai-vto-pins-container');
+      if (!container) return;
 
-      const analysis = this.state.currentAnalysis;
-      if (!analysis) return;
+      const issues = this.state.detectedIssues;
 
-      const labels = [];
-
-      // Add labels for detected issues
-      if (analysis.dark_circles_score > 30) {
-        labels.push({ text: 'Dark Circles', x: 30, y: 42, attr: 'dark_circles' });
-      }
-      if (analysis.wrinkle_score > 20) {
-        labels.push({ text: 'Fine Lines', x: 50, y: 18, attr: 'wrinkles' });
-      }
-      if (analysis.acne_score > 20) {
-        labels.push({ text: 'Blemishes', x: 70, y: 55, attr: 'acne' });
-      }
-      if (analysis.pigmentation_score > 20) {
-        labels.push({ text: 'Dark Spots', x: 25, y: 58, attr: 'pigmentation' });
-      }
-      if (analysis.redness_score > 30) {
-        labels.push({ text: 'Redness', x: 75, y: 48, attr: 'redness' });
-      }
-      if ((analysis.enlarged_pores_count || 0) > 5) {
-        labels.push({ text: 'Pores', x: 50, y: 50, attr: 'pores' });
-      }
-
-      labelsContainer.innerHTML = labels.map(label => `
-        <div class="flashai-vto-marker-label"
-             data-attribute="${label.attr}"
-             style="left: ${label.x}%; top: ${label.y}%;">
-          <span class="flashai-vto-marker-dot"></span>
-          <span class="flashai-vto-marker-text">${label.text}</span>
+      container.innerHTML = issues.map((issue, index) => `
+        <div class="flashai-vto-pin ${issue.severity}"
+             data-index="${index}"
+             style="left: ${issue.position.x}%; top: ${issue.position.y}%;">
+          <span class="flashai-vto-pin-num">${index + 1}</span>
+          <span class="flashai-vto-pin-pulse"></span>
         </div>
       `).join('');
 
-      // Add click handlers to labels
-      labelsContainer.querySelectorAll('.flashai-vto-marker-label').forEach(label => {
-        label.addEventListener('click', () => {
-          const attr = label.dataset.attribute;
-          this.selectAttribute(attr);
+      // Add click handlers
+      container.querySelectorAll('.flashai-vto-pin').forEach(pin => {
+        pin.addEventListener('click', () => {
+          const index = parseInt(pin.dataset.index);
+          this.selectIssue(index);
         });
       });
     }
 
-    highlightAttributeOnFace(attribute) {
-      const canvas = document.getElementById('flashai-vto-face-overlay');
-      if (!canvas) return;
+    renderIssuesList() {
+      const listContainer = document.getElementById('flashai-vto-issues-list');
+      if (!listContainer) return;
 
-      const ctx = canvas.getContext('2d');
-      const analysis = this.state.currentAnalysis;
-      const w = canvas.width;
-      const h = canvas.height;
+      const issues = this.state.detectedIssues;
 
-      if (!analysis) return;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Draw face outline
-      this.drawFaceOutlineOnCanvas(ctx, analysis, w, h);
-
-      // Draw ONLY the selected attribute's overlay with enhanced visibility
-      const overlayMap = {
-        'dark_circles': () => this.drawDarkCirclesOverlay(ctx, analysis, w, h, true),
-        'pores': () => this.drawPoresOverlay(ctx, analysis, w, h, true),
-        'wrinkles': () => this.drawWrinklesOverlay(ctx, analysis, w, h, true),
-        'hydration': () => this.drawFullFaceHighlight(ctx, w, h, 'rgba(59, 130, 246, 0.25)', analysis),
-        'acne': () => this.drawAcneOverlay(ctx, analysis, w, h, true),
-        'redness': () => this.drawRednessOverlay(ctx, analysis, w, h, true),
-        'oiliness': () => this.drawTZoneOverlay(ctx, w, h, true),
-        'pigmentation': () => this.drawPigmentationOverlay(ctx, analysis, w, h, true),
-        'texture': () => this.drawTextureOverlay(ctx, w, h, analysis, true)
-      };
-
-      const drawFn = overlayMap[attribute];
-      if (drawFn) drawFn();
-
-      // Update marker labels to highlight the selected one
-      const labels = document.querySelectorAll('.flashai-vto-marker-label');
-      labels.forEach(label => {
-        if (label.dataset.attribute === attribute) {
-          label.classList.add('active');
-        } else {
-          label.classList.remove('active');
-        }
-      });
-    }
-
-    selectAttribute(attribute) {
-      this.state.selectedAttribute = attribute;
-
-      // Highlight the card
-      const cards = document.querySelectorAll('.flashai-vto-attribute-card');
-      cards.forEach(card => {
-        if (card.dataset.attribute === attribute) {
-          card.classList.add('active');
-        } else {
-          card.classList.remove('active');
-        }
-      });
-
-      // Highlight on face
-      this.highlightAttributeOnFace(attribute);
-
-      // Show detail panel
-      this.showDetailPanel(attribute);
-    }
-
-    showDetailPanel(attribute) {
-      const panel = document.getElementById('flashai-vto-detail-panel');
-      if (!panel) return;
-
-      const attrs = this.getAttributeDefinitions();
-      const attr = attrs[attribute];
-      const analysis = this.state.currentAnalysis;
-
-      if (!attr || !analysis) return;
-
-      const score = attr.getScore(analysis);
-      const problem = attr.getProblem(analysis, score);
-      const solution = attr.getSolution(analysis, score);
-
-      // Determine severity
-      let severity;
-      if (attr.isGood) {
-        severity = score > 70 ? 'good' : score > 40 ? 'moderate' : 'concern';
-      } else {
-        severity = score < 30 ? 'good' : score < 60 ? 'moderate' : 'concern';
+      if (issues.length === 0) {
+        listContainer.innerHTML = `
+          <div class="flashai-vto-no-issues">
+            <span>✨</span>
+            <p>Great news! No significant skin concerns detected.</p>
+          </div>
+        `;
+        return;
       }
 
-      // Update panel content
-      document.getElementById('flashai-vto-detail-icon').textContent = attr.icon;
-      document.getElementById('flashai-vto-detail-title').textContent = attr.name;
-      document.getElementById('flashai-vto-detail-score').textContent = `${Math.round(score)}%`;
-      document.getElementById('flashai-vto-detail-score').className = `flashai-vto-detail-score ${severity}`;
-      document.getElementById('flashai-vto-detail-problem').textContent = problem;
-      document.getElementById('flashai-vto-detail-solution').textContent = solution;
+      listContainer.innerHTML = issues.map((issue, index) => `
+        <div class="flashai-vto-issue-item ${issue.severity}" data-index="${index}">
+          <span class="flashai-vto-issue-num">${index + 1}</span>
+          <div class="flashai-vto-issue-info">
+            <span class="flashai-vto-issue-name">${issue.name}</span>
+            <span class="flashai-vto-issue-region">${issue.region}</span>
+          </div>
+          <div class="flashai-vto-issue-badge ${issue.severity}">${issue.severityLabel}</div>
+          <svg class="flashai-vto-issue-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </div>
+      `).join('');
+
+      // Add click handlers
+      listContainer.querySelectorAll('.flashai-vto-issue-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const index = parseInt(item.dataset.index);
+          this.selectIssue(index);
+        });
+      });
+    }
+
+    selectIssue(index) {
+      const issues = this.state.detectedIssues;
+      if (index < 0 || index >= issues.length) return;
+
+      this.state.selectedIssue = index;
+      const issue = issues[index];
+
+      // Highlight pin
+      document.querySelectorAll('.flashai-vto-pin').forEach((pin, i) => {
+        pin.classList.toggle('active', i === index);
+      });
+
+      // Highlight list item
+      document.querySelectorAll('.flashai-vto-issue-item').forEach((item, i) => {
+        item.classList.toggle('active', i === index);
+      });
+
+      // Show detail panel
+      this.showIssueDetail(issue, index);
+    }
+
+    showIssueDetail(issue, index) {
+      const panel = document.getElementById('flashai-vto-issue-detail');
+      if (!panel) return;
+
+      document.getElementById('flashai-vto-detail-num').textContent = index + 1;
+      document.getElementById('flashai-vto-detail-title').textContent = issue.name;
+      document.getElementById('flashai-vto-detail-severity').textContent = issue.severityLabel;
+      document.getElementById('flashai-vto-detail-severity').className = `flashai-vto-detail-severity ${issue.severity}`;
+      document.getElementById('flashai-vto-detail-problem').textContent = issue.problem;
+      document.getElementById('flashai-vto-detail-solution').textContent = issue.solution;
 
       panel.style.display = 'block';
-      panel.className = `flashai-vto-detail-panel ${severity}`;
+      panel.className = `flashai-vto-issue-detail ${issue.severity}`;
+    }
+
+    closeIssueDetail() {
+      const panel = document.getElementById('flashai-vto-issue-detail');
+      if (panel) panel.style.display = 'none';
+
+      this.state.selectedIssue = null;
+
+      // Remove active states
+      document.querySelectorAll('.flashai-vto-pin').forEach(pin => pin.classList.remove('active'));
+      document.querySelectorAll('.flashai-vto-issue-item').forEach(item => item.classList.remove('active'));
+    }
+
+    // Legacy method for backward compatibility
+    highlightAttributeOnFace(attribute) {
+      // Find issue by key and select it
+      const index = this.state.detectedIssues.findIndex(i => i.key === attribute);
+      if (index >= 0) this.selectIssue(index);
+    }
+
+    // Legacy method - kept for compatibility
+    selectAttribute(attribute) {
+      this.highlightAttributeOnFace(attribute);
     }
 
     // Attribute definitions with problems and solutions
