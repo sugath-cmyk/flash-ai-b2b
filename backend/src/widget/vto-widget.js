@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 1.4.0 (Interactive Face Analysis with Visual Overlays)
+ * Version: 1.5.0 (Vertical Card Layout with Problem & Solution)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 1.4.0 - Interactive Face Analysis with Visual Overlays');
+  console.log('[Flash AI Widget] Version 1.5.0 - Vertical Card Layout with Problem & Solution');
 
   // ==========================================================================
   // Main Widget Class
@@ -409,183 +409,54 @@
             </div>
           </div>
 
-          <!-- Face Scan Step 3: Results (Interactive Layout) -->
+          <!-- Face Scan Step 3: Results (Vertical Card Layout) -->
           <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
-              <h2 class="flashai-vto-results-title">Your Skin Analysis</h2>
 
-              <!-- Interactive Analysis Container -->
-              <div class="flashai-vto-analysis-container">
-                <!-- Left: Face Image with Overlays -->
-                <div class="flashai-vto-face-display">
-                  <img id="flashai-vto-face-image" alt="Your face scan" />
-                  <canvas id="flashai-vto-face-overlay"></canvas>
+              <!-- Summary Header -->
+              <div class="flashai-vto-summary-header">
+                <div class="flashai-vto-skin-score-circle">
+                  <svg viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="54" fill="none" stroke="#e0e0e0" stroke-width="12"></circle>
+                    <circle id="flashai-vto-score-circle" cx="60" cy="60" r="54" fill="none" stroke="${this.config.primaryColor}" stroke-width="12" stroke-dasharray="339.3" stroke-dashoffset="339.3" transform="rotate(-90 60 60)"></circle>
+                  </svg>
+                  <div class="flashai-vto-score-text">
+                    <span id="flashai-vto-skin-score">--</span>
+                    <span class="flashai-vto-score-label">Skin Score</span>
+                  </div>
                 </div>
-
-                <!-- Right: Analysis Panel -->
-                <div class="flashai-vto-analysis-panel">
-                  <!-- Skin Score Circle -->
-                  <div class="flashai-vto-score-section">
-                    <div class="flashai-vto-skin-score-circle">
-                      <svg viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r="54" fill="none" stroke="#e0e0e0" stroke-width="12"></circle>
-                        <circle id="flashai-vto-score-circle" cx="60" cy="60" r="54" fill="none" stroke="${this.config.primaryColor}" stroke-width="12" stroke-dasharray="339.3" stroke-dashoffset="339.3" transform="rotate(-90 60 60)"></circle>
-                      </svg>
-                      <div class="flashai-vto-score-text">
-                        <span id="flashai-vto-skin-score">--</span>
-                        <span class="flashai-vto-score-label">Skin Score</span>
-                      </div>
-                    </div>
-                    <div class="flashai-vto-skin-age-label">
-                      Perceived Skin Age: <strong id="flashai-vto-skin-age">--</strong>
-                    </div>
-                  </div>
-
-                  <!-- Scrollable Attribute Cards -->
-                  <div class="flashai-vto-attributes-scroll" id="flashai-vto-attributes-scroll">
-                    <div class="flashai-vto-attribute-card" data-attribute="dark_circles" id="flashai-vto-attr-dark_circles">
-                      <span class="flashai-vto-attr-name">Dark Circles</span>
-                      <div class="flashai-vto-circular-progress" data-metric="dark_circles">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#9333ea" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="pores" id="flashai-vto-attr-pores">
-                      <span class="flashai-vto-attr-name">Pores</span>
-                      <div class="flashai-vto-circular-progress" data-metric="pores">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#9333ea" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="wrinkles" id="flashai-vto-attr-wrinkles">
-                      <span class="flashai-vto-attr-name">Lines</span>
-                      <div class="flashai-vto-circular-progress" data-metric="wrinkles">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#9333ea" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="hydration" id="flashai-vto-attr-hydration">
-                      <span class="flashai-vto-attr-name">Hydration</span>
-                      <div class="flashai-vto-circular-progress" data-metric="hydration">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="acne" id="flashai-vto-attr-acne">
-                      <span class="flashai-vto-attr-name">Acne</span>
-                      <div class="flashai-vto-circular-progress" data-metric="acne">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#9333ea" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="redness" id="flashai-vto-attr-redness">
-                      <span class="flashai-vto-attr-name">Redness</span>
-                      <div class="flashai-vto-circular-progress" data-metric="redness">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#9333ea" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="oiliness" id="flashai-vto-attr-oiliness">
-                      <span class="flashai-vto-attr-name">Oiliness</span>
-                      <div class="flashai-vto-circular-progress" data-metric="oiliness">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#9333ea" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="pigmentation" id="flashai-vto-attr-pigmentation">
-                      <span class="flashai-vto-attr-name">Pigmentation</span>
-                      <div class="flashai-vto-circular-progress" data-metric="pigmentation">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#9333ea" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-
-                    <div class="flashai-vto-attribute-card" data-attribute="texture" id="flashai-vto-attr-texture">
-                      <span class="flashai-vto-attr-name">Texture</span>
-                      <div class="flashai-vto-circular-progress" data-metric="texture">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15" fill="none" stroke="#e0e0e0" stroke-width="3"></circle>
-                          <circle class="flashai-vto-progress-ring" cx="18" cy="18" r="15" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2" transform="rotate(-90 18 18)"></circle>
-                        </svg>
-                        <span class="flashai-vto-progress-value">--%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Skin Details -->
-                  <div class="flashai-vto-skin-details-compact">
-                    <div class="flashai-vto-detail-item">
-                      <span>Tone:</span>
-                      <strong id="flashai-vto-skin-tone">--</strong>
-                    </div>
-                    <div class="flashai-vto-detail-item">
-                      <span>Undertone:</span>
-                      <strong id="flashai-vto-skin-undertone">--</strong>
-                    </div>
-                    <div class="flashai-vto-detail-item">
-                      <span>Hydration:</span>
-                      <strong id="flashai-vto-hydration-level">--</strong>
-                    </div>
+                <div class="flashai-vto-summary-details">
+                  <h2>Your Skin Analysis</h2>
+                  <div class="flashai-vto-quick-stats">
+                    <span>Skin Age: <strong id="flashai-vto-skin-age">--</strong></span>
+                    <span>Tone: <strong id="flashai-vto-skin-tone">--</strong></span>
+                    <span>Undertone: <strong id="flashai-vto-skin-undertone">--</strong></span>
                   </div>
                 </div>
               </div>
 
-              <!-- Hidden containers for backward compatibility -->
+              <!-- Vertical Attribute Cards Container -->
+              <div class="flashai-vto-attribute-cards-vertical" id="flashai-vto-attribute-cards">
+                <!-- Cards will be dynamically generated -->
+              </div>
+
+              <!-- Hidden elements for backward compatibility -->
               <div style="display:none;">
+                <div id="flashai-vto-hydration-level"></div>
                 <div id="flashai-vto-metric-pigmentation"></div>
                 <div id="flashai-vto-metric-acne"></div>
                 <div id="flashai-vto-metric-wrinkles"></div>
                 <div id="flashai-vto-metric-texture"></div>
                 <div id="flashai-vto-metric-redness"></div>
                 <div id="flashai-vto-metric-hydration"></div>
-              </div>
-
-              <!-- Customer-Friendly Skin Summary -->
-              <div class="flashai-vto-skin-summary" id="flashai-vto-skin-summary">
-                <h3>Your Skin Summary</h3>
-                <div class="flashai-vto-summary-concerns" id="flashai-vto-summary-concerns">
-                  <!-- Dynamically populated -->
-                </div>
-                <div class="flashai-vto-summary-tips" id="flashai-vto-summary-tips">
-                  <!-- Dynamically populated -->
-                </div>
+                <div id="flashai-vto-skin-summary"></div>
+                <div id="flashai-vto-summary-concerns"></div>
+                <div id="flashai-vto-summary-tips"></div>
               </div>
 
               <div class="flashai-vto-recommendations-section">
                 <h3>Recommended For You</h3>
                 <p class="flashai-vto-recommendations-subtitle">Products matched to your skin concerns</p>
-
                 <div class="flashai-vto-recommendations-carousel" id="flashai-vto-recommendations">
                   <div class="flashai-vto-recommendations-loading">Finding perfect products...</div>
                 </div>
@@ -1229,13 +1100,6 @@
       // Store analysis for overlay drawing
       this.state.currentAnalysis = scan.analysis;
 
-      // Display captured face image
-      const faceImage = document.getElementById('flashai-vto-face-image');
-      if (faceImage && this.state.faceImageData) {
-        faceImage.src = this.state.faceImageData;
-        faceImage.onload = () => this.initFaceOverlay();
-      }
-
       // Update skin score
       const scoreElement = document.getElementById('flashai-vto-skin-score');
       if (scoreElement) {
@@ -1252,27 +1116,19 @@
         scoreCircle.style.strokeDashoffset = offset;
       }
 
-      // Update new circular progress attribute cards
-      this.updateAttributeCards(scan.analysis);
-
       // Update skin details
       if (scan.analysis) {
         const toneElem = document.getElementById('flashai-vto-skin-tone');
         const undertoneElem = document.getElementById('flashai-vto-skin-undertone');
         const ageElem = document.getElementById('flashai-vto-skin-age');
-        const hydrationElem = document.getElementById('flashai-vto-hydration-level');
 
         if (toneElem) toneElem.textContent = this.capitalizeFirst(scan.analysis.skin_tone) || 'N/A';
         if (undertoneElem) undertoneElem.textContent = this.capitalizeFirst(scan.analysis.skin_undertone) || 'N/A';
         if (ageElem) ageElem.textContent = scan.analysis.skin_age_estimate ? `~${scan.analysis.skin_age_estimate}` : 'N/A';
-        if (hydrationElem) hydrationElem.textContent = this.capitalizeFirst(scan.analysis.hydration_level) || 'N/A';
-
-        // Generate customer-friendly skin summary
-        this.generateSkinSummary(scan.analysis);
       }
 
-      // Setup attribute card click handlers
-      this.setupAttributeCardHandlers();
+      // Generate vertical attribute cards
+      this.generateVerticalAttributeCards(scan.analysis);
 
       // Load product recommendations
       this.loadProductRecommendations(scan.id);
@@ -1281,98 +1137,276 @@
       this.showStep('face-results');
     }
 
-    updateAttributeCards(analysis) {
-      if (!analysis) return;
-
-      const attributeMetrics = {
-        'dark_circles': { score: analysis.dark_circles_score || 0, isGood: false },
-        'pores': { score: Math.min(100, (analysis.enlarged_pores_count || 0) * 10 + 20), isGood: false },
-        'wrinkles': { score: analysis.wrinkle_score || 0, isGood: false },
-        'hydration': { score: analysis.hydration_score || 0, isGood: true },
-        'acne': { score: analysis.acne_score || 0, isGood: false },
-        'redness': { score: analysis.redness_score || 0, isGood: false },
-        'oiliness': { score: analysis.oiliness_score || analysis.t_zone_oiliness * 100 || 0, isGood: false },
-        'pigmentation': { score: analysis.pigmentation_score || 0, isGood: false },
-        'texture': { score: analysis.texture_score || 0, isGood: true }
-      };
-
-      Object.entries(attributeMetrics).forEach(([attr, data]) => {
-        const card = document.getElementById(`flashai-vto-attr-${attr}`);
-        if (!card) return;
-
-        const progressRing = card.querySelector('.flashai-vto-progress-ring');
-        const valueSpan = card.querySelector('.flashai-vto-progress-value');
-
-        if (valueSpan) {
-          valueSpan.textContent = `${Math.round(data.score)}%`;
-        }
-
-        if (progressRing) {
-          const circumference = 2 * Math.PI * 15; // r=15
-          const offset = circumference - (data.score / 100) * circumference;
-          progressRing.style.strokeDashoffset = offset;
-
-          // Color based on whether higher is good
-          let color;
-          if (data.isGood) {
-            color = data.score > 70 ? '#10b981' : data.score > 40 ? '#f59e0b' : '#ef4444';
-          } else {
-            color = data.score < 30 ? '#10b981' : data.score < 60 ? '#f59e0b' : '#ef4444';
+    // Attribute definitions with problems and solutions
+    getAttributeDefinitions() {
+      return {
+        dark_circles: {
+          name: 'Dark Circles',
+          icon: '👁️',
+          getScore: (a) => a.dark_circles_score || 0,
+          isGood: false,
+          getProblem: (a, score) => {
+            if (score < 30) return 'Your under-eye area looks healthy with minimal darkness.';
+            if (score < 60) return 'Moderate dark circles detected under your eyes, likely from fatigue or genetics.';
+            return 'Significant dark circles visible. This could indicate lack of sleep, dehydration, or genetics.';
+          },
+          getSolution: (a, score) => {
+            if (score < 30) return 'Maintain good sleep habits and stay hydrated to keep this area healthy.';
+            return 'Use an eye cream with Vitamin C, caffeine, or retinol. Ensure 7-8 hours of sleep and stay hydrated. Cold compresses can help reduce puffiness.';
           }
-          progressRing.style.stroke = color;
+        },
+        acne: {
+          name: 'Acne & Blemishes',
+          icon: '🎯',
+          getScore: (a) => a.acne_score || 0,
+          isGood: false,
+          getProblem: (a, score) => {
+            const count = (a.whitehead_count || 0) + (a.blackhead_count || 0) + (a.pimple_count || 0);
+            if (score < 20) return 'Your skin is clear with minimal blemishes.';
+            if (score < 50) return `${count} active blemishes detected. This is common and manageable with proper care.`;
+            return `${count} blemishes found including possible inflammation. Your skin may need targeted treatment.`;
+          },
+          getSolution: (a, score) => {
+            if (score < 20) return 'Continue your current routine. Use non-comedogenic products to prevent future breakouts.';
+            return 'Use a gentle cleanser with Salicylic Acid or Benzoyl Peroxide. Avoid touching your face and change pillowcases frequently. Consider a spot treatment for active breakouts.';
+          }
+        },
+        wrinkles: {
+          name: 'Lines & Wrinkles',
+          icon: '✨',
+          getScore: (a) => a.wrinkle_score || 0,
+          isGood: false,
+          getProblem: (a, score) => {
+            if (score < 20) return 'Minimal fine lines detected. Your skin shows good elasticity.';
+            if (score < 50) return 'Some fine lines visible, particularly around expression areas like forehead and eyes.';
+            return 'Notable wrinkles detected in multiple areas including forehead, crow\'s feet, and nasolabial folds.';
+          },
+          getSolution: (a, score) => {
+            if (score < 20) return 'Start using SPF daily and a light retinol serum at night to maintain skin youth.';
+            return 'Use Retinol or Retinoid products at night. Apply SPF 30+ daily. Consider products with Peptides and Hyaluronic Acid for plumping effect.';
+          }
+        },
+        pigmentation: {
+          name: 'Pigmentation',
+          icon: '☀️',
+          getScore: (a) => a.pigmentation_score || 0,
+          isGood: false,
+          getProblem: (a, score) => {
+            const spots = a.dark_spots_count || 0;
+            if (score < 20) return 'Even skin tone with minimal dark spots detected.';
+            if (score < 50) return `${spots} dark spots detected. This may be from sun exposure or post-inflammatory marks.`;
+            return `Significant uneven pigmentation with ${spots} dark spots. Signs of sun damage or melasma may be present.`;
+          },
+          getSolution: (a, score) => {
+            if (score < 20) return 'Maintain SPF use daily to prevent future pigmentation.';
+            return 'Use Vitamin C serum in the morning and Niacinamide for brightening. Apply SPF 50 daily. Consider products with Alpha Arbutin or Kojic Acid for stubborn spots.';
+          }
+        },
+        redness: {
+          name: 'Redness & Sensitivity',
+          icon: '🌸',
+          getScore: (a) => a.redness_score || 0,
+          isGood: false,
+          getProblem: (a, score) => {
+            if (score < 20) return 'Minimal redness detected. Your skin appears calm and balanced.';
+            if (score < 50) return 'Some redness visible, particularly on cheeks. Your skin may be slightly sensitive.';
+            return 'Significant redness detected. This could indicate sensitivity, rosacea, or irritation from products.';
+          },
+          getSolution: (a, score) => {
+            if (score < 20) return 'Continue using gentle products. Avoid harsh exfoliants to maintain calm skin.';
+            return 'Use fragrance-free, hypoallergenic products. Look for Centella Asiatica, Aloe Vera, or Green Tea. Avoid hot water and harsh scrubs. Consider Azelaic Acid for rosacea-prone skin.';
+          }
+        },
+        hydration: {
+          name: 'Hydration',
+          icon: '💧',
+          getScore: (a) => a.hydration_score || 0,
+          isGood: true,
+          getProblem: (a, score) => {
+            if (score > 70) return 'Excellent hydration levels! Your skin barrier appears healthy and plump.';
+            if (score > 40) return 'Moderate hydration. Some areas may feel tight or show fine dehydration lines.';
+            return 'Low hydration detected. Your skin may feel tight, look dull, or show premature fine lines.';
+          },
+          getSolution: (a, score) => {
+            if (score > 70) return 'Maintain your hydration routine. Continue drinking water and using moisturizer.';
+            return 'Use Hyaluronic Acid serum on damp skin. Apply a rich moisturizer and consider overnight sleeping masks. Drink at least 8 glasses of water daily.';
+          }
+        },
+        oiliness: {
+          name: 'Oiliness',
+          icon: '🧴',
+          getScore: (a) => Math.round((a.oiliness_score || a.t_zone_oiliness * 100 || 0)),
+          isGood: false,
+          getProblem: (a, score) => {
+            if (score < 30) return 'Normal oil levels. Your skin has a healthy balance.';
+            if (score < 60) return 'Moderate oiliness in the T-zone (forehead, nose, chin). This is common for combination skin.';
+            return 'High oil production detected, particularly in the T-zone. This may lead to enlarged pores and breakouts.';
+          },
+          getSolution: (a, score) => {
+            if (score < 30) return 'Your oil levels are balanced. Use a light moisturizer to maintain this balance.';
+            return 'Use a gentle foaming cleanser and oil-free moisturizer. Try Niacinamide to regulate sebum. Use clay masks 1-2x weekly. Avoid over-cleansing which can increase oil production.';
+          }
+        },
+        pores: {
+          name: 'Pores',
+          icon: '🔍',
+          getScore: (a) => Math.min(100, (a.enlarged_pores_count || 0) * 8 + 15),
+          isGood: false,
+          getProblem: (a, score) => {
+            const count = a.enlarged_pores_count || 0;
+            if (score < 30) return 'Pores appear minimal and refined.';
+            if (score < 60) return `${count} enlarged pores visible, mainly in the T-zone area.`;
+            return `${count} visibly enlarged pores detected. This is often related to oiliness and can trap debris.`;
+          },
+          getSolution: (a, score) => {
+            if (score < 30) return 'Continue cleansing properly and using SPF to prevent pore enlargement.';
+            return 'Use BHA (Salicylic Acid) to clean inside pores. Try Niacinamide to tighten appearance. Use non-comedogenic products and consider regular clay masks.';
+          }
+        },
+        texture: {
+          name: 'Skin Texture',
+          icon: '💎',
+          getScore: (a) => a.texture_score || a.smoothness_score || 0,
+          isGood: true,
+          getProblem: (a, score) => {
+            if (score > 70) return 'Smooth, refined skin texture detected. Your skin looks healthy and even.';
+            if (score > 40) return 'Some texture irregularities visible. Minor bumps or rough patches may be present.';
+            return 'Uneven texture detected with visible bumps, roughness, or scarring.';
+          },
+          getSolution: (a, score) => {
+            if (score > 70) return 'Maintain your exfoliation routine. Use gentle products to keep skin smooth.';
+            return 'Incorporate AHA (Glycolic/Lactic Acid) for surface exfoliation. Use a gentle physical exfoliant 1-2x weekly. Retinol can help smooth texture over time.';
+          }
+        }
+      };
+    }
+
+    generateVerticalAttributeCards(analysis) {
+      const container = document.getElementById('flashai-vto-attribute-cards');
+      if (!container || !analysis) return;
+
+      const attributes = this.getAttributeDefinitions();
+      const faceImageData = this.state.faceImageData;
+
+      // Sort attributes by severity (highest score first for problem attributes)
+      const sortedAttrs = Object.entries(attributes).sort(([, a], [, b]) => {
+        const scoreA = a.getScore(analysis);
+        const scoreB = b.getScore(analysis);
+        // For "isGood" attributes, lower is worse; for others, higher is worse
+        const severityA = a.isGood ? (100 - scoreA) : scoreA;
+        const severityB = b.isGood ? (100 - scoreB) : scoreB;
+        return severityB - severityA;
+      });
+
+      container.innerHTML = sortedAttrs.map(([key, attr]) => {
+        const score = attr.getScore(analysis);
+        const problem = attr.getProblem(analysis, score);
+        const solution = attr.getSolution(analysis, score);
+
+        // Determine severity level for styling
+        let severity, severityLabel;
+        if (attr.isGood) {
+          severity = score > 70 ? 'good' : score > 40 ? 'moderate' : 'concern';
+          severityLabel = score > 70 ? 'Good' : score > 40 ? 'Moderate' : 'Needs Attention';
+        } else {
+          severity = score < 30 ? 'good' : score < 60 ? 'moderate' : 'concern';
+          severityLabel = score < 30 ? 'Good' : score < 60 ? 'Moderate' : 'Needs Attention';
+        }
+
+        return `
+          <div class="flashai-vto-vertical-card" data-attribute="${key}" data-severity="${severity}">
+            <div class="flashai-vto-card-header">
+              <div class="flashai-vto-card-title">
+                <span class="flashai-vto-card-icon">${attr.icon}</span>
+                <h3>${attr.name}</h3>
+              </div>
+              <div class="flashai-vto-card-score ${severity}">
+                <span class="flashai-vto-score-value">${Math.round(score)}%</span>
+                <span class="flashai-vto-severity-label">${severityLabel}</span>
+              </div>
+            </div>
+
+            <div class="flashai-vto-card-body">
+              <div class="flashai-vto-card-image">
+                <img src="${faceImageData}" alt="Face analysis for ${attr.name}" />
+                <canvas class="flashai-vto-card-overlay" data-attribute="${key}"></canvas>
+              </div>
+
+              <div class="flashai-vto-card-analysis">
+                <div class="flashai-vto-analysis-section">
+                  <h4>What We Found</h4>
+                  <p>${problem}</p>
+                </div>
+
+                <div class="flashai-vto-analysis-section solution">
+                  <h4>Recommended Solution</h4>
+                  <p>${solution}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Initialize overlays for each card after images load
+      container.querySelectorAll('.flashai-vto-card-image img').forEach(img => {
+        if (img.complete) {
+          this.initCardOverlay(img);
+        } else {
+          img.onload = () => this.initCardOverlay(img);
         }
       });
     }
 
-    setupAttributeCardHandlers() {
-      const cards = document.querySelectorAll('.flashai-vto-attribute-card');
-      cards.forEach(card => {
-        card.addEventListener('click', () => {
-          const attribute = card.dataset.attribute;
-
-          // Remove active class from all cards
-          cards.forEach(c => c.classList.remove('active'));
-
-          // Add active class to clicked card
-          card.classList.add('active');
-
-          // Draw overlay for this attribute
-          this.highlightAttributeRegion(attribute);
-        });
-      });
-    }
-
-    initFaceOverlay() {
-      const faceImage = document.getElementById('flashai-vto-face-image');
-      const canvas = document.getElementById('flashai-vto-face-overlay');
-
-      if (!faceImage || !canvas) return;
-
-      // Set canvas size to match image
-      canvas.width = faceImage.naturalWidth;
-      canvas.height = faceImage.naturalHeight;
-
-      // Draw initial face outline
-      this.drawFaceOutline();
-    }
-
-    drawFaceOutline() {
-      const canvas = document.getElementById('flashai-vto-face-overlay');
+    initCardOverlay(img) {
+      const canvas = img.parentElement.querySelector('canvas');
       if (!canvas) return;
 
+      const attribute = canvas.dataset.attribute;
+
+      // Set canvas size to match image display size
+      canvas.width = img.offsetWidth;
+      canvas.height = img.offsetHeight;
+
+      // Draw the overlay for this attribute
+      this.drawCardOverlay(canvas, attribute);
+    }
+
+    drawCardOverlay(canvas, attribute) {
       const ctx = canvas.getContext('2d');
       const analysis = this.state.currentAnalysis;
-      const faceOutline = analysis?.face_outline;
-
-      if (!faceOutline || faceOutline.length < 3) return;
-
       const w = canvas.width;
       const h = canvas.height;
 
+      if (!analysis) return;
+
       ctx.clearRect(0, 0, w, h);
 
-      // Draw face outline
-      ctx.strokeStyle = 'rgba(147, 51, 234, 0.8)'; // Purple
+      // Draw face outline first
+      this.drawFaceOutlineOnCanvas(ctx, analysis, w, h);
+
+      // Draw attribute-specific overlay
+      const overlayMap = {
+        'dark_circles': () => this.drawDarkCirclesOverlay(ctx, analysis, w, h),
+        'pores': () => this.drawPoresOverlay(ctx, analysis, w, h),
+        'wrinkles': () => this.drawWrinklesOverlay(ctx, analysis, w, h),
+        'hydration': () => this.drawFullFaceHighlight(ctx, w, h, 'rgba(59, 130, 246, 0.15)', analysis),
+        'acne': () => this.drawAcneOverlay(ctx, analysis, w, h),
+        'redness': () => this.drawRednessOverlay(ctx, analysis, w, h),
+        'oiliness': () => this.drawTZoneOverlay(ctx, w, h),
+        'pigmentation': () => this.drawPigmentationOverlay(ctx, analysis, w, h),
+        'texture': () => this.drawTextureOverlay(ctx, w, h, analysis)
+      };
+
+      const drawFn = overlayMap[attribute];
+      if (drawFn) drawFn();
+    }
+
+    drawFaceOutlineOnCanvas(ctx, analysis, w, h) {
+      const faceOutline = analysis?.face_outline;
+      if (!faceOutline || faceOutline.length < 3) return;
+
+      ctx.strokeStyle = 'rgba(147, 51, 234, 0.6)';
       ctx.lineWidth = 2;
       ctx.beginPath();
 
@@ -1390,69 +1424,48 @@
       ctx.stroke();
     }
 
-    highlightAttributeRegion(attribute) {
-      const canvas = document.getElementById('flashai-vto-face-overlay');
-      if (!canvas) return;
-
-      const ctx = canvas.getContext('2d');
-      const analysis = this.state.currentAnalysis;
-      const w = canvas.width;
-      const h = canvas.height;
-
-      // Clear and redraw face outline
-      this.drawFaceOutline();
-
-      if (!analysis) return;
-
-      // Define regions and markers for each attribute
-      const regionMap = {
-        'dark_circles': () => this.drawDarkCirclesOverlay(ctx, analysis, w, h),
-        'pores': () => this.drawPoresOverlay(ctx, analysis, w, h),
-        'wrinkles': () => this.drawWrinklesOverlay(ctx, analysis, w, h),
-        'hydration': () => this.drawFullFaceHighlight(ctx, w, h, 'rgba(59, 130, 246, 0.2)'),
-        'acne': () => this.drawAcneOverlay(ctx, analysis, w, h),
-        'redness': () => this.drawRednessOverlay(ctx, analysis, w, h),
-        'oiliness': () => this.drawTZoneOverlay(ctx, w, h),
-        'pigmentation': () => this.drawPigmentationOverlay(ctx, analysis, w, h),
-        'texture': () => this.drawFullFaceHighlight(ctx, w, h, 'rgba(16, 185, 129, 0.2)')
-      };
-
-      const drawFn = regionMap[attribute];
-      if (drawFn) drawFn();
-    }
-
     drawDarkCirclesOverlay(ctx, analysis, w, h) {
       const regions = analysis.dark_circles_regions;
       if (!regions) return;
 
-      ctx.fillStyle = 'rgba(147, 51, 234, 0.3)';
+      ctx.fillStyle = 'rgba(147, 51, 234, 0.35)';
+      ctx.strokeStyle = 'rgba(147, 51, 234, 0.8)';
+      ctx.lineWidth = 2;
 
       ['left_eye', 'right_eye'].forEach(eye => {
         const region = regions[eye];
         if (region && region.bbox) {
           const [x1, y1, x2, y2] = region.bbox;
-          ctx.fillRect(x1 * w, y1 * h, (x2 - x1) * w, (y2 - y1) * h);
+          const rx = x1 * w;
+          const ry = y1 * h;
+          const rw = (x2 - x1) * w;
+          const rh = (y2 - y1) * h;
+
+          // Draw rounded rectangle
+          ctx.beginPath();
+          ctx.roundRect(rx, ry, rw, rh, 4);
+          ctx.fill();
+          ctx.stroke();
         }
       });
     }
 
     drawPoresOverlay(ctx, analysis, w, h) {
       const pores = analysis.enlarged_pores_locations || [];
-      const poresRegion = analysis.pores_region;
 
-      // Draw T-zone region
-      if (poresRegion && poresRegion.bbox) {
-        const [x1, y1, x2, y2] = poresRegion.bbox;
-        ctx.fillStyle = 'rgba(147, 51, 234, 0.15)';
-        ctx.fillRect(x1 * w, y1 * h, (x2 - x1) * w, (y2 - y1) * h);
-      }
+      // Draw T-zone highlight
+      ctx.fillStyle = 'rgba(147, 51, 234, 0.12)';
+      ctx.fillRect(0.35 * w, 0.15 * h, 0.3 * w, 0.55 * h);
 
       // Draw pore markers
-      ctx.fillStyle = 'rgba(255, 200, 0, 0.9)';
       pores.forEach(pore => {
+        ctx.fillStyle = 'rgba(255, 200, 0, 0.9)';
+        ctx.strokeStyle = 'rgba(200, 150, 0, 1)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(pore.x * w, pore.y * h, 3, 0, Math.PI * 2);
+        ctx.arc(pore.x * w, pore.y * h, 4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
       });
     }
 
@@ -1460,12 +1473,30 @@
       const regions = analysis.wrinkle_regions;
       if (!regions) return;
 
-      ctx.fillStyle = 'rgba(147, 51, 234, 0.25)';
-
-      Object.values(regions).forEach(region => {
+      Object.entries(regions).forEach(([name, region]) => {
         if (region && region.bbox && region.severity > 0.1) {
           const [x1, y1, x2, y2] = region.bbox;
-          ctx.fillRect(x1 * w, y1 * h, (x2 - x1) * w, (y2 - y1) * h);
+          const intensity = Math.min(0.4, region.severity * 0.5);
+
+          ctx.fillStyle = `rgba(147, 51, 234, ${intensity})`;
+          ctx.strokeStyle = 'rgba(147, 51, 234, 0.7)';
+          ctx.lineWidth = 1;
+
+          ctx.beginPath();
+          ctx.roundRect(x1 * w, y1 * h, (x2 - x1) * w, (y2 - y1) * h, 4);
+          ctx.fill();
+          ctx.stroke();
+
+          // Draw lines pattern for wrinkles
+          ctx.strokeStyle = 'rgba(147, 51, 234, 0.5)';
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 3; i++) {
+            const ly = y1 * h + ((y2 - y1) * h * (i + 1)) / 4;
+            ctx.beginPath();
+            ctx.moveTo(x1 * w + 4, ly);
+            ctx.lineTo(x2 * w - 4, ly);
+            ctx.stroke();
+          }
         }
       });
     }
@@ -1548,6 +1579,31 @@
 
       ctx.closePath();
       ctx.fill();
+    }
+
+    drawTextureOverlay(ctx, w, h, analysis) {
+      // Highlight cheeks and forehead where texture is most visible
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
+      ctx.lineWidth = 1;
+
+      // Left cheek
+      ctx.beginPath();
+      ctx.ellipse(0.25 * w, 0.5 * h, 0.12 * w, 0.15 * h, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Right cheek
+      ctx.beginPath();
+      ctx.ellipse(0.75 * w, 0.5 * h, 0.12 * w, 0.15 * h, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Forehead
+      ctx.beginPath();
+      ctx.ellipse(0.5 * w, 0.2 * h, 0.2 * w, 0.1 * h, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
     }
 
     async loadProductRecommendations(scanId) {
