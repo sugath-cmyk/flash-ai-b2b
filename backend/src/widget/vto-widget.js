@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.3.2 (Fix black rectangle - aggressive video positioning)
+ * Version: 2.4.0 (Fix black rectangle - loading overlay until video plays)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.3.2 - Fix black rectangle - aggressive video positioning');
+  console.log('[Flash AI Widget] Version 2.4.0 - Fix black rectangle - loading overlay until video plays');
 
   // ==========================================================================
   // Main Widget Class
@@ -366,7 +366,14 @@
             </div>
 
             <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%) !important;">
-              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;"></video>
+              <!-- Loading overlay that hides the black video placeholder -->
+              <div id="flashai-vto-camera-loading" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s ease;">
+                <div style="width:50px;height:50px;border:4px solid #e9d5ff;border-top-color:#8b5cf6;border-radius:50%;animation:flashai-spin 1s linear infinite;"></div>
+                <p style="margin-top:16px;color:#6b21a8;font-size:14px;font-weight:500;">Starting camera...</p>
+              </div>
+              <style>@keyframes flashai-spin{to{transform:rotate(360deg)}}</style>
+
+              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;opacity:0;transition:opacity 0.3s ease;"></video>
 
               <!-- Face Boundary Guide Overlay - transparent, no backgrounds -->
               <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:none !important;">
@@ -865,6 +872,13 @@
 
     async startFaceCamera() {
       try {
+        // Show loading overlay while waiting for camera
+        const loadingOverlay = document.getElementById('flashai-vto-camera-loading');
+        if (loadingOverlay) {
+          loadingOverlay.style.display = 'flex';
+          loadingOverlay.style.opacity = '1';
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: 'user',
@@ -890,12 +904,38 @@
         const photosContainer = document.getElementById('flashai-vto-face-photos');
         if (photosContainer) photosContainer.innerHTML = '';
 
+        // Hide loading overlay and show video once it's actually playing
+        const hideLoadingAndShowVideo = () => {
+          console.log('[Flash AI Widget] Camera stream started, hiding loading overlay');
+          if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+              loadingOverlay.style.display = 'none';
+            }, 300);
+          }
+          video.style.opacity = '1';
+        };
+
+        // Listen for when video actually has frames to display
+        video.addEventListener('playing', hideLoadingAndShowVideo, { once: true });
+
+        // Fallback: if playing event doesn't fire within 2 seconds, show video anyway
+        setTimeout(() => {
+          if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+            console.log('[Flash AI Widget] Fallback: showing video after timeout');
+            hideLoadingAndShowVideo();
+          }
+        }, 2000);
+
         // Initialize face detection and quality checking
         video.addEventListener('loadedmetadata', () => {
           this.initializeFaceDetection();
         });
       } catch (error) {
         console.error('Face camera access error:', error);
+        // Hide loading overlay on error
+        const loadingOverlay = document.getElementById('flashai-vto-camera-loading');
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
         this.showError('Camera access denied. Please allow camera access to use Face Scan.');
       }
     }
