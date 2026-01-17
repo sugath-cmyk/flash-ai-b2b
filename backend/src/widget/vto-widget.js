@@ -403,6 +403,25 @@
               <div id="flashai-vto-face-angle-indicator" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;z-index:15;border:1px solid rgba(255,255,255,0.2);backdrop-filter:none !important;-webkit-backdrop-filter:none !important;box-shadow:none !important;">
                 📸 Photo <span id="flashai-vto-face-photo-count">1</span> of 3: <span id="flashai-vto-current-angle">Front View</span>
               </div>
+
+              <!-- Auto-capture countdown overlay -->
+              <div id="flashai-vto-countdown-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:20;pointer-events:none;">
+                <div style="display:flex;flex-direction:column;align-items:center;">
+                  <div id="flashai-vto-countdown-number" style="width:100px;height:100px;border-radius:50%;background:rgba(139,92,246,0.9);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:800;color:#fff;box-shadow:0 0 40px rgba(139,92,246,0.6);animation:flashai-countdown-pulse 1s ease-in-out infinite;">5</div>
+                  <p id="flashai-vto-countdown-text" style="margin-top:12px;background:rgba(0,0,0,0.8);color:#fff;padding:8px 20px;border-radius:20px;font-size:14px;font-weight:600;">Get ready for front photo</p>
+                </div>
+              </div>
+              <style>
+                @keyframes flashai-countdown-pulse {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.1); }
+                }
+                @keyframes flashai-capture-flash {
+                  0% { opacity: 0; }
+                  50% { opacity: 1; }
+                  100% { opacity: 0; }
+                }
+              </style>
             </div>
 
             <!-- Lighting Guide -->
@@ -507,6 +526,45 @@
                 <h3 class="flashai-vto-issues-title" style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 12px;">Detected Concerns</h3>
                 <div class="flashai-vto-issues-list" id="flashai-vto-issues-list" style="display:flex;flex-direction:column;gap:0;">
                   <!-- Dynamically generated accordion items -->
+                </div>
+              </div>
+
+              <!-- Treatment Prioritization Section -->
+              <div class="flashai-vto-treatment-priority" id="flashai-vto-treatment-priority" style="margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#fef3c7 0%,#fff7ed 100%);border-radius:12px;border:1px solid #fed7aa;">
+                <h3 style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#92400e;margin:0 0 12px;">
+                  <span style="font-size:18px;">📋</span> Your Treatment Priority Order
+                </h3>
+                <p style="font-size:12px;color:#78350f;margin:0 0 12px;">Focus on one concern at a time for best results. Here's your recommended order:</p>
+                <div id="flashai-vto-priority-list" style="display:flex;flex-direction:column;gap:8px;">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+              <!-- 12-Month Skincare Journey Timeline -->
+              <div class="flashai-vto-timeline" id="flashai-vto-timeline" style="margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:12px;border:1px solid #ddd6fe;">
+                <h3 style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#5b21b6;margin:0 0 12px;">
+                  <span style="font-size:18px;">📅</span> Your 12-Month Skincare Journey
+                </h3>
+                <div id="flashai-vto-timeline-content" style="display:flex;flex-direction:column;gap:10px;">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+              <!-- Healthcare Professional Recommendation -->
+              <div class="flashai-vto-healthcare-notice" id="flashai-vto-healthcare-notice" style="display:none;margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#fef2f2 0%,#fff 100%);border-radius:12px;border:2px solid #fca5a5;">
+                <h3 style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#b91c1c;margin:0 0 8px;">
+                  <span style="font-size:18px;">⚕️</span> Professional Consultation Recommended
+                </h3>
+                <p id="flashai-vto-healthcare-text" style="font-size:13px;color:#7f1d1d;margin:0 0 12px;line-height:1.5;">
+                  Based on your scan results, we recommend consulting a dermatologist or healthcare professional for personalized treatment.
+                </p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:#fee2e2;border-radius:20px;font-size:11px;font-weight:600;color:#991b1b;">
+                    🏥 Dermatologist
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:#fee2e2;border-radius:20px;font-size:11px;font-weight:600;color:#991b1b;">
+                    💊 Prescription Treatment
+                  </span>
                 </div>
               </div>
 
@@ -934,13 +992,19 @@
         };
 
         // Listen for when video actually has frames to display
-        video.addEventListener('playing', hideLoadingAndShowVideo, { once: true });
+        video.addEventListener('playing', () => {
+          hideLoadingAndShowVideo();
+          // Start auto-capture countdown after camera is ready (1 second delay to let user see themselves)
+          setTimeout(() => this.startAutoCaptureCountdown(), 1000);
+        }, { once: true });
 
         // Fallback: if playing event doesn't fire within 2 seconds, show video anyway
         setTimeout(() => {
           if (loadingOverlay && loadingOverlay.style.display !== 'none') {
             console.log('[Flash AI Widget] Fallback: showing video after timeout');
             hideLoadingAndShowVideo();
+            // Start auto-capture countdown
+            setTimeout(() => this.startAutoCaptureCountdown(), 1000);
           }
         }, 2000);
 
@@ -1090,6 +1154,99 @@
         this.qualityCheckInterval = null;
       }
       this.state.qualityCheckReady = false;
+
+      // Stop any running countdown
+      this.stopAutoCaptureCountdown();
+    }
+
+    // ==========================================================================
+    // Auto-Capture Countdown System
+    // ==========================================================================
+
+    startAutoCaptureCountdown() {
+      // Determine countdown duration based on current angle
+      // Front view: 5 seconds, Profile views: 3 seconds
+      const isFrontView = this.state.currentAngleIndex === 0;
+      const countdownDuration = isFrontView ? 5 : 3;
+
+      const overlay = document.getElementById('flashai-vto-countdown-overlay');
+      const numberEl = document.getElementById('flashai-vto-countdown-number');
+      const textEl = document.getElementById('flashai-vto-countdown-text');
+
+      if (!overlay || !numberEl || !textEl) return;
+
+      // Update text based on current angle
+      const angleTexts = [
+        'Get ready for front photo',
+        'Turn LEFT - profile photo',
+        'Turn RIGHT - profile photo'
+      ];
+      textEl.textContent = angleTexts[this.state.currentAngleIndex] || 'Get ready';
+
+      // Show countdown overlay
+      overlay.style.display = 'flex';
+      numberEl.textContent = countdownDuration;
+
+      let remaining = countdownDuration;
+
+      // Clear any existing countdown
+      if (this.autoCaptureCountdownInterval) {
+        clearInterval(this.autoCaptureCountdownInterval);
+      }
+
+      console.log(`[Auto-Capture] Starting ${countdownDuration}s countdown for ${this.state.faceAngles[this.state.currentAngleIndex]}`);
+
+      this.autoCaptureCountdownInterval = setInterval(() => {
+        remaining--;
+
+        if (remaining > 0) {
+          numberEl.textContent = remaining;
+          // Add pulse effect
+          numberEl.style.animation = 'none';
+          setTimeout(() => {
+            numberEl.style.animation = 'flashai-countdown-pulse 1s ease-in-out infinite';
+          }, 10);
+        } else {
+          // Countdown complete - capture photo
+          clearInterval(this.autoCaptureCountdownInterval);
+          this.autoCaptureCountdownInterval = null;
+
+          // Flash effect
+          numberEl.textContent = '📸';
+          numberEl.style.background = 'rgba(34, 197, 94, 0.9)';
+          numberEl.style.boxShadow = '0 0 60px rgba(34, 197, 94, 0.8)';
+
+          setTimeout(() => {
+            overlay.style.display = 'none';
+            numberEl.style.background = 'rgba(139, 92, 246, 0.9)';
+            numberEl.style.boxShadow = '0 0 40px rgba(139, 92, 246, 0.6)';
+
+            // Trigger photo capture
+            this.captureFacePhoto();
+
+            // If more photos needed, start next countdown after a brief delay
+            if (this.state.currentAngleIndex < 3 && this.state.faceCameraStream) {
+              setTimeout(() => {
+                if (this.state.faceCameraStream && this.state.currentAngleIndex < 3) {
+                  this.startAutoCaptureCountdown();
+                }
+              }, 800);
+            }
+          }, 300);
+        }
+      }, 1000);
+    }
+
+    stopAutoCaptureCountdown() {
+      if (this.autoCaptureCountdownInterval) {
+        clearInterval(this.autoCaptureCountdownInterval);
+        this.autoCaptureCountdownInterval = null;
+      }
+
+      const overlay = document.getElementById('flashai-vto-countdown-overlay');
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
     }
 
     captureFacePhoto() {
@@ -1407,6 +1564,11 @@
 
       // Generate detected issues with numbered pins
       this.generateDetectedIssues(scan.analysis);
+
+      // Render treatment prioritization, timeline, and healthcare notice
+      this.renderTreatmentPriority(scan.analysis);
+      this.renderSkincareTimeline(scan.analysis);
+      this.checkHealthcareRecommendation(scan.analysis);
 
       // Show results step
       this.showStep('face-results');
@@ -3643,6 +3805,266 @@
       } catch (error) {
         console.error('Track event error:', error);
         // Don't throw - tracking failures shouldn't break UX
+      }
+    }
+
+    // ==========================================================================
+    // Treatment Prioritization, Timeline & Healthcare Recommendations
+    // ==========================================================================
+
+    renderTreatmentPriority(analysis) {
+      const container = document.getElementById('flashai-vto-priority-list');
+      if (!container || !analysis) return;
+
+      // Define treatment priority rules (what to fix first)
+      const priorities = [
+        {
+          key: 'acne',
+          name: 'Clear Breakouts First',
+          score: analysis.acne_score || 0,
+          threshold: 25,
+          icon: '🎯',
+          why: 'Active breakouts need immediate attention to prevent scarring',
+          products: 'Salicylic Acid cleanser, Benzoyl Peroxide spot treatment',
+          usage: 'Cleanse AM/PM, spot treat at night'
+        },
+        {
+          key: 'redness',
+          name: 'Calm Inflammation',
+          score: analysis.redness_score || 0,
+          threshold: 30,
+          icon: '🌸',
+          why: 'Reduce redness and sensitivity before using active ingredients',
+          products: 'Centella (Cica) serum, Azelaic Acid',
+          usage: 'Apply soothing serum AM/PM after cleansing'
+        },
+        {
+          key: 'hydration',
+          name: 'Repair Skin Barrier',
+          score: 100 - (analysis.hydration_score || 65),
+          threshold: 35,
+          icon: '💧',
+          why: 'A healthy barrier is essential for other treatments to work',
+          products: 'Hyaluronic Acid serum, Ceramide moisturizer',
+          usage: 'Apply on damp skin AM/PM, seal with moisturizer'
+        },
+        {
+          key: 'pigmentation',
+          name: 'Fade Dark Spots',
+          score: analysis.pigmentation_score || 0,
+          threshold: 25,
+          icon: '☀️',
+          why: 'Once skin is calm, focus on evening skin tone',
+          products: 'Vitamin C serum (AM), Niacinamide, SPF 50',
+          usage: 'Vitamin C in morning, Niacinamide at night'
+        },
+        {
+          key: 'wrinkles',
+          name: 'Address Fine Lines',
+          score: analysis.wrinkle_score || 0,
+          threshold: 20,
+          icon: '✨',
+          why: 'Anti-aging treatments work best on healthy, calm skin',
+          products: 'Retinol serum, Peptide cream',
+          usage: 'Start 2x/week at night, increase gradually'
+        },
+        {
+          key: 'texture',
+          name: 'Refine Texture',
+          score: 100 - (analysis.texture_score || 70),
+          threshold: 30,
+          icon: '💎',
+          why: 'Exfoliation for smoother skin after other concerns are managed',
+          products: 'AHA/BHA exfoliant, Niacinamide for pores',
+          usage: 'Exfoliate 2-3x/week, not with retinol'
+        }
+      ];
+
+      // Filter and sort by score (highest issues first)
+      const activeIssues = priorities
+        .filter(p => p.score >= p.threshold)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4); // Show top 4 priorities
+
+      if (activeIssues.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:12px;background:#dcfce7;border-radius:8px;">
+            <span style="font-size:24px;">✨</span>
+            <p style="margin:8px 0 0;font-size:13px;color:#166534;">Your skin is in great condition! Focus on maintenance with SPF and hydration.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = activeIssues.map((issue, index) => `
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#fff;border-radius:8px;border:1px solid #fde68a;">
+          <div style="width:32px;height:32px;border-radius:50%;background:${index === 0 ? '#dc2626' : index === 1 ? '#f59e0b' : '#3b82f6'};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0;">
+            ${index + 1}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span style="font-size:16px;">${issue.icon}</span>
+              <span style="font-weight:700;font-size:13px;color:#1f2937;">${issue.name}</span>
+            </div>
+            <p style="font-size:11px;color:#6b7280;margin:0 0 6px;line-height:1.4;">${issue.why}</p>
+            <div style="background:#f9fafb;padding:8px;border-radius:6px;margin-top:6px;">
+              <p style="font-size:10px;font-weight:600;color:#374151;margin:0 0 2px;">📦 Products: <span style="font-weight:400;">${issue.products}</span></p>
+              <p style="font-size:10px;font-weight:600;color:#374151;margin:0;">⏰ Usage: <span style="font-weight:400;">${issue.usage}</span></p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    renderSkincareTimeline(analysis) {
+      const container = document.getElementById('flashai-vto-timeline-content');
+      if (!container || !analysis) return;
+
+      // Determine primary concerns for personalized timeline
+      const hasAcne = (analysis.acne_score || 0) > 25;
+      const hasRedness = (analysis.redness_score || 0) > 30;
+      const hasDehydration = (analysis.hydration_score || 65) < 50;
+      const hasPigmentation = (analysis.pigmentation_score || 0) > 25;
+      const hasWrinkles = (analysis.wrinkle_score || 0) > 20;
+
+      const timeline = [
+        {
+          period: 'Month 1',
+          title: 'Foundation Phase',
+          icon: '🌱',
+          focus: 'Build your basic routine',
+          tasks: [
+            'Start with gentle cleanser AM/PM',
+            hasDehydration ? 'Add Hyaluronic Acid serum daily' : 'Use a lightweight moisturizer',
+            'Apply SPF 30+ every morning (non-negotiable!)',
+            hasAcne ? 'Introduce Salicylic Acid cleanser 3x/week' : 'Keep routine simple',
+            hasRedness ? 'Use fragrance-free products only' : ''
+          ].filter(Boolean)
+        },
+        {
+          period: 'Months 1-3',
+          title: 'Treatment Phase',
+          icon: '🔬',
+          focus: 'Add targeted treatments',
+          tasks: [
+            hasAcne ? 'Continue acne treatment, add spot treatment' : 'Maintain cleansing routine',
+            hasPigmentation ? 'Introduce Vitamin C serum (AM)' : 'Add antioxidant serum',
+            hasRedness ? 'Add Centella/Cica products for calming' : '',
+            'Upgrade to SPF 50 if using actives',
+            hasWrinkles ? 'Start Retinol 2x/week at night (pea-sized)' : ''
+          ].filter(Boolean)
+        },
+        {
+          period: 'Months 3-6',
+          title: 'Optimization Phase',
+          icon: '📈',
+          focus: 'Increase strength & frequency',
+          tasks: [
+            hasWrinkles ? 'Increase Retinol to 3-4x/week' : 'Consider adding gentle retinol',
+            hasPigmentation ? 'Add Niacinamide for enhanced brightening' : 'Continue Vitamin C',
+            hasAcne ? 'Transition to maintenance (less frequent acids)' : '',
+            'Add weekly exfoliation (AHA or enzyme mask)',
+            'Evaluate progress - adjust products if needed'
+          ].filter(Boolean)
+        },
+        {
+          period: 'Months 6-9',
+          title: 'Advanced Care',
+          icon: '⭐',
+          focus: 'Fine-tune your routine',
+          tasks: [
+            'Consider professional treatments (facials, peels)',
+            hasWrinkles ? 'Increase Retinol strength or add Peptides' : 'Add anti-aging preventive care',
+            'Try overnight masks for deep hydration',
+            'Reassess and adjust based on seasonal changes',
+            hasPigmentation ? 'Consider Alpha Arbutin for stubborn spots' : ''
+          ].filter(Boolean)
+        },
+        {
+          period: 'Months 9-12',
+          title: 'Maintenance Mode',
+          icon: '🏆',
+          focus: 'Maintain your results',
+          tasks: [
+            'Continue your established routine',
+            'Re-scan your skin to track improvements',
+            'Adjust products seasonally (lighter in summer)',
+            'Book annual dermatologist check-up',
+            'Celebrate your skin transformation! 🎉'
+          ]
+        }
+      ];
+
+      container.innerHTML = timeline.map((phase, index) => `
+        <div style="position:relative;padding-left:24px;">
+          ${index < timeline.length - 1 ? '<div style="position:absolute;left:8px;top:24px;bottom:-10px;width:2px;background:linear-gradient(to bottom,#8b5cf6,#ddd6fe);"></div>' : ''}
+          <div style="position:absolute;left:0;top:4px;width:18px;height:18px;border-radius:50%;background:${index === 0 ? '#8b5cf6' : '#e9d5ff'};display:flex;align-items:center;justify-content:center;font-size:10px;">${index === 0 ? '●' : ''}</div>
+          <div style="background:#fff;border-radius:8px;padding:12px;border:1px solid #e5e7eb;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:16px;">${phase.icon}</span>
+              <div>
+                <span style="font-weight:700;font-size:12px;color:#5b21b6;">${phase.period}</span>
+                <span style="font-weight:600;font-size:12px;color:#1f2937;margin-left:8px;">${phase.title}</span>
+              </div>
+            </div>
+            <p style="font-size:11px;color:#6b7280;margin:0 0 8px;font-style:italic;">${phase.focus}</p>
+            <ul style="margin:0;padding-left:16px;font-size:11px;color:#374151;line-height:1.6;">
+              ${phase.tasks.map(task => `<li>${task}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    checkHealthcareRecommendation(analysis) {
+      const container = document.getElementById('flashai-vto-healthcare-notice');
+      const textEl = document.getElementById('flashai-vto-healthcare-text');
+      if (!container || !analysis) return;
+
+      // Conditions that warrant professional consultation
+      const concerns = [];
+
+      // Severe acne
+      if ((analysis.acne_score || 0) > 70) {
+        concerns.push('severe acne that may require prescription treatment');
+      }
+
+      // Rosacea indicators
+      if (analysis.rosacea_indicators || (analysis.redness_score || 0) > 65) {
+        concerns.push('persistent redness that could indicate rosacea');
+      }
+
+      // Severe pigmentation / melasma
+      if (analysis.melasma_detected || (analysis.pigmentation_score || 0) > 70) {
+        concerns.push('significant pigmentation that may need medical-grade treatments');
+      }
+
+      // Very low skin health score
+      if ((analysis.skin_score || 50) < 30) {
+        concerns.push('multiple skin concerns that could benefit from professional assessment');
+      }
+
+      // Severe dehydration with dry patches
+      if (analysis.dry_patches_detected && (analysis.hydration_score || 65) < 30) {
+        concerns.push('severe dehydration that may indicate a skin barrier condition');
+      }
+
+      // Deep wrinkles (possible sun damage)
+      if ((analysis.deep_wrinkles_count || 0) > 5 || (analysis.sun_damage_score || 0) > 60) {
+        concerns.push('signs of significant sun damage');
+      }
+
+      if (concerns.length > 0) {
+        container.style.display = 'block';
+        textEl.innerHTML = `
+          Based on your scan, we detected <strong>${concerns.join(', ')}</strong>.
+          While our product recommendations can help, we strongly recommend consulting a dermatologist
+          or healthcare professional for personalized medical advice and potential prescription treatments.
+          <br><br>
+          <em style="font-size:11px;color:#991b1b;">This is not a medical diagnosis. Our AI analysis is for skincare guidance only.</em>
+        `;
+      } else {
+        container.style.display = 'none';
       }
     }
   }
