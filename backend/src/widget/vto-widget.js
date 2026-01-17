@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.11.0 (Highlight Find My Shade, remove Start New Scan)
+ * Version: 2.12.0 (Show skin tone with undertone and color swatch)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.11.0 - Highlight Find My Shade, remove Start New Scan');
+  console.log('[Flash AI Widget] Version 2.12.0 - Show skin tone with undertone and color swatch');
 
   // ==========================================================================
   // Main Widget Class
@@ -508,7 +508,11 @@
                 </div>
                 <div class="flashai-vto-results-title">
                   <h2 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 4px;">Skin Analysis</h2>
-                  <p style="font-size:12px;color:#71717a;margin:0;">Skin Tone: <strong id="flashai-vto-skin-tone" style="color:#3f3f46;">--</strong></p>
+                  <p style="font-size:12px;color:#71717a;margin:0;display:flex;align-items:center;gap:6px;">
+                    Skin Tone:
+                    <span id="flashai-vto-skin-color-swatch" style="display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #e5e7eb;background:#DEB887;"></span>
+                    <strong id="flashai-vto-skin-tone" style="color:#3f3f46;">--</strong>
+                  </p>
                 </div>
               </div>
 
@@ -1536,10 +1540,26 @@
         scoreCircle.style.strokeDashoffset = offset;
       }
 
-      // Update skin tone
+      // Update skin tone with undertone and color swatch
       if (scan.analysis) {
         const toneElem = document.getElementById('flashai-vto-skin-tone');
-        if (toneElem) toneElem.textContent = this.capitalizeFirst(scan.analysis.skin_tone) || 'N/A';
+        const swatchElem = document.getElementById('flashai-vto-skin-color-swatch');
+
+        if (toneElem) {
+          const tone = this.capitalizeFirst(scan.analysis.skin_tone) || 'N/A';
+          const undertone = scan.analysis.skin_undertone;
+          // Display as "Olive (Warm)" or just "Olive" if no undertone
+          if (undertone && undertone !== 'unknown' && undertone !== 'neutral') {
+            toneElem.textContent = `${tone} (${this.capitalizeFirst(undertone)})`;
+          } else {
+            toneElem.textContent = tone;
+          }
+        }
+
+        // Update color swatch with actual detected skin hex color
+        if (swatchElem && scan.analysis.skin_hex_color) {
+          swatchElem.style.background = scan.analysis.skin_hex_color;
+        }
       }
 
       // Show multi-view indicator if multiple views were analyzed
