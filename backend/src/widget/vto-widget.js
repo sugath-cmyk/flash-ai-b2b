@@ -2842,9 +2842,9 @@
           getIngredients: () => 'Vitamin C, Caffeine, Vitamin K, Retinol, Niacinamide, Peptides, Hyaluronic Acid',
           getUsage: () => 'Apply a pea-sized amount of eye cream to your ring finger. Gently pat (don\'t rub) around the orbital bone, from inner to outer corner. Use morning and night after cleansing and before moisturizer.',
           getProducts: () => [
-            { name: 'Eye Cream with Caffeine', brands: 'The Ordinary Caffeine Solution 5%, CeraVe Eye Repair Cream, Olay Eyes Brightening Eye Cream' },
-            { name: 'Vitamin C Eye Serum', brands: 'Kiehl\'s Powerful-Strength Line-Reducing Eye, La Roche-Posay Pigmentclar Eyes, Ole Henriksen Banana Bright Eye Cream' },
-            { name: 'Retinol Eye Cream', brands: 'Neutrogena Rapid Wrinkle Repair Eye, RoC Retinol Correxion Eye Cream, SkinCeuticals A.G.E. Eye Complex' }
+            { name: 'Eye Cream with Caffeine', brands: 'The Ordinary Caffeine Solution 5% (Nykaa), Minimalist 5% Caffeine Eye Serum, Plum Bright Years Under-Eye Recovery Gel' },
+            { name: 'Vitamin C Eye Serum', brands: 'Dot & Key Vitamin C + E Super Bright Eye Cream, Mamaearth Vitamin C Under Eye Cream, Kiehl\'s Powerful-Strength Eye (Nykaa)' },
+            { name: 'Retinol Eye Cream', brands: 'Minimalist 0.3% Retinol Eye Cream, Olay Regenerist Retinol24 Eye Cream, Neutrogena Rapid Wrinkle Repair Eye' }
           ]
         },
         acne: {
@@ -2865,9 +2865,9 @@
           getIngredients: () => 'Salicylic Acid (BHA), Benzoyl Peroxide, Tea Tree Oil, Niacinamide, Zinc, Sulfur, Azelaic Acid',
           getUsage: () => 'Cleanse face twice daily with acne cleanser. Apply spot treatment directly on blemishes at night. Use oil-free moisturizer. For prevention, use BHA toner 2-3 times per week on affected areas.',
           getProducts: () => [
-            { name: 'Salicylic Acid Cleanser', brands: 'CeraVe Acne Foaming Cream Cleanser, La Roche-Posay Effaclar Medicated Gel Cleanser, Neutrogena Oil-Free Acne Wash' },
-            { name: 'Benzoyl Peroxide Treatment', brands: 'Paula\'s Choice Clear Regular Strength, Differin Acne Treatment Gel, La Roche-Posay Effaclar Duo' },
-            { name: 'Spot Treatment', brands: 'Mario Badescu Drying Lotion, COSRX Acne Pimple Master Patch, The Ordinary Niacinamide 10% + Zinc 1%' }
+            { name: 'Salicylic Acid Cleanser', brands: 'Minimalist 2% Salicylic Acid Face Wash, CeraVe SA Cleanser (Nykaa), Neutrogena Oil-Free Acne Wash, Himalaya Purifying Neem Face Wash' },
+            { name: 'Acne Treatment Gel', brands: 'Minimalist 2% Salicylic Acid Serum, Re\'equil Acne Clarifying Gel, Fixderma Salyzap Daily Use Gel, La Roche-Posay Effaclar Duo (Nykaa)' },
+            { name: 'Spot Treatment & Patches', brands: 'COSRX Acne Pimple Master Patch (Nykaa), Dot & Key Acne Spot Corrector, The Ordinary Niacinamide 10% + Zinc 1% (Nykaa)' }
           ]
         },
         wrinkles: {
@@ -2887,9 +2887,9 @@
           getIngredients: () => 'Retinol/Retinoid, Peptides, Hyaluronic Acid, Vitamin C, Bakuchiol (natural alternative), Collagen, CoQ10',
           getUsage: () => 'Start with retinol 2x/week at night, gradually increasing to nightly use. Apply pea-sized amount to clean, dry skin. Wait 20 mins before moisturizer. Always use SPF next morning. Avoid mixing with Vitamin C or AHAs.',
           getProducts: () => [
-            { name: 'Retinol Serum', brands: 'The Ordinary Retinol 0.5% in Squalane, Neutrogena Rapid Wrinkle Repair, RoC Retinol Correxion Deep Wrinkle Serum' },
-            { name: 'Peptide Cream', brands: 'The Ordinary Buffet, Olay Regenerist Micro-Sculpting Cream, StriVectin SD Advanced Plus' },
-            { name: 'Sunscreen SPF 50+', brands: 'La Roche-Posay Anthelios, EltaMD UV Clear, Supergoop Unseen Sunscreen' }
+            { name: 'Retinol Serum', brands: 'Minimalist 0.3% Retinol Serum, The Ordinary Retinol 0.5% (Nykaa), Olay Regenerist Retinol24 Serum, Neutrogena Rapid Wrinkle Repair' },
+            { name: 'Peptide Cream', brands: 'The Ordinary Buffet (Nykaa), Olay Regenerist Micro-Sculpting Cream, Minimalist Multi-Peptide Serum, Plum Bright Years Cell Renewal Serum' },
+            { name: 'Sunscreen SPF 50+', brands: 'La Roche-Posay Anthelios (Nykaa), Minimalist SPF 50 Sunscreen, Re\'equil Ultra Matte SPF 50, Lakme Sun Expert SPF 50' }
           ]
         },
         pigmentation: {
@@ -2910,9 +2910,9 @@
           getIngredients: () => 'Vitamin C (L-Ascorbic Acid), Niacinamide, Alpha Arbutin, Kojic Acid, Tranexamic Acid, Licorice Root Extract, Azelaic Acid',
           getUsage: () => 'Apply Vitamin C serum every morning after cleansing, before SPF. Use brightening serums with Alpha Arbutin at night. Apply SPF 50 generously and reapply every 2 hours when outdoors. Be patient - results take 8-12 weeks.',
           getProducts: () => [
-            { name: 'Vitamin C Serum', brands: 'SkinCeuticals C E Ferulic, Timeless 20% Vitamin C + E + Ferulic Acid, La Roche-Posay Vitamin C Serum' },
-            { name: 'Brightening Serum', brands: 'The Ordinary Alpha Arbutin 2%, Good Molecules Discoloration Correcting Serum, Murad Rapid Age Spot Correcting Serum' },
-            { name: 'Sunscreen SPF 50+', brands: 'EltaMD UV Clear SPF 46, La Roche-Posay Anthelios Melt-in Milk SPF 60, Supergoop Unseen Sunscreen SPF 40' }
+            { name: 'Vitamin C Serum', brands: 'Minimalist 10% Vitamin C Serum, The Ordinary Vitamin C Suspension 23% (Nykaa), Plum 15% Vitamin C Serum, Garnier Bright Complete Vitamin C Serum' },
+            { name: 'Brightening Serum', brands: 'Minimalist Alpha Arbutin 2% Serum, The Ordinary Alpha Arbutin 2% (Nykaa), Dot & Key Vitamin C Glow Serum, Deconstruct 10% Niacinamide Serum' },
+            { name: 'Sunscreen SPF 50+', brands: 'La Roche-Posay Anthelios (Nykaa), Minimalist SPF 50 Sunscreen, Bioderma Photoderm SPF 50+, Cipla Rivela SPF 50' }
           ]
         },
         redness: {
@@ -2932,9 +2932,9 @@
           getIngredients: () => 'Centella Asiatica (Cica), Aloe Vera, Green Tea, Azelaic Acid, Allantoin, Chamomile, Oat Extract, Panthenol',
           getUsage: () => 'Use lukewarm water only. Apply calming products with gentle patting motions. Layer Cica serum before moisturizer. Avoid actives (AHA, retinol) until redness subsides. Test new products on small area first.',
           getProducts: () => [
-            { name: 'Calming Cleanser', brands: 'Cetaphil Gentle Skin Cleanser, La Roche-Posay Toleriane Hydrating Cleanser, Vanicream Gentle Facial Cleanser' },
-            { name: 'Cica/Centella Serum', brands: 'Dr. Jart+ Cicapair Serum, COSRX Centella Blemish Cream, Purito Centella Unscented Serum' },
-            { name: 'Soothing Moisturizer', brands: 'Avene Tolerance Extreme Cream, First Aid Beauty Ultra Repair Cream, La Roche-Posay Cicaplast Baume B5' }
+            { name: 'Calming Cleanser', brands: 'Cetaphil Gentle Skin Cleanser, Simple Kind To Skin Refreshing Facial Wash, Bioderma Sensibio Gel Moussant, CeraVe Hydrating Cleanser (Nykaa)' },
+            { name: 'Cica/Centella Serum', brands: 'Minimalist Sepicalm 3% + Oats Moisturizer, COSRX Centella Blemish Cream (Nykaa), Innisfree Bija Cica Balm, Dr. Sheth\'s Cica & Ceramide Overnight Repair Serum' },
+            { name: 'Soothing Moisturizer', brands: 'La Roche-Posay Cicaplast Baume B5 (Nykaa), Bioderma Atoderm Intensive Baume, Re\'equil Ceramide & Hyaluronic Acid Moisturizer, Avene Skin Recovery Cream (Nykaa)' }
           ]
         },
         hydration: {
@@ -2954,9 +2954,9 @@
           getIngredients: () => 'Hyaluronic Acid, Glycerin, Ceramides, Squalane, Aloe Vera, Beta Glucan, Sodium PCA, Urea',
           getUsage: () => 'Apply Hyaluronic Acid serum on DAMP skin (this is crucial!). Layer from thinnest to thickest: toner → serum → moisturizer. Use a sleeping mask 2-3x/week. Drink 8+ glasses of water daily.',
           getProducts: () => [
-            { name: 'Hyaluronic Acid Serum', brands: 'The Ordinary Hyaluronic Acid 2% + B5, Neutrogena Hydro Boost Serum, Vichy Minéral 89' },
-            { name: 'Hydrating Moisturizer', brands: 'CeraVe Moisturizing Cream, Neutrogena Hydro Boost Gel-Cream, Tatcha The Dewy Skin Cream' },
-            { name: 'Sleeping Mask', brands: 'Laneige Water Sleeping Mask, Glow Recipe Watermelon Sleeping Mask, Kiehl\'s Ultra Facial Overnight Mask' }
+            { name: 'Hyaluronic Acid Serum', brands: 'Minimalist 2% Hyaluronic Acid Serum, The Ordinary Hyaluronic Acid 2% + B5 (Nykaa), Neutrogena Hydro Boost Serum, Plum Grape Seed & Sea Buckthorn Glow Serum' },
+            { name: 'Hydrating Moisturizer', brands: 'CeraVe Moisturizing Cream (Nykaa), Neutrogena Hydro Boost Gel-Cream, Minimalist Sepicalm Moisturizer, Pond\'s Super Light Gel' },
+            { name: 'Sleeping Mask', brands: 'Laneige Water Sleeping Mask (Nykaa/Sephora), Innisfree Aloe Revital Sleeping Pack, Dot & Key Glow Reviving Vitamin C Sleeping Mask, Plum Green Tea Renewed Clarity Night Gel' }
           ]
         },
         oiliness: {
@@ -2976,9 +2976,9 @@
           getIngredients: () => 'Niacinamide, Salicylic Acid, Kaolin Clay, Zinc, Tea Tree Oil, Witch Hazel, Green Tea Extract',
           getUsage: () => 'Cleanse with foaming gel cleanser morning and night. Apply Niacinamide serum to T-zone after toning. Use oil-free gel moisturizer. Apply clay mask to oily areas 1-2x weekly for 10-15 mins. Blotting papers for midday touch-ups.',
           getProducts: () => [
-            { name: 'Oil-Control Cleanser', brands: 'CeraVe Foaming Facial Cleanser, La Roche-Posay Effaclar Purifying Gel, Fresh Soy Face Cleanser' },
-            { name: 'Niacinamide Serum', brands: 'The Ordinary Niacinamide 10% + Zinc 1%, Paula\'s Choice 10% Niacinamide Booster, Good Molecules Niacinamide Serum' },
-            { name: 'Clay Mask', brands: 'Aztec Secret Indian Healing Clay, Innisfree Super Volcanic Pore Clay Mask, Origins Clear Improvement Charcoal Mask' }
+            { name: 'Oil-Control Cleanser', brands: 'CeraVe Foaming Facial Cleanser (Nykaa), Neutrogena Deep Clean Facial Cleanser, Himalaya Oil Clear Lemon Face Wash, Plum Green Tea Pore Cleansing Face Wash' },
+            { name: 'Niacinamide Serum', brands: 'Minimalist 10% Niacinamide Serum, The Ordinary Niacinamide 10% + Zinc 1% (Nykaa), Deconstruct 10% Niacinamide Serum, Mamaearth Vitamin C & Niacinamide Serum' },
+            { name: 'Clay Mask', brands: 'Innisfree Super Volcanic Pore Clay Mask (Nykaa), Mamaearth Charcoal Face Mask, Lotus Herbals Claywhite Black Clay Face Pack, WOW Skin Science Activated Charcoal Face Mask' }
           ]
         },
         pores: {
@@ -2999,9 +2999,9 @@
           getIngredients: () => 'Salicylic Acid (BHA), Niacinamide, Kaolin/Bentonite Clay, Retinol, Alpha Hydroxy Acids (AHA), Witch Hazel',
           getUsage: () => 'Use BHA toner 2-3x/week at night. Apply to clean skin, wait 20 mins before next step. Use clay mask on nose/chin 1-2x weekly (15 mins max). Double cleanse at night with oil cleanser followed by water-based cleanser.',
           getProducts: () => [
-            { name: 'BHA Exfoliant', brands: 'Paula\'s Choice 2% BHA Liquid Exfoliant, COSRX BHA Blackhead Power Liquid, The Inkey List Beta Hydroxy Acid' },
-            { name: 'Pore-Minimizing Serum', brands: 'The Ordinary Niacinamide 10% + Zinc 1%, Benefit POREfessional Super Setter, Dr. Brandt Pores No More Primer' },
-            { name: 'Oil Cleanser', brands: 'DHC Deep Cleansing Oil, Banila Co Clean It Zero, Kose Softymo Speedy Cleansing Oil' }
+            { name: 'BHA Exfoliant', brands: 'Minimalist 2% Salicylic Acid Serum, COSRX BHA Blackhead Power Liquid (Nykaa), Deconstruct 2% Salicylic Acid Serum, Re\'equil Fruit AHA Face Wash' },
+            { name: 'Pore-Minimizing Serum', brands: 'Minimalist 10% Niacinamide + Zinc, The Ordinary Niacinamide 10% + Zinc 1% (Nykaa), Dot & Key CICA Calming Niacinamide Serum, Pilgrim Niacinamide & Zinc Serum' },
+            { name: 'Oil Cleanser', brands: 'Innisfree Apple Seed Cleansing Oil (Nykaa), Plum E-Luminence Deep Cleansing Oil, Kama Ayurveda Rose Jasmine Face Cleanser, Forest Essentials Makeup Remover Oil' }
           ]
         },
         texture: {
@@ -3021,9 +3021,9 @@
           getIngredients: () => 'Glycolic Acid (AHA), Lactic Acid, Mandelic Acid, Retinol, Niacinamide, Polyhydroxy Acids (PHA), Enzyme Exfoliants',
           getUsage: () => 'Use AHA exfoliant 2-3x/week at night on clean skin. Start with lower concentrations (5-8%) and increase gradually. Never use with retinol on same night. Follow with hydrating serum and moisturizer. Always use SPF next day.',
           getProducts: () => [
-            { name: 'AHA Exfoliating Toner', brands: 'Pixi Glow Tonic, The Ordinary Glycolic Acid 7% Toning Solution, Glow Recipe Watermelon Glow PHA+BHA Toner' },
-            { name: 'Resurfacing Serum', brands: 'Good Molecules Overnight Exfoliating Treatment, Sunday Riley Good Genes, Drunk Elephant T.L.C. Framboos Glycolic Night Serum' },
-            { name: 'Smoothing Moisturizer', brands: 'First Aid Beauty Ultra Repair Cream, CeraVe SA Cream for Rough & Bumpy Skin, AmLactin Daily Moisturizing Lotion' }
+            { name: 'AHA Exfoliating Toner', brands: 'The Ordinary Glycolic Acid 7% Toning Solution (Nykaa), Minimalist 10% Lactic Acid Serum, Pixi Glow Tonic (Nykaa), Plum 1% Glycolic Acid Toner' },
+            { name: 'Resurfacing Serum', brands: 'Minimalist 25% AHA + 2% BHA Peeling Solution, The Ordinary AHA 30% + BHA 2% Peeling Solution (Nykaa), Deconstruct AHA + BHA Exfoliating Serum, Dot & Key 10% AHA Exfoliating Serum' },
+            { name: 'Smoothing Moisturizer', brands: 'CeraVe SA Cream for Rough & Bumpy Skin (Nykaa), Minimalist 0.3% Ceramide Moisturizer, Neutrogena Norwegian Formula Body Emulsion, Dermaco 1% Salicylic Acid Gel Moisturizer' }
           ]
         }
       };
