@@ -672,9 +672,10 @@ class FaceScanService:
             merged[field] = total
 
         # Aggregate score fields (weighted average - front view gets more weight)
+        # NOTE: sensitivity_level is a STRING ("low"/"medium"/"high"), not a number - handle separately
         score_fields = [
             'acne_score', 'wrinkle_score', 'texture_score',
-            'redness_score', 'sensitivity_level', 'pigmentation_score',
+            'redness_score', 'pigmentation_score',
             'smoothness_score', 'pore_size_average'
         ]
         for field in score_fields:
@@ -682,11 +683,18 @@ class FaceScanService:
             weight_total = 0
             for view_name, analysis in view_analyses:
                 if field in analysis:
-                    weight = 1.5 if view_name == 'front' else 1.0
-                    weighted_sum += analysis[field] * weight
-                    weight_total += weight
+                    value = analysis[field]
+                    # Ensure value is numeric before multiplying
+                    if isinstance(value, (int, float)):
+                        weight = 1.5 if view_name == 'front' else 1.0
+                        weighted_sum += value * weight
+                        weight_total += weight
             if weight_total > 0:
                 merged[field] = round(weighted_sum / weight_total, 1)
+
+        # Handle categorical fields (take from front view)
+        if 'sensitivity_level' in front_analysis:
+            merged['sensitivity_level'] = front_analysis['sensitivity_level']
 
         # Combine location arrays from all views
         location_fields = [
