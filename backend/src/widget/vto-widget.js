@@ -365,12 +365,12 @@
               <p id="flashai-vto-face-angle-instruction">Align your face within the boundary</p>
             </div>
 
-            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;">
-              <video id="flashai-vto-face-camera" autoplay playsinline style="position:relative;z-index:1;"></video>
-              <canvas id="flashai-vto-face-detection-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;z-index:2;"></canvas>
+            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:transparent !important;">
+              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+              <canvas id="flashai-vto-face-detection-canvas" style="display:none !important;"></canvas>
 
               <!-- Face Boundary Guide Overlay -->
-              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;">
+              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:transparent !important;">
                 <!-- Animated oval border only (no dark overlay) -->
                 <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:60%;height:72%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 25px rgba(139,92,246,0.6),inset 0 0 25px rgba(139,92,246,0.15);animation:flashai-boundary-pulse 2s ease-in-out infinite;"></div>
 

@@ -308,7 +308,7 @@
 .flashai-vto-camera-container {
   position: relative;
   width: 100%;
-  background: var(--flashai-gray-900);
+  background: transparent;
   aspect-ratio: 3/4;
   max-height: 50vh;
 }
