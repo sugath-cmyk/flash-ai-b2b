@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On Widget Styles
- * Version: 2.6.0 - Block external CSS/pseudo-elements causing black rectangle
+ * Version: 2.7.0 - Block backdrop-filter blur effects causing frosted rectangle
  * Mobile-first, compact single-screen layout
  */
 
@@ -374,9 +374,24 @@
   background: transparent !important;
 }
 
-/* Force camera container children to not have black backgrounds */
-.flashai-vto-camera-container > * {
+/* Force camera container children to not have any backgrounds or blur effects */
+.flashai-vto-camera-container > *,
+.flashai-vto-camera-container * {
   background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Explicitly block blur/frosted effects on camera and all children */
+.flashai-vto-camera-container,
+.flashai-vto-camera-container video,
+.flashai-vto-camera-container div,
+#flashai-vto-face-boundary,
+#flashai-vto-face-boundary * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  -webkit-filter: none !important;
+  filter: none !important;
 }
 
 .flashai-vto-camera-guide {
