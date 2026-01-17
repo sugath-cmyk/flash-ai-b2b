@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.0.3 (Visual problem markers on zoomed regions)
+ * Version: 2.0.4 (Problem markers constrained to face region)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.0.3 - Visual problem markers on zoomed regions');
+  console.log('[Flash AI Widget] Version 2.0.4 - Problem markers constrained to face region');
 
   // ==========================================================================
   // Main Widget Class
@@ -1737,6 +1737,18 @@
 
       ctx.save();
 
+      // Create face-shaped clip region to ensure markers stay within face area
+      // Use an ellipse that represents the face boundary with margin
+      const margin = 0.1; // 10% margin from edges
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radiusX = (width / 2) * (1 - margin);
+      const radiusY = (height / 2) * (1 - margin);
+
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+      ctx.clip();
+
       switch(issue.key) {
         case 'acne':
           // Draw spots/dots for acne locations
@@ -1791,23 +1803,24 @@
       // Number of spots based on severity
       const numSpots = Math.max(2, Math.floor(score / 15));
 
-      // Pre-defined positions for natural distribution
+      // Pre-defined positions within face area (centered, avoiding edges)
+      // Positions are now in 0.2-0.8 range to stay within face
       const positions = [
-        { x: 0.3, y: 0.4 }, { x: 0.7, y: 0.35 }, { x: 0.5, y: 0.6 },
-        { x: 0.25, y: 0.65 }, { x: 0.75, y: 0.55 }, { x: 0.4, y: 0.75 },
-        { x: 0.6, y: 0.7 }, { x: 0.35, y: 0.3 }
+        { x: 0.35, y: 0.4 }, { x: 0.65, y: 0.38 }, { x: 0.5, y: 0.55 },
+        { x: 0.32, y: 0.58 }, { x: 0.68, y: 0.52 }, { x: 0.42, y: 0.68 },
+        { x: 0.58, y: 0.65 }, { x: 0.4, y: 0.35 }
       ];
 
       for (let i = 0; i < Math.min(numSpots, positions.length); i++) {
         const pos = positions[i];
         const x = pos.x * width;
         const y = pos.y * height;
-        const radius = 4 + Math.random() * 3;
+        const radius = 3 + Math.random() * 2; // Slightly smaller markers
 
-        // Draw spot with glow
+        // Draw spot with subtle glow
         ctx.beginPath();
-        ctx.arc(x, y, radius + 3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.fill();
 
         ctx.beginPath();
@@ -1815,47 +1828,47 @@
         ctx.fillStyle = colors.fill;
         ctx.fill();
         ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
       }
     }
 
     drawWrinkleMarkers(ctx, width, height, score, colors) {
       ctx.strokeStyle = colors.stroke;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 2]);
 
-      // Draw horizontal lines for forehead wrinkles
+      // Draw horizontal lines for forehead wrinkles (within face area)
       const numLines = Math.max(1, Math.floor(score / 25));
 
       for (let i = 0; i < numLines; i++) {
-        const y = 0.2 + (i * 0.15);
+        const y = 0.22 + (i * 0.12);
         ctx.beginPath();
-        ctx.moveTo(width * 0.15, height * y);
-        // Wavy line
+        ctx.moveTo(width * 0.25, height * y);
+        // Wavy line - shorter to stay within face
         ctx.bezierCurveTo(
-          width * 0.35, height * (y - 0.03),
-          width * 0.65, height * (y + 0.03),
-          width * 0.85, height * y
+          width * 0.4, height * (y - 0.02),
+          width * 0.6, height * (y + 0.02),
+          width * 0.75, height * y
         );
         ctx.stroke();
       }
 
-      // Draw crow's feet if severe
+      // Draw crow's feet if severe (positioned more inward)
       if (score > 40) {
-        ctx.setLineDash([3, 2]);
-        // Left side
-        for (let i = 0; i < 3; i++) {
+        ctx.setLineDash([2, 2]);
+        // Left side - more inward
+        for (let i = 0; i < 2; i++) {
           ctx.beginPath();
-          ctx.moveTo(width * 0.1, height * (0.4 + i * 0.08));
-          ctx.lineTo(width * 0.25, height * (0.45 + i * 0.05));
+          ctx.moveTo(width * 0.2, height * (0.42 + i * 0.06));
+          ctx.lineTo(width * 0.3, height * (0.45 + i * 0.04));
           ctx.stroke();
         }
-        // Right side
-        for (let i = 0; i < 3; i++) {
+        // Right side - more inward
+        for (let i = 0; i < 2; i++) {
           ctx.beginPath();
-          ctx.moveTo(width * 0.9, height * (0.4 + i * 0.08));
-          ctx.lineTo(width * 0.75, height * (0.45 + i * 0.05));
+          ctx.moveTo(width * 0.8, height * (0.42 + i * 0.06));
+          ctx.lineTo(width * 0.7, height * (0.45 + i * 0.04));
           ctx.stroke();
         }
       }
@@ -1864,91 +1877,91 @@
     }
 
     drawDarkCircleMarkers(ctx, width, height, score, colors) {
-      const alpha = Math.min(0.5, score / 100);
+      const alpha = Math.min(0.4, score / 120);
 
-      // Left under-eye area
+      // Left under-eye area (smaller, more centered)
       ctx.beginPath();
-      ctx.ellipse(width * 0.3, height * 0.55, width * 0.18, height * 0.12, 0, 0, Math.PI * 2);
+      ctx.ellipse(width * 0.35, height * 0.52, width * 0.12, height * 0.08, 0, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(75, 0, 130, ${alpha})`;
       ctx.fill();
       ctx.strokeStyle = colors.stroke;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Right under-eye area
+      // Right under-eye area (smaller, more centered)
       ctx.beginPath();
-      ctx.ellipse(width * 0.7, height * 0.55, width * 0.18, height * 0.12, 0, 0, Math.PI * 2);
+      ctx.ellipse(width * 0.65, height * 0.52, width * 0.12, height * 0.08, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     }
 
     drawPoreMarkers(ctx, width, height, score, colors) {
-      const density = Math.max(8, Math.floor(score / 5));
+      const density = Math.max(6, Math.floor(score / 6));
 
-      // Concentrate in T-zone (nose area for zoomed view)
+      // Concentrate in center of face (T-zone area)
       for (let i = 0; i < density; i++) {
-        const x = width * (0.35 + Math.random() * 0.3);
-        const y = height * (0.3 + Math.random() * 0.5);
+        const x = width * (0.4 + Math.random() * 0.2);
+        const y = height * (0.35 + Math.random() * 0.35);
 
         ctx.beginPath();
-        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
         ctx.fillStyle = colors.fill;
         ctx.fill();
       }
 
-      // Add larger pore indicators
-      const largePores = Math.floor(score / 30);
+      // Add larger pore indicators (fewer, more centered)
+      const largePores = Math.floor(score / 35);
       for (let i = 0; i < largePores; i++) {
-        const x = width * (0.4 + Math.random() * 0.2);
-        const y = height * (0.4 + Math.random() * 0.3);
+        const x = width * (0.42 + Math.random() * 0.16);
+        const y = height * (0.42 + Math.random() * 0.22);
 
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
       }
     }
 
     drawRednessMarkers(ctx, width, height, score, colors) {
-      const alpha = Math.min(0.4, score / 150);
+      const alpha = Math.min(0.3, score / 180);
 
-      // Create gradient for natural redness
+      // Create gradient for natural redness (centered in face)
       const gradient = ctx.createRadialGradient(
         width * 0.5, height * 0.5, 0,
-        width * 0.5, height * 0.5, width * 0.5
+        width * 0.5, height * 0.5, width * 0.35
       );
       gradient.addColorStop(0, `rgba(220, 38, 38, ${alpha})`);
-      gradient.addColorStop(0.7, `rgba(220, 38, 38, ${alpha * 0.3})`);
+      gradient.addColorStop(0.6, `rgba(220, 38, 38, ${alpha * 0.4})`);
       gradient.addColorStop(1, 'transparent');
 
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(width * 0.15, height * 0.15, width * 0.7, height * 0.7);
 
-      // Add indicator circles
+      // Add indicator circles (smaller, more centered)
       ctx.strokeStyle = colors.stroke;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
 
       ctx.beginPath();
-      ctx.ellipse(width * 0.35, height * 0.5, width * 0.2, height * 0.25, 0, 0, Math.PI * 2);
+      ctx.ellipse(width * 0.38, height * 0.5, width * 0.12, height * 0.15, 0, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.ellipse(width * 0.65, height * 0.5, width * 0.2, height * 0.25, 0, 0, Math.PI * 2);
+      ctx.ellipse(width * 0.62, height * 0.5, width * 0.12, height * 0.15, 0, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.setLineDash([]);
     }
 
     drawPigmentationMarkers(ctx, width, height, score, colors) {
-      const numSpots = Math.max(2, Math.floor(score / 12));
+      const numSpots = Math.max(2, Math.floor(score / 15));
 
-      // Irregular shaped spots
+      // Irregular shaped spots (centered within face area)
       const positions = [
-        { x: 0.25, y: 0.4, size: 12 }, { x: 0.7, y: 0.35, size: 10 },
-        { x: 0.4, y: 0.6, size: 8 }, { x: 0.6, y: 0.55, size: 14 },
-        { x: 0.3, y: 0.7, size: 9 }, { x: 0.75, y: 0.65, size: 11 }
+        { x: 0.32, y: 0.42, size: 8 }, { x: 0.65, y: 0.38, size: 7 },
+        { x: 0.45, y: 0.55, size: 6 }, { x: 0.58, y: 0.52, size: 9 },
+        { x: 0.38, y: 0.62, size: 6 }, { x: 0.68, y: 0.58, size: 7 }
       ];
 
       for (let i = 0; i < Math.min(numSpots, positions.length); i++) {
@@ -1956,62 +1969,63 @@
         const x = spot.x * width;
         const y = spot.y * height;
 
-        // Draw irregular spot shape
+        // Draw irregular spot shape (smaller)
         ctx.beginPath();
-        ctx.ellipse(x, y, spot.size * 0.8, spot.size * 0.6, Math.random() * Math.PI, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(139, 69, 19, ${0.3 + (score / 200)})`;
+        ctx.ellipse(x, y, spot.size * 0.6, spot.size * 0.5, Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(139, 69, 19, ${0.25 + (score / 250)})`;
         ctx.fill();
         ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1;
         ctx.stroke();
       }
     }
 
     drawOilinessMarkers(ctx, width, height, score, colors) {
-      const alpha = Math.min(0.35, score / 150);
+      const alpha = Math.min(0.3, score / 180);
 
-      // Shine effect in T-zone
-      const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-      gradient.addColorStop(0.3, 'transparent');
-      gradient.addColorStop(0.7, 'transparent');
-      gradient.addColorStop(1, `rgba(255, 255, 255, ${alpha * 0.5})`);
+      // Shine effect in T-zone (centered)
+      const gradient = ctx.createLinearGradient(width * 0.35, 0, width * 0.65, 0);
+      gradient.addColorStop(0, 'transparent');
+      gradient.addColorStop(0.3, `rgba(255, 255, 255, ${alpha})`);
+      gradient.addColorStop(0.7, `rgba(255, 255, 255, ${alpha})`);
+      gradient.addColorStop(1, 'transparent');
 
       ctx.fillStyle = gradient;
-      ctx.fillRect(width * 0.3, 0, width * 0.4, height);
+      ctx.fillRect(width * 0.35, height * 0.2, width * 0.3, height * 0.5);
 
-      // Shine highlights
-      const numHighlights = Math.floor(score / 20);
+      // Shine highlights (smaller, centered)
+      const numHighlights = Math.max(2, Math.floor(score / 25));
       for (let i = 0; i < numHighlights; i++) {
-        const x = width * (0.35 + Math.random() * 0.3);
-        const y = height * (0.2 + Math.random() * 0.6);
+        const x = width * (0.4 + Math.random() * 0.2);
+        const y = height * (0.3 + Math.random() * 0.35);
 
-        const highlightGradient = ctx.createRadialGradient(x, y, 0, x, y, 15);
-        highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+        const highlightGradient = ctx.createRadialGradient(x, y, 0, x, y, 10);
+        highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
         highlightGradient.addColorStop(1, 'transparent');
 
         ctx.fillStyle = highlightGradient;
         ctx.beginPath();
-        ctx.arc(x, y, 15, 0, Math.PI * 2);
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
     drawTextureMarkers(ctx, width, height, score, colors) {
       ctx.strokeStyle = colors.stroke;
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 0.8;
+      ctx.globalAlpha = 0.4;
 
-      // Draw crosshatch pattern for rough texture
-      const density = Math.max(5, Math.floor(score / 10));
-      const spacing = Math.max(10, 50 / density);
+      // Draw crosshatch pattern for rough texture (within face area)
+      const density = Math.max(4, Math.floor(score / 12));
+      const spacing = Math.max(12, 55 / density);
 
-      for (let x = 0; x < width; x += spacing) {
-        for (let y = 0; y < height; y += spacing) {
-          if (Math.random() > 0.5) {
+      // Only draw within face region (20%-80% of canvas)
+      for (let x = width * 0.2; x < width * 0.8; x += spacing) {
+        for (let y = height * 0.2; y < height * 0.8; y += spacing) {
+          if (Math.random() > 0.6) {
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + 6, y + 6);
+            ctx.lineTo(x + 4, y + 4);
             ctx.stroke();
           }
         }
@@ -2019,17 +2033,17 @@
 
       ctx.globalAlpha = 1;
 
-      // Add bumpy texture indicators
+      // Add bumpy texture indicators (centered)
       if (score > 40) {
-        const numBumps = Math.floor(score / 15);
+        const numBumps = Math.floor(score / 20);
         for (let i = 0; i < numBumps; i++) {
-          const x = Math.random() * width;
-          const y = Math.random() * height;
+          const x = width * (0.25 + Math.random() * 0.5);
+          const y = height * (0.25 + Math.random() * 0.5);
 
           ctx.beginPath();
-          ctx.arc(x, y, 3, 0, Math.PI * 2);
+          ctx.arc(x, y, 2.5, 0, Math.PI * 2);
           ctx.strokeStyle = colors.stroke;
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 1;
           ctx.stroke();
         }
       }
@@ -2041,35 +2055,35 @@
 
       if (invertedScore > 30) {
         ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([2, 4]);
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([2, 3]);
 
-        // Draw fine lines indicating dryness
-        const numLines = Math.floor(invertedScore / 15);
+        // Draw fine lines indicating dryness (within face area)
+        const numLines = Math.floor(invertedScore / 18);
         for (let i = 0; i < numLines; i++) {
-          const y = (0.2 + Math.random() * 0.6) * height;
-          const startX = Math.random() * width * 0.3;
-          const length = 20 + Math.random() * 40;
+          const y = (0.3 + Math.random() * 0.4) * height;
+          const startX = width * (0.25 + Math.random() * 0.2);
+          const length = 15 + Math.random() * 25;
 
           ctx.beginPath();
           ctx.moveTo(startX, y);
-          ctx.lineTo(startX + length, y + (Math.random() - 0.5) * 10);
+          ctx.lineTo(startX + length, y + (Math.random() - 0.5) * 6);
           ctx.stroke();
         }
 
         ctx.setLineDash([]);
       }
 
-      // If well hydrated, show a subtle glow
+      // If well hydrated, show a subtle glow (centered)
       if (score > 60) {
         const gradient = ctx.createRadialGradient(
           width * 0.5, height * 0.5, 0,
-          width * 0.5, height * 0.5, width * 0.4
+          width * 0.5, height * 0.5, width * 0.3
         );
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.12)');
         gradient.addColorStop(1, 'transparent');
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(width * 0.2, height * 0.2, width * 0.6, height * 0.6);
       }
     }
 
