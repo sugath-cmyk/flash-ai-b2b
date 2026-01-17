@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On Widget Styles
- * Version: 2.4.0 - Clean Numbered Pins Design
+ * Version: 2.4.1 - Fix camera background styling
  * Mobile-first, compact single-screen layout
  */
 
@@ -308,9 +308,10 @@
 .flashai-vto-camera-container {
   position: relative;
   width: 100%;
-  background: transparent;
+  background: linear-gradient(135deg, #e8e0ff 0%, #f5f3ff 100%);
   aspect-ratio: 3/4;
   max-height: 50vh;
+  overflow: hidden;
 }
 
 #flashai-vto-camera,
@@ -319,6 +320,9 @@
   height: 100%;
   display: block;
   object-fit: cover;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .flashai-vto-camera-guide {
