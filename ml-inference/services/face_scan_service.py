@@ -1800,7 +1800,8 @@ class FaceScanService:
             lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
             l_channel = lab[:, :, 0]
 
-            landmarks = face_data.get("landmarks", [])
+            # NOTE: Landmarks are stored under "data" key, not "landmarks"
+            landmarks = face_data.get("data", [])
             if not landmarks:
                 return self._default_dark_circles()
 
@@ -2268,7 +2269,8 @@ class FaceScanService:
         if face_data.get("type") != "landmarks":
             return []
 
-        landmarks = face_data.get("landmarks", [])
+        # NOTE: Landmarks are stored under "data" key, not "landmarks"
+        landmarks = face_data.get("data", [])
         if not landmarks:
             return []
 

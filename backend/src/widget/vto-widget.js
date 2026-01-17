@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.7.0 (Remove class from photo indicator to prevent CSS interference)
+ * Version: 2.8.0 (Enhanced overlay system with ML region data)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.7.0 - Remove class from photo indicator to prevent CSS interference');
+  console.log('[Flash AI Widget] Version 2.8.0 - Enhanced overlay system with ML region data');
 
   // ==========================================================================
   // Main Widget Class
@@ -2289,7 +2289,7 @@
 
       // Draw REAL markers from ML analysis data
       // Pass the source region bounds so we can transform coordinates
-      const analysis = this.state.lastAnalysis || {};
+      const analysis = this.state.currentAnalysis || {};
       this.drawRealMarkers(ctx, canvas.width, canvas.height, issue, analysis, {
         srcX, srcY, srcW, srcH
       });
@@ -2408,9 +2408,10 @@
           break;
 
         case 'dark_circles':
-          // Draw under-eye regions
-          const leftEye = analysis.left_under_eye_region;
-          const rightEye = analysis.right_under_eye_region;
+          // Draw under-eye regions from dark_circles_regions (returned by ML service)
+          const darkCirclesRegions = analysis.dark_circles_regions || {};
+          const leftEye = darkCirclesRegions.left_eye;
+          const rightEye = darkCirclesRegions.right_eye;
 
           ctx.fillStyle = `rgba(75, 0, 130, ${Math.min(0.4, (analysis.dark_circles_score || 30) / 100)})`;
           ctx.strokeStyle = color.stroke;
