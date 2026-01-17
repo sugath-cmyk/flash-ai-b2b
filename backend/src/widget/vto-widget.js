@@ -2371,11 +2371,11 @@
             </div>
             <!-- Recommended Products -->
             ${issue.products && issue.products.length > 0 ? `
-            <div style="padding:12px;background:linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, #fff7ed 100%);border-radius:8px;border-left:3px solid #f97316;">
-              <div style="font-size:10px;font-weight:700;color:#c2410c;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🛒 Recommended Products</div>
+            <div style="padding:12px;background:linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, #faf5ff 100%);border-radius:8px;border-left:3px solid #8b5cf6;">
+              <div style="font-size:10px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🛒 Recommended Products</div>
               ${issue.products.map(p => `
                 <div style="margin-bottom:10px;padding:8px;background:rgba(255,255,255,0.7);border-radius:6px;">
-                  <div style="font-size:12px;font-weight:600;color:#ea580c;margin-bottom:4px;">${p.name}</div>
+                  <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px;">${p.name}</div>
                   <div style="font-size:11px;color:#6b7280;line-height:1.4;"><strong style="color:#374151;">Top Brands:</strong> ${p.brands}</div>
                 </div>
               `).join('')}
