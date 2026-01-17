@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.0.6 (Subtle overlays instead of fake pinpoint markers)
+ * Version: 2.1.0 (Multi-view face analysis - front, left, right)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.0.6 - Subtle overlays instead of fake pinpoint markers');
+  console.log('[Flash AI Widget] Version 2.1.0 - Multi-view face analysis (front, left, right)');
 
   // ==========================================================================
   // Main Widget Class
@@ -1014,10 +1014,26 @@
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0);
 
-      // Store first photo (front view) as base64 for displaying in results
-      if (this.state.facePhotos.length === 0) {
-        this.state.faceImageData = canvas.toDataURL('image/jpeg', 0.9);
+      // Store ALL photos for multi-view display
+      const viewNames = ['front', 'left', 'right'];
+      const currentView = viewNames[this.state.facePhotos.length] || 'front';
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+      // Initialize multi-view storage if needed
+      if (!this.state.faceImagesByView) {
+        this.state.faceImagesByView = {};
       }
+
+      // Store image by view name
+      this.state.faceImagesByView[currentView] = imageData;
+
+      // Store first photo (front view) as default display image
+      if (this.state.facePhotos.length === 0) {
+        this.state.faceImageData = imageData;
+        this.state.currentFaceView = 'front';
+      }
+
+      console.log(`[Face Scan] Captured ${currentView} view image`);
 
       canvas.toBlob(blob => {
         // Add photo to array
@@ -1256,6 +1272,7 @@
       this.state.currentAnalysis = scan.analysis;
       this.state.selectedIssue = null;
       this.state.detectedIssues = [];
+      this.state.currentFaceView = 'front'; // Default to front view
 
       // Update skin score
       const scoreElement = document.getElementById('flashai-vto-skin-score');
@@ -1278,6 +1295,13 @@
         if (toneElem) toneElem.textContent = this.capitalizeFirst(scan.analysis.skin_tone) || 'N/A';
       }
 
+      // Show multi-view indicator if multiple views were analyzed
+      const viewsAnalyzed = scan.analysis?.views_analyzed || ['front'];
+      console.log('[Face Results] Views analyzed:', viewsAnalyzed);
+
+      // Add view switcher if we have multiple views
+      this.renderViewSwitcher(viewsAnalyzed);
+
       // Set up face image
       this.initFaceImage();
 
@@ -1286,6 +1310,92 @@
 
       // Show results step
       this.showStep('face-results');
+    }
+
+    renderViewSwitcher(viewsAnalyzed) {
+      // Add view switcher below the face image container
+      const faceContainer = document.getElementById('flashai-vto-face-container');
+      if (!faceContainer) return;
+
+      // Remove existing switcher if present
+      const existingSwitcher = document.getElementById('flashai-vto-view-switcher');
+      if (existingSwitcher) existingSwitcher.remove();
+
+      // Only show switcher if we have multiple views with images
+      if (!this.state.faceImagesByView || Object.keys(this.state.faceImagesByView).length <= 1) {
+        return;
+      }
+
+      const switcher = document.createElement('div');
+      switcher.id = 'flashai-vto-view-switcher';
+      switcher.style.cssText = 'display:flex;justify-content:center;gap:8px;margin-top:12px;';
+
+      const views = [
+        { key: 'front', label: 'Front', icon: '👤' },
+        { key: 'left', label: 'Left', icon: '👈' },
+        { key: 'right', label: 'Right', icon: '👉' }
+      ];
+
+      views.forEach(view => {
+        if (!this.state.faceImagesByView[view.key]) return;
+
+        const btn = document.createElement('button');
+        btn.className = `flashai-vto-view-btn ${this.state.currentFaceView === view.key ? 'active' : ''}`;
+        btn.innerHTML = `${view.icon} ${view.label}`;
+        btn.style.cssText = `
+          padding: 6px 12px;
+          border: 1px solid #e4e4e7;
+          border-radius: 8px;
+          background: ${this.state.currentFaceView === view.key ? '#18181b' : '#fff'};
+          color: ${this.state.currentFaceView === view.key ? '#fff' : '#3f3f46'};
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        `;
+        btn.onclick = () => this.switchFaceView(view.key);
+        switcher.appendChild(btn);
+      });
+
+      // Add switcher after the face container
+      faceContainer.parentElement.insertBefore(switcher, faceContainer.nextSibling);
+
+      // Also add a note about multi-view analysis
+      const note = document.createElement('div');
+      note.style.cssText = 'text-align:center;font-size:11px;color:#71717a;margin-top:6px;';
+      note.innerHTML = `<span style="color:#22c55e;">✓</span> Multi-view analysis: ${viewsAnalyzed.length} angles scanned`;
+      switcher.appendChild(note);
+    }
+
+    switchFaceView(viewKey) {
+      if (!this.state.faceImagesByView || !this.state.faceImagesByView[viewKey]) {
+        console.warn(`[Face View] No image for view: ${viewKey}`);
+        return;
+      }
+
+      this.state.currentFaceView = viewKey;
+      this.state.faceImageData = this.state.faceImagesByView[viewKey];
+
+      // Update the displayed image
+      const faceImg = document.getElementById('flashai-vto-face-image');
+      if (faceImg) {
+        faceImg.src = this.state.faceImageData;
+      }
+
+      // Update switcher button styles
+      const switcher = document.getElementById('flashai-vto-view-switcher');
+      if (switcher) {
+        switcher.querySelectorAll('.flashai-vto-view-btn').forEach(btn => {
+          const isActive = btn.innerHTML.toLowerCase().includes(viewKey);
+          btn.style.background = isActive ? '#18181b' : '#fff';
+          btn.style.color = isActive ? '#fff' : '#3f3f46';
+        });
+      }
+
+      // Re-render pins filtered by current view
+      this.renderPins();
+
+      console.log(`[Face View] Switched to ${viewKey} view`);
     }
 
     initFaceImage() {
@@ -1518,6 +1628,8 @@
       if (!container) return;
 
       const issues = this.state.detectedIssues;
+      const currentView = this.state.currentFaceView || 'front';
+      const analysis = this.state.currentAnalysis || {};
 
       // Severity colors for pins
       const severityColors = {
@@ -1526,7 +1638,8 @@
         good: { bg: '#10b981', pulse: 'rgba(16, 185, 129, 0.4)' }
       };
 
-      container.innerHTML = issues.map((issue, index) => {
+      // First render issue pins (numbered circles)
+      let pinsHtml = issues.map((issue, index) => {
         const colors = severityColors[issue.severity] || severityColors.moderate;
         return `
         <div class="flashai-vto-pin ${issue.severity}"
@@ -1538,13 +1651,85 @@
       `;
       }).join('');
 
-      // Add click handlers
+      // Also render real detection markers from ML service (smaller dots for actual locations)
+      // These show actual detected spots for current view
+      const realMarkers = this.getRealMarkersForView(analysis, currentView);
+      pinsHtml += realMarkers.map(marker => {
+        const colors = severityColors[marker.severity] || severityColors.moderate;
+        return `
+        <div class="flashai-vto-real-marker ${marker.type}"
+             style="position:absolute;left:${marker.x * 100}%;top:${marker.y * 100}%;transform:translate(-50%,-50%);width:${marker.size || 8}px;height:${marker.size || 8}px;border-radius:50%;background:${colors.bg};opacity:0.7;box-shadow:0 0 4px ${colors.pulse};pointer-events:none;z-index:5;"
+             title="${marker.label}">
+        </div>
+      `;
+      }).join('');
+
+      container.innerHTML = pinsHtml;
+
+      // Add click handlers for issue pins
       container.querySelectorAll('.flashai-vto-pin').forEach(pin => {
         pin.addEventListener('click', () => {
           const index = parseInt(pin.dataset.index);
           this.selectIssue(index);
         });
       });
+
+      console.log(`[Pins] Rendered ${issues.length} issue pins + ${realMarkers.length} real markers for ${currentView} view`);
+    }
+
+    getRealMarkersForView(analysis, currentView) {
+      const markers = [];
+
+      // Acne locations
+      if (analysis.acne_locations) {
+        analysis.acne_locations.forEach(loc => {
+          // Only show markers for current view (or all if view not specified)
+          if (!loc.view || loc.view === currentView) {
+            markers.push({
+              x: loc.x,
+              y: loc.y,
+              type: 'acne',
+              severity: 'concern',
+              size: loc.type === 'pimple' ? 10 : 6,
+              label: `${loc.type || 'blemish'} (${loc.view || 'front'})`
+            });
+          }
+        });
+      }
+
+      // Dark spots
+      if (analysis.dark_spots_locations) {
+        analysis.dark_spots_locations.forEach(loc => {
+          if (!loc.view || loc.view === currentView) {
+            markers.push({
+              x: loc.x,
+              y: loc.y,
+              type: 'pigmentation',
+              severity: 'moderate',
+              size: Math.max(6, Math.min(12, (loc.size || 0.02) * 400)),
+              label: `dark spot (${loc.view || 'front'})`
+            });
+          }
+        });
+      }
+
+      // Enlarged pores
+      if (analysis.enlarged_pores_locations) {
+        analysis.enlarged_pores_locations.forEach(loc => {
+          if (!loc.view || loc.view === currentView) {
+            markers.push({
+              x: loc.x,
+              y: loc.y,
+              type: 'pores',
+              severity: 'moderate',
+              size: 5,
+              label: `enlarged pore (${loc.view || 'front'})`
+            });
+          }
+        });
+      }
+
+      return markers;
     }
 
     renderIssuesList() {
@@ -1693,10 +1878,15 @@
 
       // Calculate source region (with some padding)
       const padding = 5; // 5% padding
-      const sx = Math.max(0, (hr.x - padding) / 100) * faceImg.naturalWidth;
-      const sy = Math.max(0, (hr.y - padding) / 100) * faceImg.naturalHeight;
-      const sw = Math.min(1, (hr.w + padding * 2) / 100) * faceImg.naturalWidth;
-      const sh = Math.min(1, (hr.h + padding * 2) / 100) * faceImg.naturalHeight;
+      const srcX = Math.max(0, (hr.x - padding) / 100);
+      const srcY = Math.max(0, (hr.y - padding) / 100);
+      const srcW = Math.min(1 - srcX, (hr.w + padding * 2) / 100);
+      const srcH = Math.min(1 - srcY, (hr.h + padding * 2) / 100);
+
+      const sx = srcX * faceImg.naturalWidth;
+      const sy = srcY * faceImg.naturalHeight;
+      const sw = srcW * faceImg.naturalWidth;
+      const sh = srcH * faceImg.naturalHeight;
 
       // Set canvas size (maintain aspect ratio, max 200px height)
       const aspectRatio = sw / sh;
@@ -1707,8 +1897,12 @@
       // Draw cropped/zoomed region
       ctx.drawImage(faceImg, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
-      // Draw problem markers based on issue type and severity
-      this.drawProblemMarkers(ctx, canvas.width, canvas.height, issue);
+      // Draw REAL markers from ML analysis data
+      // Pass the source region bounds so we can transform coordinates
+      const analysis = this.state.lastAnalysis || {};
+      this.drawRealMarkers(ctx, canvas.width, canvas.height, issue, analysis, {
+        srcX, srcY, srcW, srcH
+      });
 
       // Draw severity-colored border overlay
       const severityColors = {
@@ -1723,153 +1917,177 @@
       ctx.strokeRect(0, 0, canvas.width, canvas.height);
     }
 
-    drawProblemMarkers(ctx, width, height, issue) {
-      const score = issue.score;
+    drawRealMarkers(ctx, width, height, issue, analysis, srcBounds) {
+      const { srcX, srcY, srcW, srcH } = srcBounds;
       const severity = issue.severity;
 
-      // Severity-based overlay colors (subtle tints)
-      const overlayColors = {
-        concern: 'rgba(220, 38, 38, 0.15)',    // Red tint for significant
-        moderate: 'rgba(245, 158, 11, 0.12)',  // Orange tint for moderate
-        good: 'rgba(16, 185, 129, 0.08)'       // Green tint for mild
+      // Colors based on severity
+      const colors = {
+        concern: { fill: 'rgba(220, 38, 38, 0.8)', stroke: '#dc2626' },
+        moderate: { fill: 'rgba(245, 158, 11, 0.7)', stroke: '#f59e0b' },
+        good: { fill: 'rgba(16, 185, 129, 0.6)', stroke: '#10b981' }
       };
-
-      const borderColors = {
-        concern: '#dc2626',
-        moderate: '#f59e0b',
-        good: '#10b981'
-      };
+      const color = colors[severity] || colors.moderate;
 
       ctx.save();
 
-      // Draw subtle colored overlay based on issue type
-      // This provides visual feedback without fake pinpoint accuracy
-      const overlayColor = overlayColors[severity] || overlayColors.moderate;
-      const borderColor = borderColors[severity] || borderColors.moderate;
+      // Transform function: convert ML coordinates (0-1) to zoomed canvas coordinates
+      const transformX = (x) => ((x - srcX) / srcW) * width;
+      const transformY = (y) => ((y - srcY) / srcH) * height;
+      const isInBounds = (x, y) => x >= srcX && x <= srcX + srcW && y >= srcY && y <= srcY + srcH;
 
-      // Create elliptical face region
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const radiusX = width * 0.4;
-      const radiusY = height * 0.45;
-
-      // Draw subtle overlay for the affected area
-      ctx.beginPath();
-      ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
-      ctx.fillStyle = overlayColor;
-      ctx.fill();
-
-      // Draw a subtle dashed outline to indicate detected region
-      ctx.beginPath();
-      ctx.ellipse(centerX, centerY, radiusX * 0.8, radiusY * 0.8, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Add issue-specific subtle indicator in center
-      this.drawIssueIndicator(ctx, width, height, issue.key, score, borderColor);
-
-      ctx.restore();
-    }
-
-    drawIssueIndicator(ctx, width, height, issueKey, score, color) {
-      const centerX = width / 2;
-      const centerY = height / 2;
-
-      ctx.fillStyle = color;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
-      ctx.globalAlpha = 0.6;
-
-      switch(issueKey) {
-        case 'pigmentation':
+      switch(issue.key) {
         case 'acne':
-          // Small dots pattern to suggest spots detected
-          const numDots = Math.min(5, Math.ceil(score / 20));
-          for (let i = 0; i < numDots; i++) {
-            const angle = (i / numDots) * Math.PI * 2;
-            const r = width * 0.15;
-            const x = centerX + Math.cos(angle) * r;
-            const y = centerY + Math.sin(angle) * r;
-            ctx.beginPath();
-            ctx.arc(x, y, 3, 0, Math.PI * 2);
-            ctx.fill();
-          }
+          // Draw REAL acne locations from ML
+          const acneLocations = analysis.acne_locations || [];
+          acneLocations.forEach(spot => {
+            if (isInBounds(spot.x, spot.y)) {
+              const x = transformX(spot.x);
+              const y = transformY(spot.y);
+              const size = spot.size === 'large' ? 6 : spot.size === 'medium' ? 5 : 4;
+
+              // Glow effect
+              ctx.shadowColor = color.stroke;
+              ctx.shadowBlur = 6;
+
+              ctx.beginPath();
+              ctx.arc(x, y, size, 0, Math.PI * 2);
+              ctx.fillStyle = spot.type === 'pimple' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(255, 180, 0, 0.9)';
+              ctx.fill();
+              ctx.strokeStyle = '#fff';
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+
+              ctx.shadowBlur = 0;
+            }
+          });
+          break;
+
+        case 'pigmentation':
+          // Draw REAL dark spot locations from ML
+          const darkSpots = analysis.dark_spots_locations || [];
+          darkSpots.forEach(spot => {
+            if (isInBounds(spot.x, spot.y)) {
+              const x = transformX(spot.x);
+              const y = transformY(spot.y);
+              const size = Math.max(4, Math.min(10, (spot.size || 0.01) * 500));
+
+              ctx.shadowColor = 'rgba(139, 69, 19, 0.5)';
+              ctx.shadowBlur = 4;
+
+              ctx.beginPath();
+              ctx.arc(x, y, size, 0, Math.PI * 2);
+              ctx.fillStyle = 'rgba(139, 69, 19, 0.8)';
+              ctx.fill();
+              ctx.strokeStyle = '#fff';
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+
+              ctx.shadowBlur = 0;
+            }
+          });
           break;
 
         case 'wrinkles':
-          // Horizontal lines to suggest wrinkle detection
-          ctx.setLineDash([3, 3]);
-          for (let i = -1; i <= 1; i++) {
-            ctx.beginPath();
-            ctx.moveTo(centerX - width * 0.2, centerY + i * 15);
-            ctx.lineTo(centerX + width * 0.2, centerY + i * 15);
-            ctx.stroke();
-          }
+          // Draw wrinkle regions from ML
+          const wrinkleRegions = analysis.wrinkle_regions || {};
+          ctx.strokeStyle = color.stroke;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 3]);
+
+          Object.entries(wrinkleRegions).forEach(([region, data]) => {
+            if (data && data.bbox) {
+              const [x1, y1, x2, y2] = data.bbox;
+              if (isInBounds((x1+x2)/2, (y1+y2)/2)) {
+                const tx1 = transformX(x1), ty1 = transformY(y1);
+                const tx2 = transformX(x2), ty2 = transformY(y2);
+
+                // Draw lines across the region
+                const numLines = Math.max(1, Math.floor((data.severity || 0.3) * 4));
+                for (let i = 0; i < numLines; i++) {
+                  const y = ty1 + (ty2 - ty1) * (i + 0.5) / numLines;
+                  ctx.beginPath();
+                  ctx.moveTo(tx1, y);
+                  ctx.lineTo(tx2, y);
+                  ctx.stroke();
+                }
+              }
+            }
+          });
           ctx.setLineDash([]);
           break;
 
         case 'dark_circles':
-          // Two small ovals for under-eye areas
-          ctx.beginPath();
-          ctx.ellipse(centerX - width * 0.1, centerY, width * 0.08, height * 0.05, 0, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.ellipse(centerX + width * 0.1, centerY, width * 0.08, height * 0.05, 0, 0, Math.PI * 2);
-          ctx.stroke();
-          break;
+          // Draw under-eye regions
+          const leftEye = analysis.left_under_eye_region;
+          const rightEye = analysis.right_under_eye_region;
 
-        case 'redness':
-          // Gradient circle for redness area
-          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, width * 0.2);
-          gradient.addColorStop(0, 'rgba(220, 38, 38, 0.2)');
-          gradient.addColorStop(1, 'transparent');
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, width * 0.2, 0, Math.PI * 2);
-          ctx.fill();
-          break;
+          ctx.fillStyle = `rgba(75, 0, 130, ${Math.min(0.4, (analysis.dark_circles_score || 30) / 100)})`;
+          ctx.strokeStyle = color.stroke;
+          ctx.lineWidth = 2;
 
-        case 'pores':
-        case 'texture':
-          // Stipple pattern for texture issues
-          for (let i = 0; i < 8; i++) {
-            const x = centerX + (Math.random() - 0.5) * width * 0.3;
-            const y = centerY + (Math.random() - 0.5) * height * 0.3;
+          if (leftEye && leftEye.bbox && isInBounds((leftEye.bbox[0]+leftEye.bbox[2])/2, (leftEye.bbox[1]+leftEye.bbox[3])/2)) {
+            const [x1, y1, x2, y2] = leftEye.bbox;
             ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.ellipse(transformX((x1+x2)/2), transformY((y1+y2)/2),
+              (transformX(x2) - transformX(x1)) / 2, (transformY(y2) - transformY(y1)) / 2, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.stroke();
+          }
+
+          if (rightEye && rightEye.bbox && isInBounds((rightEye.bbox[0]+rightEye.bbox[2])/2, (rightEye.bbox[1]+rightEye.bbox[3])/2)) {
+            const [x1, y1, x2, y2] = rightEye.bbox;
+            ctx.beginPath();
+            ctx.ellipse(transformX((x1+x2)/2), transformY((y1+y2)/2),
+              (transformX(x2) - transformX(x1)) / 2, (transformY(y2) - transformY(y1)) / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
           }
           break;
 
-        case 'oiliness':
-          // Shine highlight
-          const shineGradient = ctx.createRadialGradient(centerX, centerY - 10, 0, centerX, centerY - 10, width * 0.15);
-          shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
-          shineGradient.addColorStop(1, 'transparent');
-          ctx.fillStyle = shineGradient;
-          ctx.beginPath();
-          ctx.arc(centerX, centerY - 10, width * 0.15, 0, Math.PI * 2);
-          ctx.fill();
+        case 'redness':
+          // Draw redness regions from ML
+          const rednessRegions = analysis.redness_regions || [];
+          ctx.fillStyle = `rgba(220, 38, 38, ${Math.min(0.35, (analysis.redness_score || 30) / 150)})`;
+
+          rednessRegions.forEach(region => {
+            if (region.bbox) {
+              const [x1, y1, x2, y2] = region.bbox;
+              if (isInBounds((x1+x2)/2, (y1+y2)/2)) {
+                ctx.beginPath();
+                ctx.ellipse(transformX((x1+x2)/2), transformY((y1+y2)/2),
+                  (transformX(x2) - transformX(x1)) / 2, (transformY(y2) - transformY(y1)) / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          });
+          break;
+
+        case 'pores':
+          // Draw enlarged pore locations from ML
+          const poreLocations = analysis.enlarged_pores_locations || [];
+          ctx.fillStyle = color.fill;
+
+          poreLocations.forEach(pore => {
+            if (isInBounds(pore.x, pore.y)) {
+              const x = transformX(pore.x);
+              const y = transformY(pore.y);
+              ctx.beginPath();
+              ctx.arc(x, y, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          });
           break;
 
         default:
-          // Generic indicator - small target
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(centerX - 12, centerY);
-          ctx.lineTo(centerX + 12, centerY);
-          ctx.moveTo(centerX, centerY - 12);
-          ctx.lineTo(centerX, centerY + 12);
-          ctx.stroke();
+          // For other issues, draw a subtle severity-based overlay
+          const alpha = severity === 'concern' ? 0.15 : severity === 'moderate' ? 0.1 : 0.05;
+          ctx.fillStyle = color.fill.replace(/[\d.]+\)$/, `${alpha})`);
+          ctx.fillRect(0, 0, width, height);
           break;
       }
 
-      ctx.globalAlpha = 1;
+      ctx.restore();
     }
 
     // Old marker functions removed - now using subtle overlays via drawIssueIndicator

@@ -392,184 +392,345 @@ class FaceScanService:
 
     async def analyze_face(self, scan_id: str, image_data: List[bytes]) -> Dict[str, Any]:
         """
-        Analyze facial images for comprehensive skin analysis
+        Analyze facial images for comprehensive skin analysis using MULTIPLE VIEWS.
+
+        Uses all available images (front, left profile, right profile) for more
+        accurate and comprehensive skin analysis. Each view captures different
+        areas of the face that may not be visible in other views.
 
         Args:
             scan_id: Unique scan identifier
-            image_data: List of image bytes
+            image_data: List of image bytes (front, left, right)
 
         Returns:
-            Dictionary containing quality_score and detailed analysis
+            Dictionary containing quality_score and detailed analysis from all views
         """
         start_time = time.time()
+        VIEW_NAMES = ['front', 'left', 'right']
 
         try:
-            # Step 1: Load and preprocess images
+            # Step 1: Load and preprocess ALL images
             images, face_data_list = self._process_images(image_data)
 
             if not face_data_list:
                 return self._error_response(scan_id, "No face detected in images", time.time() - start_time)
 
-            # Step 2: Use primary image (first with valid face)
-            img_original = images[0]
-            face_data = face_data_list[0]
+            print(f"[FaceScan] Multi-view analysis: {len(images)} images with {len(face_data_list)} valid faces")
 
-            # Step 3: Extract skin mask
-            skin_mask = self._create_skin_mask(img_original, face_data)
+            # Step 2: Analyze each view and collect results
+            view_analyses = []
+            view_quality_scores = []
+            primary_view_idx = 0  # Front view is primary
 
-            # Step 4: Normalize lighting for consistent analysis
-            img = self._normalize_lighting(img_original, skin_mask)
+            for idx in range(len(images)):
+                view_name = VIEW_NAMES[idx] if idx < len(VIEW_NAMES) else f'view_{idx}'
+                img_original = images[idx]
+                face_data = face_data_list[idx] if idx < len(face_data_list) else face_data_list[0]
 
-            # Step 5: Check image quality (lighting & blur)
-            lighting_info = self._estimate_lighting_quality(img_original, skin_mask)
-            blur_info = self._detect_blur(img_original, skin_mask)
+                print(f"[FaceScan] Analyzing {view_name} view...")
 
-            # Step 6: If image quality is too poor, return early with warning
-            if not blur_info["is_acceptable"]:
+                # Extract skin mask for this view
+                skin_mask = self._create_skin_mask(img_original, face_data)
+
+                # Normalize lighting
+                img = self._normalize_lighting(img_original, skin_mask)
+
+                # Check quality for this view
+                lighting_info = self._estimate_lighting_quality(img_original, skin_mask)
+                blur_info = self._detect_blur(img_original, skin_mask)
+
+                # Skip view if quality is too poor (but continue with others)
+                if not blur_info["is_acceptable"] or lighting_info["lighting_quality"] < 0.15:
+                    print(f"[FaceScan] {view_name} view quality too low, skipping detailed analysis")
+                    continue
+
+                # Run analysis on this view
+                view_analysis = self._analyze_single_view(img, img_original, skin_mask, face_data, view_name)
+                view_analyses.append((view_name, view_analysis))
+
+                # Calculate quality score for this view
+                quality_score = self._calculate_quality_score(img_original, face_data, skin_mask)
+                view_quality_scores.append(quality_score)
+
+                print(f"[FaceScan] {view_name} view analysis complete - quality: {quality_score:.2f}")
+
+            # Step 3: Check if we have any valid analyses
+            if not view_analyses:
+                # Fall back to single image analysis if all views failed quality check
+                print("[FaceScan] All views failed quality check, falling back to best available")
+                img_original = images[0]
+                face_data = face_data_list[0]
+                skin_mask = self._create_skin_mask(img_original, face_data)
+                lighting_info = self._estimate_lighting_quality(img_original, skin_mask)
+                blur_info = self._detect_blur(img_original, skin_mask)
+
                 return self._convert_to_python_types({
                     "success": True,
                     "scan_id": scan_id,
-                    "quality_score": blur_info["sharpness_score"] * 0.5,
+                    "quality_score": max(blur_info["sharpness_score"], lighting_info["lighting_quality"]) * 0.5,
                     "processing_time_ms": int((time.time() - start_time) * 1000),
-                    "warning": "Image is too blurry for accurate analysis. Please retake with better focus.",
-                    "blur_info": blur_info,
-                    "analysis": self._get_low_confidence_defaults()
+                    "warning": "Image quality is poor. Results may be less accurate.",
+                    "analysis": self._get_low_confidence_defaults(),
+                    "views_analyzed": 0
                 })
 
-            # Relaxed threshold: was 0.3, now 0.15 to be more lenient with webcam images
-            if lighting_info["lighting_quality"] < 0.15:
-                return self._convert_to_python_types({
-                    "success": True,
-                    "scan_id": scan_id,
-                    "quality_score": lighting_info["lighting_quality"] * 0.5,
-                    "processing_time_ms": int((time.time() - start_time) * 1000),
-                    "warning": "Lighting conditions are poor. Please ensure face is well-lit.",
-                    "lighting_info": lighting_info,
-                    "analysis": self._get_low_confidence_defaults()
-                })
+            # Step 4: Merge analyses from all views
+            merged_analysis = self._merge_multi_view_analysis(view_analyses)
 
-            # Step 7: Extract skin region for analysis
-            skin_region = cv2.bitwise_and(img, img, mask=skin_mask)
+            # Add metadata about which views were used
+            merged_analysis["views_analyzed"] = [v[0] for v in view_analyses]
+            merged_analysis["multi_view"] = len(view_analyses) > 1
 
-            # Step 7: Run all analysis modules
-            analysis = {}
+            # Calculate overall quality score (average of valid views)
+            avg_quality = sum(view_quality_scores) / len(view_quality_scores) if view_quality_scores else 0.5
 
-            # Color analysis
+            processing_time = int((time.time() - start_time) * 1000)
+            print(f"[FaceScan] Multi-view analysis complete: {len(view_analyses)} views in {processing_time}ms")
+
+            return self._convert_to_python_types({
+                "success": True,
+                "scan_id": scan_id,
+                "quality_score": avg_quality,
+                "processing_time_ms": processing_time,
+                "analysis": merged_analysis
+            })
+
+        except Exception as e:
+            return self._error_response(scan_id, str(e), time.time() - start_time)
+
+    def _analyze_single_view(self, img: np.ndarray, img_original: np.ndarray,
+                             skin_mask: np.ndarray, face_data: Dict, view_name: str) -> Dict:
+        """
+        Analyze a single view (front/left/right) and return results with view context.
+
+        Args:
+            img: Lighting-normalized image
+            img_original: Original image
+            skin_mask: Mask for skin region
+            face_data: Face detection data
+            view_name: 'front', 'left', or 'right'
+
+        Returns:
+            Dictionary with analysis results including view-specific location data
+        """
+        # Extract skin region for analysis
+        skin_region = cv2.bitwise_and(img, img, mask=skin_mask)
+
+        analysis = {}
+        analysis["_view"] = view_name  # Track which view this came from
+
+        # Color analysis (only meaningful from front view)
+        if view_name == 'front':
             try:
                 skin_tone_result = self._analyze_skin_tone(skin_region, skin_mask)
                 analysis.update(skin_tone_result)
-            except Exception as e:
+            except Exception:
                 analysis.update(self._default_skin_tone())
 
-            # Undertone detection
+            # Undertone detection (front view only)
             try:
                 undertone_result = self._analyze_undertone(skin_region, skin_mask)
                 analysis.update(undertone_result)
             except Exception:
                 analysis["skin_undertone"] = "neutral"
 
-            # Face shape classification
+            # Face shape classification (front view only)
             try:
                 face_shape_result = self._classify_face_shape(face_data, img.shape)
                 analysis.update(face_shape_result)
             except Exception:
                 analysis.update({"face_shape": "oval", "face_shape_confidence": 0.5})
 
-            # Acne/blemish detection
-            try:
-                acne_result = self._detect_acne(img, skin_mask, face_data)
-                analysis.update(acne_result)
-            except Exception:
-                analysis.update(self._default_acne())
-
-            # Wrinkle detection
-            try:
-                wrinkle_result = self._detect_wrinkles(img, skin_mask, face_data)
-                analysis.update(wrinkle_result)
-            except Exception:
-                analysis.update(self._default_wrinkles())
-
-            # Texture analysis
-            try:
-                texture_result = self._analyze_texture(img, skin_mask)
-                analysis.update(texture_result)
-            except Exception:
-                analysis.update(self._default_texture())
-
-            # Redness/sensitivity
-            try:
-                redness_result = self._analyze_redness(img, skin_mask)
-                analysis.update(redness_result)
-            except Exception:
-                analysis.update(self._default_redness())
-
-            # Hydration/oiliness
-            try:
-                hydration_result = self._analyze_hydration(img, skin_mask, face_data)
-                analysis.update(hydration_result)
-            except Exception:
-                analysis.update(self._default_hydration())
-
-            # Pigmentation/dark spots
-            try:
-                pigmentation_result = self._detect_pigmentation(img, skin_mask)
-                analysis.update(pigmentation_result)
-            except Exception:
-                analysis.update(self._default_pigmentation())
-
-            # Dark circles detection
+            # Dark circles (front view - under eye area)
             try:
                 dark_circles_result = self._detect_dark_circles(img, skin_mask, face_data)
                 analysis.update(dark_circles_result)
             except Exception:
                 analysis.update(self._default_dark_circles())
 
-            # Skin age estimation
-            try:
-                age_result = self._estimate_skin_age(analysis)
-                analysis.update(age_result)
-            except Exception:
-                analysis["skin_age_estimate"] = 30
-
-            # Calculate overall skin score
-            analysis["skin_score"] = self._calculate_overall_score(analysis)
-
-            # Add analysis confidence (factoring in lighting quality)
-            analysis["analysis_confidence"] = self._calculate_analysis_confidence(
-                analysis, lighting_info.get("lighting_quality", 0.7)
-            )
-
-            # Add image quality info to analysis
-            analysis["lighting_quality"] = lighting_info.get("lighting_quality", 0.7)
-            analysis["sharpness_score"] = blur_info.get("sharpness_score", 0.7)
-            analysis["blur_level"] = blur_info.get("blur_level", "unknown")
-
-            if lighting_info.get("lighting_issues"):
-                analysis["lighting_issues"] = lighting_info["lighting_issues"]
-
-            # Extract face outline coordinates for overlay drawing
+            # Extract face outline (front view only for overlay)
             try:
                 face_outline = self._extract_face_outline(face_data, img.shape)
                 analysis["face_outline"] = face_outline
             except Exception:
                 analysis["face_outline"] = []
 
-            # Calculate quality score
-            quality_score = self._calculate_quality_score(img_original, face_data, skin_mask)
+        # Acne/blemish detection (all views - side profiles catch cheek/jawline acne)
+        try:
+            acne_result = self._detect_acne(img, skin_mask, face_data)
+            # Tag locations with view name
+            if "acne_locations" in acne_result:
+                for loc in acne_result["acne_locations"]:
+                    loc["view"] = view_name
+            analysis.update(acne_result)
+        except Exception:
+            analysis.update(self._default_acne())
 
-            processing_time = int((time.time() - start_time) * 1000)
+        # Wrinkle detection (all views - profiles show crow's feet, nasolabial)
+        try:
+            wrinkle_result = self._detect_wrinkles(img, skin_mask, face_data)
+            # Tag wrinkle regions with view
+            if "wrinkle_regions" in wrinkle_result:
+                for region_name in wrinkle_result["wrinkle_regions"]:
+                    wrinkle_result["wrinkle_regions"][region_name]["view"] = view_name
+            analysis.update(wrinkle_result)
+        except Exception:
+            analysis.update(self._default_wrinkles())
 
-            # Convert all numpy types to Python native types for JSON serialization
-            return self._convert_to_python_types({
-                "success": True,
-                "scan_id": scan_id,
-                "quality_score": quality_score,
-                "processing_time_ms": processing_time,
-                "analysis": analysis
-            })
+        # Texture analysis (all views)
+        try:
+            texture_result = self._analyze_texture(img, skin_mask)
+            if "enlarged_pores_locations" in texture_result:
+                for loc in texture_result["enlarged_pores_locations"]:
+                    loc["view"] = view_name
+            analysis.update(texture_result)
+        except Exception:
+            analysis.update(self._default_texture())
 
-        except Exception as e:
-            return self._error_response(scan_id, str(e), time.time() - start_time)
+        # Redness/sensitivity (all views - cheek redness visible from profiles)
+        try:
+            redness_result = self._analyze_redness(img, skin_mask)
+            if "redness_regions" in redness_result:
+                for region in redness_result["redness_regions"]:
+                    region["view"] = view_name
+            analysis.update(redness_result)
+        except Exception:
+            analysis.update(self._default_redness())
+
+        # Hydration/oiliness (front view mainly - T-zone analysis)
+        if view_name == 'front':
+            try:
+                hydration_result = self._analyze_hydration(img, skin_mask, face_data)
+                analysis.update(hydration_result)
+            except Exception:
+                analysis.update(self._default_hydration())
+
+        # Pigmentation/dark spots (all views)
+        try:
+            pigmentation_result = self._detect_pigmentation(img, skin_mask)
+            if "dark_spots_locations" in pigmentation_result:
+                for loc in pigmentation_result["dark_spots_locations"]:
+                    loc["view"] = view_name
+            analysis.update(pigmentation_result)
+        except Exception:
+            analysis.update(self._default_pigmentation())
+
+        return analysis
+
+    def _merge_multi_view_analysis(self, view_analyses: List[Tuple[str, Dict]]) -> Dict:
+        """
+        Merge analysis results from multiple views into a comprehensive analysis.
+
+        Strategy:
+        - Skin tone/undertone/face shape: Use front view only
+        - Counts (acne, spots, wrinkles): Sum across all views
+        - Scores (texture, redness): Average across views
+        - Locations: Combine from all views with view labels
+
+        Args:
+            view_analyses: List of (view_name, analysis_dict) tuples
+
+        Returns:
+            Merged analysis dictionary
+        """
+        merged = {}
+
+        if not view_analyses:
+            return self._get_low_confidence_defaults()
+
+        # Get front view analysis as baseline (or first available)
+        front_analysis = None
+        for view_name, analysis in view_analyses:
+            if view_name == 'front':
+                front_analysis = analysis
+                break
+        if front_analysis is None:
+            front_analysis = view_analyses[0][1]
+
+        # Copy front-view-only fields
+        front_only_fields = [
+            'skin_tone', 'skin_hex_color', 'skin_tone_confidence',
+            'skin_undertone', 'face_shape', 'face_shape_confidence',
+            'dark_circles_score', 'dark_circles_severity',
+            'hydration_score', 'hydration_level', 'oiliness_score', 't_zone_oiliness',
+            'face_outline'
+        ]
+        for field in front_only_fields:
+            if field in front_analysis:
+                merged[field] = front_analysis[field]
+
+        # Aggregate count fields (sum across views)
+        count_fields = [
+            'blackhead_count', 'pimple_count', 'whitehead_count',
+            'dark_spots_count', 'fine_lines_count', 'deep_wrinkles_count',
+            'enlarged_pores_count'
+        ]
+        for field in count_fields:
+            total = 0
+            for _, analysis in view_analyses:
+                total += analysis.get(field, 0)
+            merged[field] = total
+
+        # Aggregate score fields (weighted average - front view gets more weight)
+        score_fields = [
+            'acne_score', 'wrinkle_score', 'texture_score',
+            'redness_score', 'sensitivity_level', 'pigmentation_score',
+            'smoothness_score', 'pore_size_average'
+        ]
+        for field in score_fields:
+            weighted_sum = 0
+            weight_total = 0
+            for view_name, analysis in view_analyses:
+                if field in analysis:
+                    weight = 1.5 if view_name == 'front' else 1.0
+                    weighted_sum += analysis[field] * weight
+                    weight_total += weight
+            if weight_total > 0:
+                merged[field] = round(weighted_sum / weight_total, 1)
+
+        # Combine location arrays from all views
+        location_fields = [
+            'acne_locations', 'dark_spots_locations', 'enlarged_pores_locations',
+            'redness_regions'
+        ]
+        for field in location_fields:
+            combined = []
+            for view_name, analysis in view_analyses:
+                if field in analysis and isinstance(analysis[field], list):
+                    combined.extend(analysis[field])
+            if combined:
+                merged[field] = combined
+
+        # Combine wrinkle regions (merge dicts)
+        all_wrinkle_regions = {}
+        for view_name, analysis in view_analyses:
+            if 'wrinkle_regions' in analysis:
+                for region_name, region_data in analysis['wrinkle_regions'].items():
+                    key = f"{region_name}_{view_name}" if view_name != 'front' else region_name
+                    all_wrinkle_regions[key] = region_data
+        if all_wrinkle_regions:
+            merged['wrinkle_regions'] = all_wrinkle_regions
+
+        # Calculate overall skin score from merged data
+        merged['skin_score'] = self._calculate_overall_score(merged)
+
+        # Calculate skin age from merged data
+        try:
+            age_result = self._estimate_skin_age(merged)
+            merged.update(age_result)
+        except Exception:
+            merged['skin_age_estimate'] = 30
+
+        # Calculate analysis confidence (higher with more views)
+        base_confidence = front_analysis.get('analysis_confidence', 0.7)
+        view_bonus = min(0.15, 0.05 * (len(view_analyses) - 1))  # +5% per extra view
+        merged['analysis_confidence'] = min(0.98, base_confidence + view_bonus)
+
+        print(f"[FaceScan] Merged {len(view_analyses)} views: "
+              f"acne={merged.get('acne_score', 0)}, spots={merged.get('dark_spots_count', 0)}, "
+              f"wrinkles={merged.get('wrinkle_score', 0)}")
+
+        return merged
 
     def _process_images(self, image_data: List[bytes]) -> Tuple[List[np.ndarray], List]:
         """Load images and detect faces"""
@@ -889,6 +1050,9 @@ class FaceScanService:
 
     def _detect_acne(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
         """Detect acne and blemishes using blob detection and color analysis"""
+
+        # Get image dimensions for coordinate normalization
+        h, w = img.shape[:2]
 
         # Convert to grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
