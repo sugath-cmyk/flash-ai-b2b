@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.0.5 (Markers strictly in face center only)
+ * Version: 2.0.6 (Subtle overlays instead of fake pinpoint markers)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.0.5 - Markers strictly in face center only');
+  console.log('[Flash AI Widget] Version 2.0.6 - Subtle overlays instead of fake pinpoint markers');
 
   // ==========================================================================
   // Main Widget Class
@@ -1727,333 +1727,152 @@
       const score = issue.score;
       const severity = issue.severity;
 
-      // Colors based on severity
-      const markerColors = {
-        concern: { fill: 'rgba(220, 38, 38, 0.7)', stroke: '#dc2626' },
-        moderate: { fill: 'rgba(245, 158, 11, 0.6)', stroke: '#f59e0b' },
-        good: { fill: 'rgba(16, 185, 129, 0.5)', stroke: '#10b981' }
+      // Severity-based overlay colors (subtle tints)
+      const overlayColors = {
+        concern: 'rgba(220, 38, 38, 0.15)',    // Red tint for significant
+        moderate: 'rgba(245, 158, 11, 0.12)',  // Orange tint for moderate
+        good: 'rgba(16, 185, 129, 0.08)'       // Green tint for mild
       };
-      const colors = markerColors[severity] || markerColors.moderate;
+
+      const borderColors = {
+        concern: '#dc2626',
+        moderate: '#f59e0b',
+        good: '#10b981'
+      };
 
       ctx.save();
 
-      // Create TIGHT face-shaped clip region - markers ONLY on center of face
-      // Use a small ellipse in the center where the face skin definitely is
+      // Draw subtle colored overlay based on issue type
+      // This provides visual feedback without fake pinpoint accuracy
+      const overlayColor = overlayColors[severity] || overlayColors.moderate;
+      const borderColor = borderColors[severity] || borderColors.moderate;
+
+      // Create elliptical face region
       const centerX = width / 2;
       const centerY = height / 2;
-      // Much smaller radius to stay strictly on face skin (40% of canvas)
-      const radiusX = width * 0.25;
-      const radiusY = height * 0.3;
+      const radiusX = width * 0.4;
+      const radiusY = height * 0.45;
 
+      // Draw subtle overlay for the affected area
       ctx.beginPath();
       ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
-      ctx.clip();
+      ctx.fillStyle = overlayColor;
+      ctx.fill();
 
-      switch(issue.key) {
-        case 'acne':
-          // Draw spots/dots for acne locations
-          this.drawAcneMarkers(ctx, width, height, score, colors);
-          break;
+      // Draw a subtle dashed outline to indicate detected region
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY, radiusX * 0.8, radiusY * 0.8, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-        case 'wrinkles':
-          // Draw lines for wrinkle areas
-          this.drawWrinkleMarkers(ctx, width, height, score, colors);
-          break;
-
-        case 'dark_circles':
-          // Draw curved highlights under eyes
-          this.drawDarkCircleMarkers(ctx, width, height, score, colors);
-          break;
-
-        case 'pores':
-          // Draw small dots in T-zone
-          this.drawPoreMarkers(ctx, width, height, score, colors);
-          break;
-
-        case 'redness':
-          // Draw red-tinted areas
-          this.drawRednessMarkers(ctx, width, height, score, colors);
-          break;
-
-        case 'pigmentation':
-          // Draw irregular spots
-          this.drawPigmentationMarkers(ctx, width, height, score, colors);
-          break;
-
-        case 'oiliness':
-          // Draw shine indicators
-          this.drawOilinessMarkers(ctx, width, height, score, colors);
-          break;
-
-        case 'texture':
-          // Draw texture pattern
-          this.drawTextureMarkers(ctx, width, height, score, colors);
-          break;
-
-        case 'hydration':
-          // Draw dryness lines
-          this.drawHydrationMarkers(ctx, width, height, score, colors);
-          break;
-      }
+      // Add issue-specific subtle indicator in center
+      this.drawIssueIndicator(ctx, width, height, issue.key, score, borderColor);
 
       ctx.restore();
     }
 
-    drawAcneMarkers(ctx, width, height, score, colors) {
-      // Number of spots based on severity
-      const numSpots = Math.max(2, Math.floor(score / 18));
+    drawIssueIndicator(ctx, width, height, issueKey, score, color) {
+      const centerX = width / 2;
+      const centerY = height / 2;
 
-      // TIGHT center positions - ONLY in 0.4-0.6 range (center of face)
-      const positions = [
-        { x: 0.45, y: 0.45 }, { x: 0.55, y: 0.42 }, { x: 0.5, y: 0.52 },
-        { x: 0.43, y: 0.55 }, { x: 0.57, y: 0.5 }, { x: 0.48, y: 0.58 }
-      ];
-
-      for (let i = 0; i < Math.min(numSpots, positions.length); i++) {
-        const pos = positions[i];
-        const x = pos.x * width;
-        const y = pos.y * height;
-        const radius = 3;
-
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = colors.fill;
-        ctx.fill();
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-    }
-
-    drawWrinkleMarkers(ctx, width, height, score, colors) {
-      ctx.strokeStyle = colors.stroke;
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
-      ctx.setLineDash([3, 2]);
+      ctx.globalAlpha = 0.6;
 
-      // Draw SHORT horizontal lines ONLY in center (forehead area)
-      const numLines = Math.max(1, Math.floor(score / 30));
-
-      for (let i = 0; i < Math.min(numLines, 2); i++) {
-        const y = 0.38 + (i * 0.08);
-        ctx.beginPath();
-        ctx.moveTo(width * 0.4, height * y);
-        ctx.lineTo(width * 0.6, height * y);
-        ctx.stroke();
-      }
-
-      ctx.setLineDash([]);
-    }
-
-    drawDarkCircleMarkers(ctx, width, height, score, colors) {
-      const alpha = Math.min(0.35, score / 150);
-
-      // TIGHT center - small ellipses representing under-eye area
-      // Left under-eye (very close to center)
-      ctx.beginPath();
-      ctx.ellipse(width * 0.44, height * 0.5, width * 0.06, height * 0.04, 0, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(75, 0, 130, ${alpha})`;
-      ctx.fill();
-      ctx.strokeStyle = colors.stroke;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Right under-eye (very close to center)
-      ctx.beginPath();
-      ctx.ellipse(width * 0.56, height * 0.5, width * 0.06, height * 0.04, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    drawPoreMarkers(ctx, width, height, score, colors) {
-      const density = Math.max(4, Math.floor(score / 8));
-
-      // TIGHT center - pores only in very center (nose/T-zone)
-      for (let i = 0; i < density; i++) {
-        const x = width * (0.46 + Math.random() * 0.08);
-        const y = height * (0.45 + Math.random() * 0.12);
-
-        ctx.beginPath();
-        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = colors.fill;
-        ctx.fill();
-      }
-
-      // Larger pore indicators (very few, very centered)
-      const largePores = Math.min(2, Math.floor(score / 40));
-      for (let i = 0; i < largePores; i++) {
-        const x = width * (0.47 + Math.random() * 0.06);
-        const y = height * (0.47 + Math.random() * 0.08);
-
-        ctx.beginPath();
-        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-    }
-
-    drawRednessMarkers(ctx, width, height, score, colors) {
-      const alpha = Math.min(0.25, score / 200);
-
-      // TIGHT center gradient for redness
-      const gradient = ctx.createRadialGradient(
-        width * 0.5, height * 0.5, 0,
-        width * 0.5, height * 0.5, width * 0.2
-      );
-      gradient.addColorStop(0, `rgba(220, 38, 38, ${alpha})`);
-      gradient.addColorStop(0.7, `rgba(220, 38, 38, ${alpha * 0.3})`);
-      gradient.addColorStop(1, 'transparent');
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(width * 0.35, height * 0.35, width * 0.3, height * 0.3);
-
-      // Small indicator circles in center
-      ctx.strokeStyle = colors.stroke;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 2]);
-
-      ctx.beginPath();
-      ctx.ellipse(width * 0.46, height * 0.5, width * 0.05, height * 0.06, 0, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.ellipse(width * 0.54, height * 0.5, width * 0.05, height * 0.06, 0, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.setLineDash([]);
-    }
-
-    drawPigmentationMarkers(ctx, width, height, score, colors) {
-      const numSpots = Math.max(2, Math.floor(score / 18));
-
-      // TIGHT center positions - spots ONLY in center of face (0.42-0.58 range)
-      const positions = [
-        { x: 0.45, y: 0.45, size: 5 }, { x: 0.55, y: 0.43, size: 4 },
-        { x: 0.48, y: 0.52, size: 4 }, { x: 0.52, y: 0.5, size: 5 },
-        { x: 0.46, y: 0.56, size: 4 }, { x: 0.54, y: 0.54, size: 4 }
-      ];
-
-      for (let i = 0; i < Math.min(numSpots, positions.length); i++) {
-        const spot = positions[i];
-        const x = spot.x * width;
-        const y = spot.y * height;
-
-        ctx.beginPath();
-        ctx.ellipse(x, y, spot.size * 0.5, spot.size * 0.4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(139, 69, 19, ${0.3 + (score / 200)})`;
-        ctx.fill();
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-    }
-
-    drawOilinessMarkers(ctx, width, height, score, colors) {
-      const alpha = Math.min(0.25, score / 200);
-
-      // TIGHT center shine effect
-      const gradient = ctx.createRadialGradient(
-        width * 0.5, height * 0.5, 0,
-        width * 0.5, height * 0.5, width * 0.15
-      );
-      gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-      gradient.addColorStop(1, 'transparent');
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(width * 0.4, height * 0.4, width * 0.2, height * 0.2);
-
-      // Small shine highlights in center only
-      const numHighlights = Math.min(3, Math.floor(score / 30));
-      for (let i = 0; i < numHighlights; i++) {
-        const x = width * (0.46 + Math.random() * 0.08);
-        const y = height * (0.46 + Math.random() * 0.08);
-
-        const highlightGradient = ctx.createRadialGradient(x, y, 0, x, y, 6);
-        highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
-        highlightGradient.addColorStop(1, 'transparent');
-
-        ctx.fillStyle = highlightGradient;
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    drawTextureMarkers(ctx, width, height, score, colors) {
-      ctx.strokeStyle = colors.stroke;
-      ctx.lineWidth = 0.8;
-      ctx.globalAlpha = 0.4;
-
-      // TIGHT center crosshatch pattern (40%-60% range only)
-      const density = Math.max(3, Math.floor(score / 15));
-      const spacing = Math.max(15, 60 / density);
-
-      for (let x = width * 0.4; x < width * 0.6; x += spacing) {
-        for (let y = height * 0.4; y < height * 0.6; y += spacing) {
-          if (Math.random() > 0.5) {
+      switch(issueKey) {
+        case 'pigmentation':
+        case 'acne':
+          // Small dots pattern to suggest spots detected
+          const numDots = Math.min(5, Math.ceil(score / 20));
+          for (let i = 0; i < numDots; i++) {
+            const angle = (i / numDots) * Math.PI * 2;
+            const r = width * 0.15;
+            const x = centerX + Math.cos(angle) * r;
+            const y = centerY + Math.sin(angle) * r;
             ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + 3, y + 3);
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
+        case 'wrinkles':
+          // Horizontal lines to suggest wrinkle detection
+          ctx.setLineDash([3, 3]);
+          for (let i = -1; i <= 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(centerX - width * 0.2, centerY + i * 15);
+            ctx.lineTo(centerX + width * 0.2, centerY + i * 15);
             ctx.stroke();
           }
-        }
+          ctx.setLineDash([]);
+          break;
+
+        case 'dark_circles':
+          // Two small ovals for under-eye areas
+          ctx.beginPath();
+          ctx.ellipse(centerX - width * 0.1, centerY, width * 0.08, height * 0.05, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.ellipse(centerX + width * 0.1, centerY, width * 0.08, height * 0.05, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          break;
+
+        case 'redness':
+          // Gradient circle for redness area
+          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, width * 0.2);
+          gradient.addColorStop(0, 'rgba(220, 38, 38, 0.2)');
+          gradient.addColorStop(1, 'transparent');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, width * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+
+        case 'pores':
+        case 'texture':
+          // Stipple pattern for texture issues
+          for (let i = 0; i < 8; i++) {
+            const x = centerX + (Math.random() - 0.5) * width * 0.3;
+            const y = centerY + (Math.random() - 0.5) * height * 0.3;
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
+        case 'oiliness':
+          // Shine highlight
+          const shineGradient = ctx.createRadialGradient(centerX, centerY - 10, 0, centerX, centerY - 10, width * 0.15);
+          shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+          shineGradient.addColorStop(1, 'transparent');
+          ctx.fillStyle = shineGradient;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY - 10, width * 0.15, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+
+        default:
+          // Generic indicator - small target
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(centerX - 12, centerY);
+          ctx.lineTo(centerX + 12, centerY);
+          ctx.moveTo(centerX, centerY - 12);
+          ctx.lineTo(centerX, centerY + 12);
+          ctx.stroke();
+          break;
       }
 
       ctx.globalAlpha = 1;
-
-      // Tiny bumps only in center
-      if (score > 50) {
-        const numBumps = Math.min(3, Math.floor(score / 25));
-        for (let i = 0; i < numBumps; i++) {
-          const x = width * (0.45 + Math.random() * 0.1);
-          const y = height * (0.45 + Math.random() * 0.1);
-
-          ctx.beginPath();
-          ctx.arc(x, y, 2, 0, Math.PI * 2);
-          ctx.strokeStyle = colors.stroke;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-      }
     }
 
-    drawHydrationMarkers(ctx, width, height, score, colors) {
-      // For hydration, lower score means drier skin (more lines)
-      const invertedScore = 100 - score;
-
-      if (invertedScore > 30) {
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 0.7;
-        ctx.setLineDash([2, 2]);
-
-        // TIGHT center - fine lines only in center
-        const numLines = Math.min(3, Math.floor(invertedScore / 22));
-        for (let i = 0; i < numLines; i++) {
-          const y = height * (0.45 + Math.random() * 0.1);
-          const startX = width * (0.44 + Math.random() * 0.06);
-          const length = 10 + Math.random() * 10;
-
-          ctx.beginPath();
-          ctx.moveTo(startX, y);
-          ctx.lineTo(startX + length, y);
-          ctx.stroke();
-        }
-
-        ctx.setLineDash([]);
-      }
-
-      // If well hydrated, show a tiny glow in center
-      if (score > 60) {
-        const gradient = ctx.createRadialGradient(
-          width * 0.5, height * 0.5, 0,
-          width * 0.5, height * 0.5, width * 0.15
-        );
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.1)');
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(width * 0.4, height * 0.4, width * 0.2, height * 0.2);
-      }
-    }
+    // Old marker functions removed - now using subtle overlays via drawIssueIndicator
 
     selectIssue(index) {
       // Delegate to toggleAccordion for consistency
