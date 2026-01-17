@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.6.0 (Fix frosted rectangle - remove inset shadow, force remove blur via JS)
+ * Version: 2.7.0 (Remove class from photo indicator to prevent CSS interference)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.6.0 - Fix frosted rectangle - remove inset shadow, force remove blur via JS');
+  console.log('[Flash AI Widget] Version 2.7.0 - Remove class from photo indicator to prevent CSS interference');
 
   // ==========================================================================
   // Main Widget Class
@@ -399,8 +399,8 @@
                 </div>
               </div>
 
-              <!-- Photo indicator (top) -->
-              <div class="flashai-vto-face-angle-indicator" id="flashai-vto-face-angle-indicator" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;z-index:15;border:1px solid rgba(255,255,255,0.2);">
+              <!-- Photo indicator (top) - NO CLASS to avoid external CSS interference -->
+              <div id="flashai-vto-face-angle-indicator" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;z-index:15;border:1px solid rgba(255,255,255,0.2);backdrop-filter:none !important;-webkit-backdrop-filter:none !important;box-shadow:none !important;">
                 📸 Photo <span id="flashai-vto-face-photo-count">1</span> of 3: <span id="flashai-vto-current-angle">Front View</span>
               </div>
             </div>
