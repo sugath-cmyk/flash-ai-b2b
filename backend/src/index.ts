@@ -1,132 +1,150 @@
-// Startup diagnostic - log immediately before any imports might fail
+// Startup diagnostic - MUST be first
 console.log('🔧 Backend starting... Node:', process.version, 'PID:', process.pid);
+console.log('🔧 Working directory:', process.cwd());
+console.log('🔧 __dirname:', __dirname);
 
-import express, { Application } from 'express';
+// Catch any unhandled errors during startup
+process.on('uncaughtException', (err) => {
+  console.error('💀 UNCAUGHT EXCEPTION:', err.message);
+  console.error(err.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💀 UNHANDLED REJECTION:', reason);
+});
+
+// Core imports that should never fail
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import path from 'path';
-import { errorHandler } from './middleware/errorHandler';
-import { notFoundHandler } from './middleware/notFoundHandler';
-import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user.routes';
-import aiRoutes from './routes/ai.routes';
-import documentRoutes from './routes/document.routes';
-import teamRoutes from './routes/team.routes';
-import storeRoutes from './routes/store.routes';
-import brandRoutes from './routes/brand.routes';
-import widgetRoutes from './routes/widget.routes';
-import onboardingRoutes from './routes/onboarding.routes';
-import otpRoutes from './routes/otp.routes';
-import shopifyRoutes from './routes/shopify.routes';
-import adminRoutes from './routes/admin.routes';
-import maintenanceRoutes from './routes/maintenance.routes';
-import vtoRoutes from './routes/vto.routes';
-import faceScanRoutes from './routes/face-scan.routes';
-import widgetController from './controllers/widget.controller';
-import brandController from './controllers/brand.controller';
 
-// Load environment variables
+// Load environment variables EARLY
 dotenv.config();
+
+console.log('✅ Core modules loaded');
+console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
+console.log('🔧 DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
-// DIAGNOSTIC ENDPOINT - Register FIRST before any middleware
-// This helps diagnose if routes are being registered at all
-app.get('/ping', (req, res) => {
-  res.send('pong-v1.0.3');
+// CRITICAL: Register basic endpoints BEFORE any other imports
+// These will work even if route imports fail
+app.get('/ping', (req: Request, res: Response) => {
+  res.send('pong-v2.0.0');
 });
-console.log('✅ Diagnostic /ping endpoint registered');
+
+app.get('/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0',
+    node: process.version,
+    env: process.env.NODE_ENV || 'development',
+    dbConfigured: !!process.env.DATABASE_URL,
+  });
+});
+
+app.get('/debug', (req: Request, res: Response) => {
+  res.json({
+    cwd: process.cwd(),
+    dirname: __dirname,
+    nodeVersion: process.version,
+    platform: process.platform,
+    env: process.env.NODE_ENV,
+    port: PORT,
+    memoryUsage: process.memoryUsage(),
+  });
+});
+
+console.log('✅ Basic endpoints registered (/ping, /health, /debug)');
 
 // Middleware
-// Configure helmet with relaxed CSP for widget endpoints
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP to allow widget to load on any site
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin resource loading
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// CORS configuration - allow widget endpoints from any origin
 app.use(cors({
-  origin: (origin, callback) => {
-    // Widget API endpoints should accept requests from any origin (public API)
-    const isWidgetEndpoint = origin && origin.includes('/api/widget');
-
-    // Allow requests from:
-    // 1. Frontend URL
-    // 2. No origin (e.g., mobile apps, Postman)
-    // 3. File protocol (for local testing)
-    if (!origin ||
-        origin === (process.env.FRONTEND_URL || 'http://localhost:5173') ||
-        origin.startsWith('file://')) {
-      callback(null, true);
-    } else {
-      // For widget endpoints, allow all origins
-      callback(null, true);
-    }
-  },
+  origin: true, // Allow all origins for now
   credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(morgan('dev')); // Logging
+app.use(morgan('dev'));
 
-// Health check route
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    version: '1.0.3', // Force rebuild with recommendation engine
-    features: {
-      queryAnalytics: true,
-      brandControllerExists: typeof brandController !== 'undefined',
-      hasGetQueryStats: typeof brandController.getQueryStats === 'function',
-      hasGetPopularQueries: typeof brandController.getPopularQueries === 'function',
-      hasGetCategoryBreakdown: typeof brandController.getCategoryBreakdown === 'function',
-    }
+console.log('✅ Middleware configured');
+
+// Track which routes loaded successfully
+const loadedRoutes: string[] = [];
+const failedRoutes: string[] = [];
+
+// Helper to safely load a route
+function safeLoadRoute(routePath: string, mountPath: string) {
+  try {
+    const route = require(routePath).default;
+    app.use(mountPath, route);
+    loadedRoutes.push(mountPath);
+    console.log(`✅ Route loaded: ${mountPath}`);
+  } catch (error: any) {
+    failedRoutes.push(`${mountPath}: ${error.message}`);
+    console.error(`❌ Failed to load route ${mountPath}:`, error.message);
+  }
+}
+
+// Helper to safely load a controller
+function safeLoadController(controllerPath: string): any {
+  try {
+    const controller = require(controllerPath).default;
+    console.log(`✅ Controller loaded: ${controllerPath}`);
+    return controller;
+  } catch (error: any) {
+    console.error(`❌ Failed to load controller ${controllerPath}:`, error.message);
+    return null;
+  }
+}
+
+// Load middleware
+let errorHandler: any, notFoundHandler: any;
+try {
+  errorHandler = require('./middleware/errorHandler').errorHandler;
+  notFoundHandler = require('./middleware/notFoundHandler').notFoundHandler;
+  console.log('✅ Error handlers loaded');
+} catch (error: any) {
+  console.error('❌ Failed to load error handlers:', error.message);
+}
+
+// Load controllers
+const widgetController = safeLoadController('./controllers/widget.controller');
+const brandController = safeLoadController('./controllers/brand.controller');
+
+// Widget script routes (if controller loaded)
+if (widgetController) {
+  app.options('/widget/:storeId.js', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.sendStatus(200);
   });
-});
+  app.get('/widget/:storeId.js', widgetController.serveWidgetScript.bind(widgetController));
 
-// Simple test endpoint for query analytics
-app.get('/test/analytics', (req, res) => {
-  res.json({
-    message: 'Analytics test endpoint working',
-    brandRoutes: {
-      imported: typeof brandRoutes !== 'undefined',
-      registered: true
-    },
-    testUrls: [
-      '/api/brand/STORE_ID/query-analytics/stats?days=30',
-      '/api/brand/STORE_ID/query-analytics/popular?days=30&limit=10',
-      '/api/brand/STORE_ID/query-analytics/categories?days=30'
-    ]
+  app.options('/vto/:storeId.js', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.sendStatus(200);
   });
-});
+  app.get('/vto/:storeId.js', widgetController.serveVTOWidgetScript.bind(widgetController));
+  console.log('✅ Widget script routes registered');
+}
 
-// Widget script serving route (public, must be before API routes)
-app.options('/widget/:storeId.js', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.sendStatus(200);
-});
-app.get('/widget/:storeId.js', widgetController.serveWidgetScript.bind(widgetController));
-
-// VTO widget script serving route (public, must be before API routes)
-app.options('/vto/:storeId.js', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.sendStatus(200);
-});
-app.get('/vto/:storeId.js', widgetController.serveVTOWidgetScript.bind(widgetController));
-
-// VTO styles serving route (public)
+// VTO styles route
 app.get('/widget/vto-styles.css', (req, res) => {
   try {
-    // In production (dist/), widget folder is copied to dist/widget/
     const cssPath = path.join(__dirname, './widget/vto-styles.css');
     res.setHeader('Content-Type', 'text/css');
     res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -138,85 +156,71 @@ app.get('/widget/vto-styles.css', (req, res) => {
   }
 });
 
-// API Routes
-console.log('📡 Registering API routes...');
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/teams', teamRoutes);
-app.use('/api/stores', storeRoutes);
+// Load API routes dynamically
+console.log('📡 Loading API routes...');
+safeLoadRoute('./routes/auth.routes', '/api/auth');
+safeLoadRoute('./routes/user.routes', '/api/users');
+safeLoadRoute('./routes/ai.routes', '/api/ai');
+safeLoadRoute('./routes/document.routes', '/api/documents');
+safeLoadRoute('./routes/team.routes', '/api/teams');
+safeLoadRoute('./routes/store.routes', '/api/stores');
+safeLoadRoute('./routes/brand.routes', '/api/brand');
+safeLoadRoute('./routes/widget.routes', '/api/widget');
+safeLoadRoute('./routes/vto.routes', '/api/vto');
+safeLoadRoute('./routes/face-scan.routes', '/api/face-scan');
+safeLoadRoute('./routes/onboarding.routes', '/api/onboarding');
+safeLoadRoute('./routes/otp.routes', '/api/otp');
+safeLoadRoute('./routes/shopify.routes', '/api/shopify');
+safeLoadRoute('./routes/admin.routes', '/api/admin');
+safeLoadRoute('./routes/maintenance.routes', '/api/maintenance');
 
-// Brand Console Routes (for store owners)
-app.use('/api/brand', brandRoutes);
-
-// Widget Public API Routes (for embedded widget)
-app.use('/api/widget', widgetRoutes);
-
-// VTO Public API Routes (for virtual try-on widget)
-app.use('/api/vto', vtoRoutes);
-
-// Face Scan Public API Routes (for skin analysis widget)
-app.use('/api/face-scan', faceScanRoutes);
-
-// Onboarding Routes (public + admin)
-app.use('/api/onboarding', onboardingRoutes);
-
-// OTP Routes (public)
-app.use('/api/otp', otpRoutes);
-
-// Shopify Integration Routes
-app.use('/api/shopify', shopifyRoutes);
-
-// Admin Routes (requires admin authentication)
-app.use('/api/admin', adminRoutes);
-
-// Maintenance Routes (automated tasks with admin secret)
-app.use('/api/maintenance', maintenanceRoutes);
+// Route status endpoint
+app.get('/routes-status', (req: Request, res: Response) => {
+  res.json({
+    loaded: loadedRoutes,
+    failed: failedRoutes,
+    total: loadedRoutes.length + failedRoutes.length,
+    success: loadedRoutes.length,
+  });
+});
 
 // 404 handler
-app.use(notFoundHandler);
+if (notFoundHandler) {
+  app.use(notFoundHandler);
+} else {
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({ error: 'Not found', path: req.path });
+  });
+}
 
-// Error handler (must be last)
-app.use(errorHandler);
-
-// Auto-run face scan migration on startup if tables don't exist
-async function checkAndRunFaceScanMigration() {
-  try {
-    const { pool } = require('./config/database');
-
-    // Check if face_scans table exists
-    const tableCheck = await pool.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables
-        WHERE table_schema = 'public'
-        AND table_name = 'face_scans'
-      );
-    `);
-
-    const tableExists = tableCheck.rows[0].exists;
-
-    if (!tableExists) {
-      console.log('⚠️  Face scan tables not found, running migration...');
-      const { FACE_SCAN_MIGRATION_SQL } = require('./migrations/face-scan-migration');
-      await pool.query(FACE_SCAN_MIGRATION_SQL);
-      console.log('✅ Face scan tables created successfully');
-    } else {
-      console.log('✅ Face scan tables already exist');
-    }
-  } catch (error) {
-    console.error('❌ Face scan migration check failed:', error);
-  }
+// Error handler
+if (errorHandler) {
+  app.use(errorHandler);
+} else {
+  app.use((err: any, req: Request, res: Response, next: any) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  });
 }
 
 // Start server
-app.listen(PORT, async () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`📊 Routes status: ${loadedRoutes.length} loaded, ${failedRoutes.length} failed`);
 
-  // Run migration check after server starts
-  await checkAndRunFaceScanMigration();
+  if (failedRoutes.length > 0) {
+    console.log('⚠️  Failed routes:', failedRoutes);
+  }
+});
+
+// Handle server errors
+server.on('error', (err: any) => {
+  console.error('💀 Server error:', err.message);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  }
 });
 
 export default app;
