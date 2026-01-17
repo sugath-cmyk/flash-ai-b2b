@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.10.0 (Add Ingredients & Usage instructions to issue accordions)
+ * Version: 2.11.0 (Highlight Find My Shade, remove Start New Scan)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.10.0 - Add Ingredients & Usage instructions to issue accordions');
+  console.log('[Flash AI Widget] Version 2.11.0 - Highlight Find My Shade, remove Start New Scan');
 
   // ==========================================================================
   // Main Widget Class
@@ -199,19 +199,19 @@
             </div>
 
             <div class="flashai-vto-selection-grid">
-              <button id="flashai-vto-select-tryon" class="flashai-vto-selection-card">
-                <div class="flashai-vto-selection-icon">
+              <button id="flashai-vto-select-tryon" class="flashai-vto-selection-card" style="background: #f5f5f5; border: 1px solid #e0e0e0;">
+                <div class="flashai-vto-selection-icon" style="color: #9ca3af;">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                   </svg>
                 </div>
-                <h3>Virtual Try-On</h3>
-                <p>Visualize clothes on your body with AR</p>
+                <h3 style="color: #6b7280;">Virtual Try-On</h3>
+                <p style="color: #9ca3af;">Visualize clothes on your body with AR</p>
               </button>
 
-              <button id="flashai-vto-select-facescan" class="flashai-vto-selection-card" style="background: linear-gradient(135deg, ${this.config.primaryColor}15, ${this.config.primaryColor}25);">
-                <div class="flashai-vto-selection-icon" style="color: ${this.config.primaryColor};">
+              <button id="flashai-vto-select-facescan" class="flashai-vto-selection-card" style="background: linear-gradient(135deg, #8b5cf620, #8b5cf635); border: 2px solid #8b5cf6; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);">
+                <div class="flashai-vto-selection-icon" style="color: #8b5cf6;">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <circle cx="9" cy="9" r="1" fill="currentColor"></circle>
@@ -219,8 +219,8 @@
                     <path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
                   </svg>
                 </div>
-                <h3>Find My Shade</h3>
-                <p>AI skin analysis & product recommendations</p>
+                <h3 style="color: #6d28d9; font-weight: 700;">Find My Shade</h3>
+                <p style="color: #7c3aed;">AI skin analysis & product recommendations</p>
               </button>
             </div>
           </div>
@@ -585,11 +585,6 @@
                 <div id="flashai-vto-detail-score"></div>
               </div>
 
-              <div class="flashai-vto-actions" style="margin-top:20px;">
-                <button id="flashai-vto-new-scan" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor};width:100%;">
-                  Start New Scan
-                </button>
-              </div>
             </div>
           </div>
 
@@ -675,11 +670,6 @@
         this.analyzeFaceScan();
       });
 
-      // Face scan result buttons
-      modal.querySelector('#flashai-vto-new-scan').addEventListener('click', () => {
-        this.showStep('selection');
-        this.stopFaceCamera();
-      });
     }
 
     // ==========================================================================
