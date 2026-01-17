@@ -3,11 +3,10 @@ services:
     name: flash-ai-backend
     runtime: node
     region: oregon
-    buildCommand: cd backend && npm ci && npm run build
-    startCommand: cd backend && node dist/index.js
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
     healthCheckPath: /ping
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NODE_VERSION
-        value: 20
