@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.0.0 (Accordion UI + Zoomed Regions + Severity Colors)
+ * Version: 2.0.1 (Remove inaccurate skin age)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.0.0 - Accordion UI + Zoomed Regions + Severity Colors');
+  console.log('[Flash AI Widget] Version 2.0.1 - Remove inaccurate skin age');
 
   // ==========================================================================
   // Main Widget Class
@@ -457,7 +457,7 @@
                 </div>
                 <div class="flashai-vto-results-title">
                   <h2 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 4px;">Skin Analysis</h2>
-                  <p style="font-size:12px;color:#71717a;margin:0;">Age: <strong id="flashai-vto-skin-age" style="color:#3f3f46;">--</strong> • Tone: <strong id="flashai-vto-skin-tone" style="color:#3f3f46;">--</strong></p>
+                  <p style="font-size:12px;color:#71717a;margin:0;">Skin Tone: <strong id="flashai-vto-skin-tone" style="color:#3f3f46;">--</strong></p>
                 </div>
               </div>
 
@@ -1490,13 +1490,10 @@
         scoreCircle.style.strokeDashoffset = offset;
       }
 
-      // Update skin details
+      // Update skin tone
       if (scan.analysis) {
         const toneElem = document.getElementById('flashai-vto-skin-tone');
-        const ageElem = document.getElementById('flashai-vto-skin-age');
-
         if (toneElem) toneElem.textContent = this.capitalizeFirst(scan.analysis.skin_tone) || 'N/A';
-        if (ageElem) ageElem.textContent = scan.analysis.skin_age_estimate ? `~${scan.analysis.skin_age_estimate}` : 'N/A';
       }
 
       // Set up face image
@@ -1504,9 +1501,6 @@
 
       // Generate detected issues with numbered pins
       this.generateDetectedIssues(scan.analysis);
-
-      // Load product recommendations
-      this.loadProductRecommendations(scan.id);
 
       // Show results step
       this.showStep('face-results');
