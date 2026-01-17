@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.3.1 (Fix camera background + remove detection canvas)
+ * Version: 2.3.2 (Fix black rectangle - aggressive video positioning)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.3.1 - Fix camera background + remove detection canvas');
+  console.log('[Flash AI Widget] Version 2.3.2 - Fix black rectangle - aggressive video positioning');
 
   // ==========================================================================
   // Main Widget Class
@@ -365,11 +365,11 @@
               <p id="flashai-vto-face-angle-instruction">Align your face within the boundary</p>
             </div>
 
-            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%);">
-              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent;z-index:1;position:relative;"></video>
+            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%) !important;">
+              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;"></video>
 
-              <!-- Face Boundary Guide Overlay -->
-              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:transparent !important;">
+              <!-- Face Boundary Guide Overlay - transparent, no backgrounds -->
+              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:none !important;">
                 <!-- Animated oval border only (no dark overlay) -->
                 <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:60%;height:72%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 25px rgba(139,92,246,0.6),inset 0 0 25px rgba(139,92,246,0.15);animation:flashai-boundary-pulse 2s ease-in-out infinite;"></div>
 
