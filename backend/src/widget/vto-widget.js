@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.9.0 (Add heatmap gradients to zoomed problem regions)
+ * Version: 2.10.0 (Add Ingredients & Usage instructions to issue accordions)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.9.0 - Add heatmap gradients to zoomed problem regions');
+  console.log('[Flash AI Widget] Version 2.10.0 - Add Ingredients & Usage instructions to issue accordions');
 
   // ==========================================================================
   // Main Widget Class
@@ -2162,7 +2162,9 @@
             position: config.position,
             highlightRegion: config.highlightRegion, // For red overlay when selected
             problem: attr.getProblem(analysis, score),
-            solution: attr.getSolution(analysis, score)
+            solution: attr.getSolution(analysis, score),
+            ingredients: attr.getIngredients ? attr.getIngredients() : '',
+            usage: attr.getUsage ? attr.getUsage() : ''
           });
         }
       });
@@ -2334,13 +2336,23 @@
             </div>
             <!-- Problem -->
             <div style="margin-bottom:12px;padding:12px;background:#f9fafb;border-radius:8px;border-left:3px solid ${colors.num};">
-              <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Problem</div>
+              <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🔍 Problem</div>
               <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.problem}</p>
             </div>
             <!-- Solution -->
-            <div style="padding:12px;background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, #f9fafb 100%);border-radius:8px;border-left:3px solid #10b981;">
-              <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Solution</div>
+            <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, #f9fafb 100%);border-radius:8px;border-left:3px solid #10b981;">
+              <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">💡 Solution</div>
               <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.solution}</p>
+            </div>
+            <!-- Ingredients to Check -->
+            <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, #faf5ff 100%);border-radius:8px;border-left:3px solid #8b5cf6;">
+              <div style="font-size:10px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧪 Ingredients to Look For</div>
+              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.ingredients}</p>
+            </div>
+            <!-- How to Use/Apply -->
+            <div style="padding:12px;background:linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, #eff6ff 100%);border-radius:8px;border-left:3px solid #3b82f6;">
+              <div style="font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📝 How to Use/Apply</div>
+              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.usage}</p>
             </div>
           </div>
         </div>
@@ -2799,7 +2811,9 @@
           getSolution: (a, score) => {
             if (score < 30) return 'Maintain good sleep habits and stay hydrated to keep this area healthy.';
             return 'Use an eye cream with Vitamin C, caffeine, or retinol. Ensure 7-8 hours of sleep and stay hydrated. Cold compresses can help reduce puffiness.';
-          }
+          },
+          getIngredients: () => 'Vitamin C, Caffeine, Vitamin K, Retinol, Niacinamide, Peptides, Hyaluronic Acid',
+          getUsage: () => 'Apply a pea-sized amount of eye cream to your ring finger. Gently pat (don\'t rub) around the orbital bone, from inner to outer corner. Use morning and night after cleansing and before moisturizer.'
         },
         acne: {
           name: 'Acne & Blemishes',
@@ -2815,7 +2829,9 @@
           getSolution: (a, score) => {
             if (score < 20) return 'Continue your current routine. Use non-comedogenic products to prevent future breakouts.';
             return 'Use a gentle cleanser with Salicylic Acid or Benzoyl Peroxide. Avoid touching your face and change pillowcases frequently. Consider a spot treatment for active breakouts.';
-          }
+          },
+          getIngredients: () => 'Salicylic Acid (BHA), Benzoyl Peroxide, Tea Tree Oil, Niacinamide, Zinc, Sulfur, Azelaic Acid',
+          getUsage: () => 'Cleanse face twice daily with acne cleanser. Apply spot treatment directly on blemishes at night. Use oil-free moisturizer. For prevention, use BHA toner 2-3 times per week on affected areas.'
         },
         wrinkles: {
           name: 'Lines & Wrinkles',
@@ -2830,7 +2846,9 @@
           getSolution: (a, score) => {
             if (score < 20) return 'Start using SPF daily and a light retinol serum at night to maintain skin youth.';
             return 'Use Retinol or Retinoid products at night. Apply SPF 30+ daily. Consider products with Peptides and Hyaluronic Acid for plumping effect.';
-          }
+          },
+          getIngredients: () => 'Retinol/Retinoid, Peptides, Hyaluronic Acid, Vitamin C, Bakuchiol (natural alternative), Collagen, CoQ10',
+          getUsage: () => 'Start with retinol 2x/week at night, gradually increasing to nightly use. Apply pea-sized amount to clean, dry skin. Wait 20 mins before moisturizer. Always use SPF next morning. Avoid mixing with Vitamin C or AHAs.'
         },
         pigmentation: {
           name: 'Pigmentation',
@@ -2846,7 +2864,9 @@
           getSolution: (a, score) => {
             if (score < 20) return 'Maintain SPF use daily to prevent future pigmentation.';
             return 'Use Vitamin C serum in the morning and Niacinamide for brightening. Apply SPF 50 daily. Consider products with Alpha Arbutin or Kojic Acid for stubborn spots.';
-          }
+          },
+          getIngredients: () => 'Vitamin C (L-Ascorbic Acid), Niacinamide, Alpha Arbutin, Kojic Acid, Tranexamic Acid, Licorice Root Extract, Azelaic Acid',
+          getUsage: () => 'Apply Vitamin C serum every morning after cleansing, before SPF. Use brightening serums with Alpha Arbutin at night. Apply SPF 50 generously and reapply every 2 hours when outdoors. Be patient - results take 8-12 weeks.'
         },
         redness: {
           name: 'Redness & Sensitivity',
@@ -2861,7 +2881,9 @@
           getSolution: (a, score) => {
             if (score < 20) return 'Continue using gentle products. Avoid harsh exfoliants to maintain calm skin.';
             return 'Use fragrance-free, hypoallergenic products. Look for Centella Asiatica, Aloe Vera, or Green Tea. Avoid hot water and harsh scrubs. Consider Azelaic Acid for rosacea-prone skin.';
-          }
+          },
+          getIngredients: () => 'Centella Asiatica (Cica), Aloe Vera, Green Tea, Azelaic Acid, Allantoin, Chamomile, Oat Extract, Panthenol',
+          getUsage: () => 'Use lukewarm water only. Apply calming products with gentle patting motions. Layer Cica serum before moisturizer. Avoid actives (AHA, retinol) until redness subsides. Test new products on small area first.'
         },
         hydration: {
           name: 'Hydration',
@@ -2876,7 +2898,9 @@
           getSolution: (a, score) => {
             if (score > 70) return 'Maintain your hydration routine. Continue drinking water and using moisturizer.';
             return 'Use Hyaluronic Acid serum on damp skin. Apply a rich moisturizer and consider overnight sleeping masks. Drink at least 8 glasses of water daily.';
-          }
+          },
+          getIngredients: () => 'Hyaluronic Acid, Glycerin, Ceramides, Squalane, Aloe Vera, Beta Glucan, Sodium PCA, Urea',
+          getUsage: () => 'Apply Hyaluronic Acid serum on DAMP skin (this is crucial!). Layer from thinnest to thickest: toner → serum → moisturizer. Use a sleeping mask 2-3x/week. Drink 8+ glasses of water daily.'
         },
         oiliness: {
           name: 'Oiliness',
@@ -2891,7 +2915,9 @@
           getSolution: (a, score) => {
             if (score < 30) return 'Your oil levels are balanced. Use a light moisturizer to maintain this balance.';
             return 'Use a gentle foaming cleanser and oil-free moisturizer. Try Niacinamide to regulate sebum. Use clay masks 1-2x weekly. Avoid over-cleansing which can increase oil production.';
-          }
+          },
+          getIngredients: () => 'Niacinamide, Salicylic Acid, Kaolin Clay, Zinc, Tea Tree Oil, Witch Hazel, Green Tea Extract',
+          getUsage: () => 'Cleanse with foaming gel cleanser morning and night. Apply Niacinamide serum to T-zone after toning. Use oil-free gel moisturizer. Apply clay mask to oily areas 1-2x weekly for 10-15 mins. Blotting papers for midday touch-ups.'
         },
         pores: {
           name: 'Pores',
@@ -2907,7 +2933,9 @@
           getSolution: (a, score) => {
             if (score < 30) return 'Continue cleansing properly and using SPF to prevent pore enlargement.';
             return 'Use BHA (Salicylic Acid) to clean inside pores. Try Niacinamide to tighten appearance. Use non-comedogenic products and consider regular clay masks.';
-          }
+          },
+          getIngredients: () => 'Salicylic Acid (BHA), Niacinamide, Kaolin/Bentonite Clay, Retinol, Alpha Hydroxy Acids (AHA), Witch Hazel',
+          getUsage: () => 'Use BHA toner 2-3x/week at night. Apply to clean skin, wait 20 mins before next step. Use clay mask on nose/chin 1-2x weekly (15 mins max). Double cleanse at night with oil cleanser followed by water-based cleanser.'
         },
         texture: {
           name: 'Skin Texture',
@@ -2922,7 +2950,9 @@
           getSolution: (a, score) => {
             if (score > 70) return 'Maintain your exfoliation routine. Use gentle products to keep skin smooth.';
             return 'Incorporate AHA (Glycolic/Lactic Acid) for surface exfoliation. Use a gentle physical exfoliant 1-2x weekly. Retinol can help smooth texture over time.';
-          }
+          },
+          getIngredients: () => 'Glycolic Acid (AHA), Lactic Acid, Mandelic Acid, Retinol, Niacinamide, Polyhydroxy Acids (PHA), Enzyme Exfoliants',
+          getUsage: () => 'Use AHA exfoliant 2-3x/week at night on clean skin. Start with lower concentrations (5-8%) and increase gradually. Never use with retinol on same night. Follow with hydrating serum and moisturizer. Always use SPF next day.'
         }
       };
     }
