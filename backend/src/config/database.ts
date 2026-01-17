@@ -3,6 +3,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Check for database configuration
+if (!process.env.DATABASE_URL && !process.env.DB_HOST) {
+  console.warn('⚠️  WARNING: No database configuration found (DATABASE_URL or DB_HOST)');
+  console.warn('⚠️  Database-dependent features will not work');
+}
+
 // Railway and other cloud providers use DATABASE_URL
 // For local development, use individual environment variables
 const poolConfig: PoolConfig = process.env.DATABASE_URL
@@ -11,7 +17,7 @@ const poolConfig: PoolConfig = process.env.DATABASE_URL
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000, // Increased to 10s for cloud cold starts
     }
   : {
       host: process.env.DB_HOST || 'localhost',
@@ -21,7 +27,7 @@ const poolConfig: PoolConfig = process.env.DATABASE_URL
       password: process.env.DB_PASSWORD,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000, // Increased to 10s for cloud cold starts
     };
 
 // Create PostgreSQL connection pool
@@ -33,8 +39,14 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected database error:', err);
-  process.exit(-1);
+  // Log the error but DON'T crash the server - let it try to recover
+  console.error('❌ Database pool error (will attempt recovery):', err.message);
+  // Only exit on truly fatal errors like invalid credentials
+  if (err.message.includes('password authentication failed') ||
+      err.message.includes('database') && err.message.includes('does not exist')) {
+    console.error('💀 Fatal database error - exiting');
+    process.exit(-1);
+  }
 });
 
 // Helper function to execute queries
