@@ -371,26 +371,24 @@
 
               <!-- Face Boundary Guide Overlay -->
               <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;">
-                <!-- Dark overlay with oval cutout using CSS -->
-                <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse 55% 70% at 50% 45%, transparent 0%, transparent 100%), linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6));-webkit-mask:radial-gradient(ellipse 28% 38% at 50% 44%, transparent 98%, black 100%);mask:radial-gradient(ellipse 28% 38% at 50% 44%, transparent 98%, black 100%);"></div>
-
-                <!-- Animated oval border -->
-                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:56%;height:76%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 20px rgba(139,92,246,0.5),inset 0 0 20px rgba(139,92,246,0.2);animation:flashai-boundary-pulse 2s ease-in-out infinite;"></div>
+                <!-- Animated oval border only (no dark overlay) -->
+                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:60%;height:72%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 25px rgba(139,92,246,0.6),inset 0 0 25px rgba(139,92,246,0.15);animation:flashai-boundary-pulse 2s ease-in-out infinite;"></div>
 
                 <!-- Corner brackets for alignment -->
-                <div style="position:absolute;top:12%;left:22%;width:30px;height:30px;border-left:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:5px 0 0 0;"></div>
-                <div style="position:absolute;top:12%;right:22%;width:30px;height:30px;border-right:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:0 5px 0 0;"></div>
-                <div style="position:absolute;bottom:12%;left:22%;width:30px;height:30px;border-left:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 0 5px;"></div>
-                <div style="position:absolute;bottom:12%;right:22%;width:30px;height:30px;border-right:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 5px 0;"></div>
+                <div style="position:absolute;top:8%;left:20%;width:35px;height:35px;border-left:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:8px 0 0 0;"></div>
+                <div style="position:absolute;top:8%;right:20%;width:35px;height:35px;border-right:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:0 8px 0 0;"></div>
+                <div style="position:absolute;bottom:8%;left:20%;width:35px;height:35px;border-left:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 0 8px;"></div>
+                <div style="position:absolute;bottom:8%;right:20%;width:35px;height:35px;border-right:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 8px 0;"></div>
 
                 <!-- Center crosshair -->
-                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;">
-                  <div style="position:absolute;top:50%;left:0;width:100%;height:2px;background:rgba(139,92,246,0.5);"></div>
-                  <div style="position:absolute;top:0;left:50%;width:2px;height:100%;background:rgba(139,92,246,0.5);"></div>
+                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:50px;height:50px;">
+                  <div style="position:absolute;top:50%;left:0;width:100%;height:2px;background:rgba(139,92,246,0.6);"></div>
+                  <div style="position:absolute;top:0;left:50%;width:2px;height:100%;background:rgba(139,92,246,0.6);"></div>
+                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;background:rgba(139,92,246,0.8);border-radius:50%;"></div>
                 </div>
 
                 <!-- Guide text at bottom -->
-                <div style="position:absolute;bottom:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 20px;border-radius:25px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid rgba(139,92,246,0.5);">
+                <div style="position:absolute;bottom:5%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;padding:10px 24px;border-radius:25px;font-size:14px;font-weight:600;white-space:nowrap;border:2px solid rgba(139,92,246,0.6);box-shadow:0 4px 15px rgba(0,0,0,0.3);">
                   <span id="flashai-vto-boundary-text">👤 Position your face inside the oval</span>
                 </div>
               </div>
