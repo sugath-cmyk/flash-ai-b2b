@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.0.1 (Remove inaccurate skin age)
+ * Version: 2.0.2 (Simplified lighting-only indicator)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.0.1 - Remove inaccurate skin age');
+  console.log('[Flash AI Widget] Version 2.0.2 - Simplified lighting-only indicator');
 
   // ==========================================================================
   // Main Widget Class
@@ -369,19 +369,14 @@
               </div>
             </div>
 
-            <!-- Quality Indicators -->
-            <div class="flashai-vto-quality-indicators" id="flashai-vto-quality-indicators" style="display:flex;gap:8px;padding:12px;background:#fafafa;border-radius:12px;margin:12px 0;">
-              <div class="flashai-vto-quality-item" id="flashai-vto-quality-lighting" style="flex:1;padding:10px 12px;border-radius:8px;text-align:center;background:#fef3c7;border:2px solid #f59e0b;transition:all 0.3s;">
-                <div style="font-size:12px;font-weight:600;color:#92400e;">Lighting</div>
-                <div id="flashai-vto-quality-lighting-status" style="font-size:11px;font-weight:700;color:#92400e;margin-top:2px;">Checking...</div>
-              </div>
-              <div class="flashai-vto-quality-item" id="flashai-vto-quality-orientation" style="flex:1;padding:10px 12px;border-radius:8px;text-align:center;background:#fef3c7;border:2px solid #f59e0b;transition:all 0.3s;">
-                <div style="font-size:12px;font-weight:600;color:#92400e;">Look Straight</div>
-                <div id="flashai-vto-quality-orientation-status" style="font-size:11px;font-weight:700;color:#92400e;margin-top:2px;">Checking...</div>
-              </div>
-              <div class="flashai-vto-quality-item" id="flashai-vto-quality-position" style="flex:1;padding:10px 12px;border-radius:8px;text-align:center;background:#fef3c7;border:2px solid #f59e0b;transition:all 0.3s;">
-                <div style="font-size:12px;font-weight:600;color:#92400e;">Face Position</div>
-                <div id="flashai-vto-quality-position-status" style="font-size:11px;font-weight:700;color:#92400e;margin-top:2px;">Checking...</div>
+            <!-- Lighting Guide (only reliable indicator without ML face detection) -->
+            <div class="flashai-vto-quality-indicators" id="flashai-vto-quality-indicators" style="display:flex;justify-content:center;padding:8px 12px;margin:8px 0;">
+              <div class="flashai-vto-quality-item" id="flashai-vto-quality-lighting" style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:#fef3c7;border:2px solid #f59e0b;transition:all 0.3s;">
+                <span style="font-size:16px;">💡</span>
+                <div>
+                  <span style="font-size:12px;font-weight:600;color:#92400e;">Lighting: </span>
+                  <span id="flashai-vto-quality-lighting-status" style="font-size:12px;font-weight:700;color:#92400e;">Checking...</span>
+                </div>
               </div>
             </div>
 
@@ -924,21 +919,14 @@
       // Get image data for analysis
       const imageData = this.qualityCtx.getImageData(0, 0, this.qualityCanvas.width, this.qualityCanvas.height);
 
-      // Run quality checks
+      // Only check lighting (the only reliable indicator without ML face detection)
       const lighting = this.checkLighting(imageData);
-      const position = await this.checkFacePosition(video);
-      const orientation = this.checkFaceOrientation(position);
 
-      // Update UI indicators
-      this.updateQualityIndicator('lighting', lighting);
-      this.updateQualityIndicator('orientation', orientation);
-      this.updateQualityIndicator('position', position);
+      // Update lighting indicator
+      this.updateLightingIndicator(lighting);
 
-      // Store current quality state
-      this.state.currentQuality = { lighting, orientation, position };
-
-      // Update capture button state
-      this.updateCaptureButtonState();
+      // Store for reference (but don't block capture)
+      this.state.currentQuality = { lighting };
     }
 
     checkLighting(imageData) {
@@ -959,196 +947,28 @@
 
       const avgBrightness = totalBrightness / pixelCount;
 
-      // Calculate contrast (standard deviation)
-      let variance = 0;
-      for (let i = 0; i < data.length; i += 40) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
-        variance += Math.pow(brightness - avgBrightness, 2);
-      }
-      const stdDev = Math.sqrt(variance / pixelCount);
-
-      // Determine lighting quality
-      // Good: brightness 80-180, contrast > 30
-      // Ok: brightness 50-200, contrast > 20
-      // Bad: too dark, too bright, or low contrast
-
+      // Determine lighting quality with more lenient thresholds
       let status, label;
-      if (avgBrightness >= 80 && avgBrightness <= 180 && stdDev >= 30) {
+      if (avgBrightness >= 70 && avgBrightness <= 200) {
         status = 'good';
         label = 'Good';
-      } else if (avgBrightness >= 50 && avgBrightness <= 200 && stdDev >= 20) {
+      } else if (avgBrightness >= 40 && avgBrightness <= 220) {
         status = 'ok';
         label = 'Ok';
-      } else if (avgBrightness < 50) {
+      } else if (avgBrightness < 40) {
         status = 'bad';
         label = 'Too Dark';
-      } else if (avgBrightness > 200) {
+      } else {
         status = 'bad';
         label = 'Too Bright';
-      } else {
-        status = 'bad';
-        label = 'Low Contrast';
       }
 
-      return { status, label, brightness: avgBrightness, contrast: stdDev };
+      return { status, label, brightness: avgBrightness };
     }
 
-    async checkFacePosition(video) {
-      let faceBox = null;
-
-      // Try to use FaceDetector API
-      if (this.faceDetector) {
-        try {
-          const faces = await this.faceDetector.detect(video);
-          if (faces.length > 0) {
-            faceBox = faces[0].boundingBox;
-          }
-        } catch (e) {
-          // Face detection failed, use fallback
-        }
-      }
-
-      // If no face detected or no detector, use simple color-based detection
-      if (!faceBox) {
-        faceBox = this.detectFaceByColor();
-      }
-
-      const videoWidth = video.videoWidth;
-      const videoHeight = video.videoHeight;
-
-      if (!faceBox) {
-        return { status: 'bad', label: 'No Face', faceBox: null };
-      }
-
-      // Check face position relative to frame
-      const faceCenterX = faceBox.x + faceBox.width / 2;
-      const faceCenterY = faceBox.y + faceBox.height / 2;
-      const frameCenterX = videoWidth / 2;
-      const frameCenterY = videoHeight / 2;
-
-      // Calculate offsets as percentage of frame
-      const offsetX = Math.abs(faceCenterX - frameCenterX) / videoWidth;
-      const offsetY = Math.abs(faceCenterY - frameCenterY) / videoHeight;
-
-      // Check face size relative to frame (should be 20-60% of frame height)
-      const faceHeightRatio = faceBox.height / videoHeight;
-
-      let status, label;
-
-      if (offsetX < 0.1 && offsetY < 0.15 && faceHeightRatio >= 0.25 && faceHeightRatio <= 0.6) {
-        status = 'good';
-        label = 'Good';
-      } else if (offsetX < 0.2 && offsetY < 0.2 && faceHeightRatio >= 0.15 && faceHeightRatio <= 0.7) {
-        status = 'ok';
-        label = 'Ok';
-      } else if (faceHeightRatio < 0.15) {
-        status = 'bad';
-        label = 'Too Far';
-      } else if (faceHeightRatio > 0.7) {
-        status = 'bad';
-        label = 'Too Close';
-      } else {
-        status = 'bad';
-        label = 'Off Center';
-      }
-
-      return { status, label, faceBox, offsetX, offsetY, faceHeightRatio };
-    }
-
-    detectFaceByColor() {
-      // Simple skin color detection as fallback
-      const imageData = this.qualityCtx.getImageData(0, 0, this.qualityCanvas.width, this.qualityCanvas.height);
-      const data = imageData.data;
-      const width = this.qualityCanvas.width;
-      const height = this.qualityCanvas.height;
-
-      let minX = width, maxX = 0, minY = height, maxY = 0;
-      let skinPixels = 0;
-
-      // Sample pixels and look for skin tones
-      for (let y = 0; y < height; y += 4) {
-        for (let x = 0; x < width; x += 4) {
-          const i = (y * width + x) * 4;
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          // Simple skin color detection (works for various skin tones)
-          if (this.isSkinColor(r, g, b)) {
-            skinPixels++;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-          }
-        }
-      }
-
-      // Need minimum skin pixels to consider a face detected
-      if (skinPixels < 500) {
-        return null;
-      }
-
-      return {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY
-      };
-    }
-
-    isSkinColor(r, g, b) {
-      // Multiple skin tone detection rules
-      // Rule 1: General skin tone (works for lighter skin)
-      const rule1 = r > 95 && g > 40 && b > 20 &&
-                   (Math.max(r, g, b) - Math.min(r, g, b)) > 15 &&
-                   Math.abs(r - g) > 15 && r > g && r > b;
-
-      // Rule 2: Works better for darker skin tones
-      const rule2 = r > 60 && g > 40 && b > 20 &&
-                   r > b && g > b &&
-                   Math.abs(r - g) < 100;
-
-      return rule1 || rule2;
-    }
-
-    checkFaceOrientation(positionResult) {
-      // For front view, check if face is roughly centered and symmetric
-      // This is a simplified check - in production you'd use face landmarks
-
-      if (!positionResult.faceBox) {
-        return { status: 'bad', label: 'No Face' };
-      }
-
-      const currentAngle = this.state.faceAngles[this.state.currentAngleIndex];
-      const offsetX = positionResult.offsetX || 0;
-
-      // For front view, face should be centered
-      if (currentAngle === 'Front View') {
-        if (offsetX < 0.08) {
-          return { status: 'good', label: 'Good' };
-        } else if (offsetX < 0.15) {
-          return { status: 'ok', label: 'Ok' };
-        } else {
-          return { status: 'bad', label: 'Turn Head' };
-        }
-      }
-
-      // For profile views, expect some offset
-      if (currentAngle === 'Left Profile' || currentAngle === 'Right Profile') {
-        // Profile views are more lenient
-        return { status: 'good', label: 'Good' };
-      }
-
-      return { status: 'ok', label: 'Ok' };
-    }
-
-    updateQualityIndicator(type, result) {
-      const container = document.getElementById(`flashai-vto-quality-${type}`);
-      const statusEl = document.getElementById(`flashai-vto-quality-${type}-status`);
+    updateLightingIndicator(result) {
+      const container = document.getElementById('flashai-vto-quality-lighting');
+      const statusEl = document.getElementById('flashai-vto-quality-lighting-status');
 
       if (!container || !statusEl) return;
 
@@ -1163,32 +983,12 @@
 
       container.style.background = color.bg;
       container.style.borderColor = color.border;
-      container.querySelector('div:first-child').style.color = color.text;
-      statusEl.style.color = color.text;
+
+      // Update all text colors in the container
+      container.querySelectorAll('span').forEach(span => {
+        span.style.color = color.text;
+      });
       statusEl.textContent = result.label;
-    }
-
-    updateCaptureButtonState() {
-      const captureBtn = document.getElementById('flashai-vto-face-capture');
-      if (!captureBtn) return;
-
-      const quality = this.state.currentQuality;
-      if (!quality) return;
-
-      // Check if any quality metric is bad
-      const hasBadQuality = quality.lighting?.status === 'bad' ||
-                           quality.orientation?.status === 'bad' ||
-                           quality.position?.status === 'bad';
-
-      if (hasBadQuality) {
-        captureBtn.disabled = true;
-        captureBtn.style.opacity = '0.5';
-        captureBtn.style.cursor = 'not-allowed';
-      } else {
-        captureBtn.disabled = false;
-        captureBtn.style.opacity = '1';
-        captureBtn.style.cursor = 'pointer';
-      }
     }
 
     stopFaceCamera() {
@@ -1206,24 +1006,6 @@
     }
 
     captureFacePhoto() {
-      // Check quality before allowing capture
-      const quality = this.state.currentQuality;
-      if (quality) {
-        const hasBadQuality = quality.lighting?.status === 'bad' ||
-                             quality.orientation?.status === 'bad' ||
-                             quality.position?.status === 'bad';
-        if (hasBadQuality) {
-          // Show which quality is bad
-          let message = 'Please fix: ';
-          if (quality.lighting?.status === 'bad') message += `Lighting (${quality.lighting.label}), `;
-          if (quality.orientation?.status === 'bad') message += `Head Position (${quality.orientation.label}), `;
-          if (quality.position?.status === 'bad') message += `Face Position (${quality.position.label}), `;
-          message = message.slice(0, -2); // Remove trailing comma
-          alert(message);
-          return;
-        }
-      }
-
       const video = document.getElementById('flashai-vto-face-camera');
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
