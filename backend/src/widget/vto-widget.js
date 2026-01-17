@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.4.0 (Fix black rectangle - loading overlay until video plays)
+ * Version: 2.5.0 (Fix black rectangle - block external CSS interference)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.4.0 - Fix black rectangle - loading overlay until video plays');
+  console.log('[Flash AI Widget] Version 2.5.0 - Fix black rectangle - block external CSS interference');
 
   // ==========================================================================
   // Main Widget Class

@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On Widget Styles
- * Version: 2.5.0 - Loading overlay fix for black video placeholder
+ * Version: 2.6.0 - Block external CSS/pseudo-elements causing black rectangle
  * Mobile-first, compact single-screen layout
  */
 
@@ -319,7 +319,7 @@
   display: none !important;
 }
 
-/* Video must always be visible and on top */
+/* Video must always be visible and on top - block ALL external styling */
 #flashai-vto-camera,
 #flashai-vto-face-camera {
   width: 100% !important;
@@ -327,19 +327,56 @@
   display: block !important;
   object-fit: cover !important;
   background: transparent !important;
+  background-color: transparent !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   z-index: 5 !important;
+  /* Block any masks, clips, or filters that external CSS might add */
+  -webkit-mask: none !important;
+  mask: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Block ALL pseudo-elements in camera container - these could create black overlays */
+.flashai-vto-camera-container::before,
+.flashai-vto-camera-container::after,
+.flashai-vto-camera-container *::before,
+.flashai-vto-camera-container *::after,
+#flashai-vto-face-camera::before,
+#flashai-vto-face-camera::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Ensure face boundary guide is above video but transparent */
 #flashai-vto-face-boundary {
   background: none !important;
+  background-color: transparent !important;
 }
 
-#flashai-vto-face-boundary * {
-  background-color: transparent;
+#flashai-vto-face-boundary *,
+#flashai-vto-face-boundary > * {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Force camera container children to not have black backgrounds */
+.flashai-vto-camera-container > * {
+  background-color: transparent !important;
 }
 
 .flashai-vto-camera-guide {
