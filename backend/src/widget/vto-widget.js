@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 1.9.0 (Real-time Quality Indicators)
+ * Version: 2.0.0 (Accordion UI + Zoomed Regions + Severity Colors)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 1.9.0 - Real-time Quality Indicators');
+  console.log('[Flash AI Widget] Version 2.0.0 - Accordion UI + Zoomed Regions + Severity Colors');
 
   // ==========================================================================
   // Main Widget Class
@@ -442,7 +442,7 @@
             </div>
           </div>
 
-          <!-- Face Scan Step 3: Results (Clean Numbered Pin Design) -->
+          <!-- Face Scan Step 3: Results (Accordion with Zoomed Regions) -->
           <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
 
@@ -461,7 +461,7 @@
                 </div>
               </div>
 
-              <!-- Face Image with Numbered Pins and Highlight Overlay -->
+              <!-- Face Image with Severity-Colored Pins -->
               <div class="flashai-vto-analysis-main" style="margin-bottom:20px;">
                 <div class="flashai-vto-face-container" id="flashai-vto-face-container" style="position:relative;width:100%;max-width:320px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
                   <img id="flashai-vto-face-image" alt="Your face scan" style="width:100%;height:auto;display:block;" />
@@ -470,35 +470,11 @@
                 </div>
               </div>
 
-              <!-- Issues List (Numbered to match pins) -->
+              <!-- Issues List (Accordion Style with Inline Expansion) -->
               <div class="flashai-vto-issues-section" style="margin-bottom:16px;">
                 <h3 class="flashai-vto-issues-title" style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 12px;">Detected Concerns</h3>
-                <div class="flashai-vto-issues-list" id="flashai-vto-issues-list" style="display:flex;flex-direction:column;gap:8px;">
-                  <!-- Dynamically generated -->
-                </div>
-              </div>
-
-              <!-- Expanded Detail (shown when issue selected) -->
-              <div class="flashai-vto-issue-detail" id="flashai-vto-issue-detail" style="display:none;position:relative;background:#fff;border:1px solid #e4e4e7;border-radius:16px;margin-bottom:16px;overflow:hidden;border-left:4px solid #f59e0b;">
-                <div class="flashai-vto-detail-close" id="flashai-vto-detail-close" style="position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#f4f4f5;border:none;border-radius:50%;font-size:16px;color:#71717a;cursor:pointer;">×</div>
-                <div class="flashai-vto-detail-content" style="padding:16px;">
-                  <div class="flashai-vto-detail-top" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-                    <span class="flashai-vto-detail-num" id="flashai-vto-detail-num" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:16px;font-weight:700;background:#f59e0b;color:#fff;">1</span>
-                    <div class="flashai-vto-detail-info" style="flex:1;">
-                      <h4 id="flashai-vto-detail-title" style="font-size:16px;font-weight:700;color:#18181b;margin:0 0 4px;">Issue Name</h4>
-                      <span class="flashai-vto-detail-severity" id="flashai-vto-detail-severity" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;color:#f59e0b;">Moderate</span>
-                    </div>
-                  </div>
-                  <div class="flashai-vto-detail-sections" style="display:flex;flex-direction:column;gap:12px;">
-                    <div class="flashai-vto-detail-block" style="padding:12px;background:#fafafa;border-radius:8px;">
-                      <span class="flashai-vto-detail-label" style="display:block;font-size:10px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Problem</span>
-                      <p id="flashai-vto-detail-problem" style="font-size:13px;line-height:1.5;color:#3f3f46;margin:0;">Description...</p>
-                    </div>
-                    <div class="flashai-vto-detail-block solution" style="padding:12px;background:linear-gradient(135deg,rgba(16,185,129,0.05) 0%,#fafafa 100%);border-radius:8px;">
-                      <span class="flashai-vto-detail-label" style="display:block;font-size:10px;font-weight:700;color:#10b981;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Solution</span>
-                      <p id="flashai-vto-detail-solution" style="font-size:13px;line-height:1.5;color:#3f3f46;margin:0;">Recommendation...</p>
-                    </div>
-                  </div>
+                <div class="flashai-vto-issues-list" id="flashai-vto-issues-list" style="display:flex;flex-direction:column;gap:0;">
+                  <!-- Dynamically generated accordion items -->
                 </div>
               </div>
 
@@ -519,20 +495,9 @@
                 <div id="flashai-vto-detail-score"></div>
               </div>
 
-              <div class="flashai-vto-recommendations-section">
-                <h3>Recommended For You</h3>
-                <p class="flashai-vto-recommendations-subtitle">Products matched to your skin concerns</p>
-                <div class="flashai-vto-recommendations-carousel" id="flashai-vto-recommendations">
-                  <div class="flashai-vto-recommendations-loading">Finding perfect products...</div>
-                </div>
-              </div>
-
-              <div class="flashai-vto-actions">
-                <button id="flashai-vto-new-scan" class="flashai-vto-btn-secondary">
-                  New Scan
-                </button>
-                <button id="flashai-vto-shop-recommended" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor}">
-                  Shop Recommendations
+              <div class="flashai-vto-actions" style="margin-top:20px;">
+                <button id="flashai-vto-new-scan" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor};width:100%;">
+                  Start New Scan
                 </button>
               </div>
             </div>
@@ -624,15 +589,6 @@
       modal.querySelector('#flashai-vto-new-scan').addEventListener('click', () => {
         this.showStep('selection');
         this.stopFaceCamera();
-      });
-
-      modal.querySelector('#flashai-vto-shop-recommended').addEventListener('click', () => {
-        this.shopRecommendedProducts();
-      });
-
-      // Detail panel close button
-      modal.querySelector('#flashai-vto-detail-close').addEventListener('click', () => {
-        this.closeIssueDetail();
       });
     }
 
@@ -1601,7 +1557,7 @@
       console.log('[Highlight Canvas] Set up:', canvas.width, 'x', canvas.height);
     }
 
-    drawHighlightRegion(highlightRegion) {
+    drawHighlightRegion(highlightRegion, severity = 'moderate') {
       const canvas = document.getElementById('flashai-vto-highlight-canvas');
       if (!canvas) return;
 
@@ -1614,15 +1570,24 @@
 
       if (!highlightRegion) return;
 
+      // Severity-based colors: Red (significant), Orange (moderate), Green (mild)
+      const severityColors = {
+        concern: { fill: 'rgba(220, 38, 38, 0.25)', stroke: 'rgba(220, 38, 38, 0.7)', outer: 'rgba(220, 38, 38, 0.3)' },
+        moderate: { fill: 'rgba(245, 158, 11, 0.25)', stroke: 'rgba(245, 158, 11, 0.7)', outer: 'rgba(245, 158, 11, 0.3)' },
+        good: { fill: 'rgba(16, 185, 129, 0.25)', stroke: 'rgba(16, 185, 129, 0.7)', outer: 'rgba(16, 185, 129, 0.3)' }
+      };
+
+      const colors = severityColors[severity] || severityColors.moderate;
+
       // Calculate region coordinates from percentage
       const x = (highlightRegion.x / 100) * w;
       const y = (highlightRegion.y / 100) * h;
       const rw = (highlightRegion.w / 100) * w;
       const rh = (highlightRegion.h / 100) * h;
 
-      // Draw semi-transparent red highlight with rounded corners
-      ctx.fillStyle = 'rgba(220, 38, 38, 0.25)'; // Red with 25% opacity
-      ctx.strokeStyle = 'rgba(220, 38, 38, 0.6)'; // Red border with 60% opacity
+      // Draw semi-transparent highlight with rounded corners
+      ctx.fillStyle = colors.fill;
+      ctx.strokeStyle = colors.stroke;
       ctx.lineWidth = 3;
 
       // Draw rounded rectangle
@@ -1641,8 +1606,8 @@
       ctx.fill();
       ctx.stroke();
 
-      // Add pulsing border animation effect with a second stroke
-      ctx.strokeStyle = 'rgba(220, 38, 38, 0.3)';
+      // Add outer glow effect
+      ctx.strokeStyle = colors.outer;
       ctx.lineWidth = 6;
       ctx.stroke();
     }
@@ -1822,116 +1787,194 @@
         return;
       }
 
-      // Severity colors for badges and numbers
+      // Severity colors - Red (Significant), Orange (Moderate), Green (Mild)
       const severityColors = {
-        concern: { bg: '#fef2f2', border: '#fecaca', num: '#dc2626', badge: '#dc2626', badgeBg: '#fee2e2' },
-        moderate: { bg: '#fffbeb', border: '#fde68a', num: '#d97706', badge: '#d97706', badgeBg: '#fef3c7' },
-        good: { bg: '#f0fdf4', border: '#bbf7d0', num: '#16a34a', badge: '#16a34a', badgeBg: '#dcfce7' }
+        concern: { bg: '#fef2f2', border: '#fecaca', num: '#dc2626', badge: '#dc2626', badgeBg: '#fee2e2', highlight: 'rgba(220, 38, 38, 0.3)' },
+        moderate: { bg: '#fffbeb', border: '#fde68a', num: '#d97706', badge: '#d97706', badgeBg: '#fef3c7', highlight: 'rgba(245, 158, 11, 0.3)' },
+        good: { bg: '#f0fdf4', border: '#bbf7d0', num: '#16a34a', badge: '#16a34a', badgeBg: '#dcfce7', highlight: 'rgba(16, 185, 129, 0.3)' }
       };
 
+      // Accordion-style list items with inline expansion
       listContainer.innerHTML = issues.map((issue, index) => {
         const colors = severityColors[issue.severity] || severityColors.moderate;
         return `
-        <div class="flashai-vto-issue-item ${issue.severity}" data-index="${index}"
-             style="display:flex;align-items:center;gap:12px;padding:12px;background:${colors.bg};border:1px solid ${colors.border};border-radius:12px;cursor:pointer;transition:all 0.2s;">
-          <span class="flashai-vto-issue-num" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${colors.num};color:#fff;font-size:12px;font-weight:700;flex-shrink:0;">${index + 1}</span>
-          <div class="flashai-vto-issue-info" style="flex:1;min-width:0;">
-            <span class="flashai-vto-issue-name" style="display:block;font-size:14px;font-weight:600;color:#18181b;">${issue.name}</span>
-            <span class="flashai-vto-issue-region" style="display:block;font-size:12px;color:#71717a;margin-top:2px;">${issue.region}</span>
+        <div class="flashai-vto-accordion-item" data-index="${index}" style="margin-bottom:8px;">
+          <!-- Header (clickable) -->
+          <div class="flashai-vto-accordion-header ${issue.severity}" data-index="${index}"
+               style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${colors.bg};border:2px solid ${colors.border};border-radius:12px;cursor:pointer;transition:all 0.2s;">
+            <span class="flashai-vto-issue-num" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${colors.num};color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">${index + 1}</span>
+            <div class="flashai-vto-issue-info" style="flex:1;min-width:0;">
+              <span class="flashai-vto-issue-name" style="display:block;font-size:14px;font-weight:600;color:#18181b;">${issue.name}</span>
+              <span class="flashai-vto-issue-region" style="display:block;font-size:12px;color:#71717a;margin-top:2px;">${issue.region}</span>
+            </div>
+            <div class="flashai-vto-issue-badge" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;background:${colors.badgeBg};color:${colors.badge};text-transform:uppercase;letter-spacing:0.5px;">${issue.severityLabel}</div>
+            <svg class="flashai-vto-accordion-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${colors.num}" stroke-width="2.5" style="flex-shrink:0;transition:transform 0.3s;">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
           </div>
-          <div class="flashai-vto-issue-badge ${issue.severity}" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${colors.badgeBg};color:${colors.badge};white-space:nowrap;">${issue.severityLabel}</div>
-          <svg class="flashai-vto-issue-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" style="flex-shrink:0;">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <!-- Expanded Content (hidden by default) -->
+          <div class="flashai-vto-accordion-content" data-index="${index}" style="display:none;padding:16px;background:#fff;border:2px solid ${colors.border};border-top:none;border-radius:0 0 12px 12px;margin-top:-8px;">
+            <!-- Zoomed Face Region -->
+            <div class="flashai-vto-zoomed-region" style="margin-bottom:16px;border-radius:12px;overflow:hidden;position:relative;">
+              <canvas class="flashai-vto-zoom-canvas" data-index="${index}" style="width:100%;height:auto;display:block;border-radius:12px;"></canvas>
+              <div style="position:absolute;top:8px;left:8px;background:${colors.num};color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;">${issue.region}</div>
+            </div>
+            <!-- Problem -->
+            <div style="margin-bottom:12px;padding:12px;background:#f9fafb;border-radius:8px;border-left:3px solid ${colors.num};">
+              <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Problem</div>
+              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.problem}</p>
+            </div>
+            <!-- Solution -->
+            <div style="padding:12px;background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, #f9fafb 100%);border-radius:8px;border-left:3px solid #10b981;">
+              <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Solution</div>
+              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.solution}</p>
+            </div>
+          </div>
         </div>
       `;
       }).join('');
 
-      // Add click handlers
-      listContainer.querySelectorAll('.flashai-vto-issue-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const index = parseInt(item.dataset.index);
-          this.selectIssue(index);
+      // Add click handlers for accordion headers
+      listContainer.querySelectorAll('.flashai-vto-accordion-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const index = parseInt(header.dataset.index);
+          this.toggleAccordion(index);
         });
       });
     }
 
-    selectIssue(index) {
+    toggleAccordion(index) {
       const issues = this.state.detectedIssues;
       if (index < 0 || index >= issues.length) return;
 
-      this.state.selectedIssue = index;
       const issue = issues[index];
+      const wasExpanded = this.state.expandedIssue === index;
 
-      // Draw red highlight region on the face image
-      this.drawHighlightRegion(issue.highlightRegion);
-
-      // Highlight pin (make it larger and add white border)
-      document.querySelectorAll('.flashai-vto-pin').forEach((pin, i) => {
-        if (i === index) {
-          pin.classList.add('active');
-          pin.style.transform = 'translate(-50%, -50%) scale(1.3)';
-          pin.style.boxShadow = '0 0 0 3px #fff, 0 4px 12px rgba(0,0,0,0.4)';
-          pin.style.zIndex = '20';
-        } else {
-          pin.classList.remove('active');
-          pin.style.transform = 'translate(-50%, -50%) scale(1)';
-          pin.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-          pin.style.zIndex = '10';
-        }
+      // Close all accordions first
+      document.querySelectorAll('.flashai-vto-accordion-content').forEach(content => {
+        content.style.display = 'none';
+      });
+      document.querySelectorAll('.flashai-vto-accordion-arrow').forEach(arrow => {
+        arrow.style.transform = 'rotate(0deg)';
+      });
+      document.querySelectorAll('.flashai-vto-accordion-header').forEach(header => {
+        header.style.borderRadius = '12px';
       });
 
-      // Highlight list item
-      document.querySelectorAll('.flashai-vto-issue-item').forEach((item, i) => {
-        item.classList.toggle('active', i === index);
-        if (i === index) {
-          item.style.transform = 'translateX(4px)';
-          item.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
-        } else {
-          item.style.transform = 'none';
-          item.style.boxShadow = 'none';
-        }
-      });
-
-      // Show detail panel
-      this.showIssueDetail(issue, index);
-    }
-
-    showIssueDetail(issue, index) {
-      const panel = document.getElementById('flashai-vto-issue-detail');
-      if (!panel) return;
-
-      document.getElementById('flashai-vto-detail-num').textContent = index + 1;
-      document.getElementById('flashai-vto-detail-title').textContent = issue.name;
-      document.getElementById('flashai-vto-detail-severity').textContent = issue.severityLabel;
-      document.getElementById('flashai-vto-detail-severity').className = `flashai-vto-detail-severity ${issue.severity}`;
-      document.getElementById('flashai-vto-detail-problem').textContent = issue.problem;
-      document.getElementById('flashai-vto-detail-solution').textContent = issue.solution;
-
-      panel.style.display = 'block';
-      panel.className = `flashai-vto-issue-detail ${issue.severity}`;
-    }
-
-    closeIssueDetail() {
-      const panel = document.getElementById('flashai-vto-issue-detail');
-      if (panel) panel.style.display = 'none';
-
-      this.state.selectedIssue = null;
-
-      // Clear the red highlight region
-      this.clearHighlightRegion();
-
-      // Remove active states and reset styles
+      // Reset all pins
       document.querySelectorAll('.flashai-vto-pin').forEach(pin => {
-        pin.classList.remove('active');
         pin.style.transform = 'translate(-50%, -50%) scale(1)';
         pin.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
         pin.style.zIndex = '10';
       });
-      document.querySelectorAll('.flashai-vto-issue-item').forEach(item => {
-        item.classList.remove('active');
-        item.style.transform = 'none';
-        item.style.boxShadow = 'none';
+
+      // Clear highlight
+      this.clearHighlightRegion();
+
+      if (wasExpanded) {
+        // Just collapse
+        this.state.expandedIssue = null;
+        return;
+      }
+
+      // Expand this accordion
+      this.state.expandedIssue = index;
+
+      const header = document.querySelector(`.flashai-vto-accordion-header[data-index="${index}"]`);
+      const content = document.querySelector(`.flashai-vto-accordion-content[data-index="${index}"]`);
+      const arrow = header?.querySelector('.flashai-vto-accordion-arrow');
+      const pin = document.querySelector(`.flashai-vto-pin[data-index="${index}"]`);
+
+      if (header) header.style.borderRadius = '12px 12px 0 0';
+      if (arrow) arrow.style.transform = 'rotate(180deg)';
+      if (content) {
+        content.style.display = 'block';
+        // Draw zoomed region
+        this.drawZoomedRegion(index, issue);
+      }
+
+      // Highlight pin
+      if (pin) {
+        pin.style.transform = 'translate(-50%, -50%) scale(1.4)';
+        pin.style.boxShadow = '0 0 0 4px #fff, 0 4px 16px rgba(0,0,0,0.5)';
+        pin.style.zIndex = '20';
+      }
+
+      // Draw highlight on main image with severity color
+      this.drawHighlightRegion(issue.highlightRegion, issue.severity);
+
+      // Scroll to show expanded content
+      content?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    drawZoomedRegion(index, issue) {
+      const canvas = document.querySelector(`.flashai-vto-zoom-canvas[data-index="${index}"]`);
+      const faceImg = document.getElementById('flashai-vto-face-image');
+      if (!canvas || !faceImg || !issue.highlightRegion) return;
+
+      const ctx = canvas.getContext('2d');
+      const hr = issue.highlightRegion;
+
+      // Calculate source region (with some padding)
+      const padding = 5; // 5% padding
+      const sx = Math.max(0, (hr.x - padding) / 100) * faceImg.naturalWidth;
+      const sy = Math.max(0, (hr.y - padding) / 100) * faceImg.naturalHeight;
+      const sw = Math.min(1, (hr.w + padding * 2) / 100) * faceImg.naturalWidth;
+      const sh = Math.min(1, (hr.h + padding * 2) / 100) * faceImg.naturalHeight;
+
+      // Set canvas size (maintain aspect ratio, max 200px height)
+      const aspectRatio = sw / sh;
+      const maxHeight = 150;
+      canvas.height = maxHeight;
+      canvas.width = maxHeight * aspectRatio;
+
+      // Draw cropped/zoomed region
+      ctx.drawImage(faceImg, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+      // Draw severity-colored border overlay
+      const severityColors = {
+        concern: 'rgba(220, 38, 38, 0.4)',
+        moderate: 'rgba(245, 158, 11, 0.4)',
+        good: 'rgba(16, 185, 129, 0.4)'
+      };
+
+      // Draw colored border
+      ctx.strokeStyle = severityColors[issue.severity] || severityColors.moderate;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      // Add inner glow effect
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      gradient.addColorStop(0, severityColors[issue.severity] || severityColors.moderate);
+      gradient.addColorStop(0.1, 'transparent');
+      gradient.addColorStop(0.9, 'transparent');
+      gradient.addColorStop(1, severityColors[issue.severity] || severityColors.moderate);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    selectIssue(index) {
+      // Delegate to toggleAccordion for consistency
+      this.toggleAccordion(index);
+    }
+
+    closeIssueDetail() {
+      // Close any expanded accordion
+      this.state.expandedIssue = null;
+      document.querySelectorAll('.flashai-vto-accordion-content').forEach(content => {
+        content.style.display = 'none';
+      });
+      document.querySelectorAll('.flashai-vto-accordion-arrow').forEach(arrow => {
+        arrow.style.transform = 'rotate(0deg)';
+      });
+      document.querySelectorAll('.flashai-vto-accordion-header').forEach(header => {
+        header.style.borderRadius = '12px';
+      });
+      this.clearHighlightRegion();
+      document.querySelectorAll('.flashai-vto-pin').forEach(pin => {
+        pin.style.transform = 'translate(-50%, -50%) scale(1)';
+        pin.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+        pin.style.zIndex = '10';
       });
     }
 
