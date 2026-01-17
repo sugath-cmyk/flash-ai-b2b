@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.1.0 (Multi-view face analysis - front, left, right)
+ * Version: 2.3.0 (Face boundary guide + mesh overlay heat map)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.1.0 - Multi-view face analysis (front, left, right)');
+  console.log('[Flash AI Widget] Version 2.3.0 - Face boundary guide + mesh overlay heat map');
 
   // ==========================================================================
   // Main Widget Class
@@ -87,6 +87,10 @@
           @keyframes flashai-pin-pulse {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+          }
+          @keyframes flashai-boundary-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.5), inset 0 0 20px rgba(139,92,246,0.2); }
+            50% { box-shadow: 0 0 35px rgba(139,92,246,0.8), inset 0 0 30px rgba(139,92,246,0.3); }
           }
           .flashai-vto-pin:hover { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
           .flashai-vto-pin.highlight { transform: translate(-50%, -50%) scale(1.3); box-shadow: 0 0 0 4px rgba(255,255,255,0.9), 0 4px 12px rgba(0,0,0,0.4); z-index: 20; }
@@ -358,18 +362,46 @@
           <div id="flashai-vto-step-facescan" class="flashai-vto-step">
             <div class="flashai-vto-header">
               <h2>Face Scan</h2>
-              <p id="flashai-vto-face-angle-instruction">Take 3 photos: Front, Left Profile, Right Profile</p>
+              <p id="flashai-vto-face-angle-instruction">Align your face within the boundary</p>
             </div>
 
-            <div class="flashai-vto-camera-container">
-              <video id="flashai-vto-face-camera" autoplay playsinline></video>
-              <canvas id="flashai-vto-face-detection-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;"></canvas>
-              <div class="flashai-vto-face-angle-indicator" id="flashai-vto-face-angle-indicator">
+            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;">
+              <video id="flashai-vto-face-camera" autoplay playsinline style="position:relative;z-index:1;"></video>
+              <canvas id="flashai-vto-face-detection-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;z-index:2;"></canvas>
+
+              <!-- Face Boundary Guide Overlay -->
+              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;">
+                <!-- Dark overlay with oval cutout using CSS -->
+                <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse 55% 70% at 50% 45%, transparent 0%, transparent 100%), linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6));-webkit-mask:radial-gradient(ellipse 28% 38% at 50% 44%, transparent 98%, black 100%);mask:radial-gradient(ellipse 28% 38% at 50% 44%, transparent 98%, black 100%);"></div>
+
+                <!-- Animated oval border -->
+                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:56%;height:76%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 20px rgba(139,92,246,0.5),inset 0 0 20px rgba(139,92,246,0.2);animation:flashai-boundary-pulse 2s ease-in-out infinite;"></div>
+
+                <!-- Corner brackets for alignment -->
+                <div style="position:absolute;top:12%;left:22%;width:30px;height:30px;border-left:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:5px 0 0 0;"></div>
+                <div style="position:absolute;top:12%;right:22%;width:30px;height:30px;border-right:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:0 5px 0 0;"></div>
+                <div style="position:absolute;bottom:12%;left:22%;width:30px;height:30px;border-left:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 0 5px;"></div>
+                <div style="position:absolute;bottom:12%;right:22%;width:30px;height:30px;border-right:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 5px 0;"></div>
+
+                <!-- Center crosshair -->
+                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;">
+                  <div style="position:absolute;top:50%;left:0;width:100%;height:2px;background:rgba(139,92,246,0.5);"></div>
+                  <div style="position:absolute;top:0;left:50%;width:2px;height:100%;background:rgba(139,92,246,0.5);"></div>
+                </div>
+
+                <!-- Guide text at bottom -->
+                <div style="position:absolute;bottom:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 20px;border-radius:25px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid rgba(139,92,246,0.5);">
+                  <span id="flashai-vto-boundary-text">👤 Position your face inside the oval</span>
+                </div>
+              </div>
+
+              <!-- Photo indicator (top) -->
+              <div class="flashai-vto-face-angle-indicator" id="flashai-vto-face-angle-indicator" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;z-index:15;border:1px solid rgba(255,255,255,0.2);">
                 📸 Photo <span id="flashai-vto-face-photo-count">1</span> of 3: <span id="flashai-vto-current-angle">Front View</span>
               </div>
             </div>
 
-            <!-- Lighting Guide (only reliable indicator without ML face detection) -->
+            <!-- Lighting Guide -->
             <div class="flashai-vto-quality-indicators" id="flashai-vto-quality-indicators" style="display:flex;justify-content:center;padding:8px 12px;margin:8px 0;">
               <div class="flashai-vto-quality-item" id="flashai-vto-quality-lighting" style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:#fef3c7;border:2px solid #f59e0b;transition:all 0.3s;">
                 <span style="font-size:16px;">💡</span>
@@ -398,9 +430,10 @@
             <div class="flashai-vto-instructions">
               <h4>For best results:</h4>
               <ul>
-                <li>💡 Ensure good, even lighting on your face</li>
-                <li>👀 Look directly at the camera</li>
-                <li>📐 Center your face in the frame</li>
+                <li>🎯 Align your face inside the oval boundary</li>
+                <li>💡 Ensure good, even lighting</li>
+                <li>👀 Look directly at the camera for front view</li>
+                <li>↪️ Turn head 45° for profile shots</li>
               </ul>
             </div>
           </div>
@@ -1057,6 +1090,7 @@
           const captureBtn = document.getElementById('flashai-vto-face-capture');
           const angleText = document.getElementById('flashai-vto-current-angle');
           const photoCount = document.getElementById('flashai-vto-face-photo-count');
+          const boundaryText = document.getElementById('flashai-vto-boundary-text');
 
           const nextAngle = this.state.faceAngles[this.state.currentAngleIndex];
 
@@ -1073,13 +1107,25 @@
 
           if (angleText) angleText.textContent = nextAngle;
           if (photoCount) photoCount.textContent = this.state.currentAngleIndex + 1;
+
+          // Update boundary guide text for the next angle
+          if (boundaryText) {
+            const boundaryGuides = [
+              'Position your face inside the oval',
+              '⬅️ Turn head LEFT - show left profile',
+              '➡️ Turn head RIGHT - show right profile'
+            ];
+            boundaryText.textContent = boundaryGuides[this.state.currentAngleIndex];
+          }
         } else {
           // All photos captured, show analyze button
           const captureBtn = document.getElementById('flashai-vto-face-capture');
           const analyzeBtn = document.getElementById('flashai-vto-face-analyze');
+          const boundary = document.getElementById('flashai-vto-face-boundary');
 
           if (captureBtn) captureBtn.style.display = 'none';
           if (analyzeBtn) analyzeBtn.style.display = 'block';
+          if (boundary) boundary.style.display = 'none'; // Hide boundary when done
 
           // Stop camera
           this.stopFaceCamera();
@@ -1379,6 +1425,12 @@
       // Update the displayed image
       const faceImg = document.getElementById('flashai-vto-face-image');
       if (faceImg) {
+        // Wait for image to load before redrawing overlays
+        faceImg.onload = () => {
+          this.setupHighlightCanvas();
+          this.drawFaceMeshHeatmap();
+          this.renderPins();
+        };
         faceImg.src = this.state.faceImageData;
       }
 
@@ -1391,9 +1443,6 @@
           btn.style.color = isActive ? '#fff' : '#3f3f46';
         });
       }
-
-      // Re-render pins filtered by current view
-      this.renderPins();
 
       console.log(`[Face View] Switched to ${viewKey} view`);
     }
@@ -1426,6 +1475,8 @@
         console.log('[Face Image] Image loaded successfully');
         // Set up the highlight canvas to match image dimensions
         this.setupHighlightCanvas();
+        // Draw the geometric mesh with heat map overlay
+        this.drawFaceMeshHeatmap();
         this.renderPins();
       };
 
@@ -1441,6 +1492,291 @@
       canvas.width = faceImg.naturalWidth || faceImg.offsetWidth;
       canvas.height = faceImg.naturalHeight || faceImg.offsetHeight;
       console.log('[Highlight Canvas] Set up:', canvas.width, 'x', canvas.height);
+    }
+
+    drawFaceMeshHeatmap() {
+      const canvas = document.getElementById('flashai-vto-highlight-canvas');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const analysis = this.state.currentAnalysis || {};
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Get face outline from ML or use default face region
+      const faceOutline = analysis.face_outline || [];
+
+      // Define face center and dimensions for mesh generation
+      const faceCenterX = w * 0.5;
+      const faceCenterY = h * 0.45;
+      const faceWidth = w * 0.55;
+      const faceHeight = h * 0.7;
+
+      // Generate mesh grid points if no landmarks available
+      const meshPoints = this.generateFaceMeshPoints(faceOutline, w, h, faceCenterX, faceCenterY, faceWidth, faceHeight);
+
+      // Draw the base purple/blue mesh overlay
+      this.drawMeshOverlay(ctx, meshPoints, w, h);
+
+      // Draw heat map gradients for problem areas
+      this.drawProblemHeatmaps(ctx, analysis, w, h, faceCenterX, faceCenterY, faceWidth, faceHeight);
+
+      // Draw the mesh lines on top
+      this.drawMeshLines(ctx, meshPoints, w, h);
+
+      console.log('[Mesh Heatmap] Rendered with', meshPoints.length, 'mesh points');
+    }
+
+    generateFaceMeshPoints(faceOutline, w, h, cx, cy, fw, fh) {
+      const points = [];
+
+      // If we have real face outline from ML, use it
+      if (faceOutline && faceOutline.length > 10) {
+        faceOutline.forEach(pt => {
+          points.push({ x: pt[0] * w, y: pt[1] * h });
+        });
+        return points;
+      }
+
+      // Generate a grid of points in an oval face shape
+      const rows = 12;
+      const cols = 8;
+
+      for (let row = 0; row <= rows; row++) {
+        const rowRatio = row / rows;
+        const y = cy - fh/2 + rowRatio * fh;
+
+        // Calculate width at this row (oval shape - wider in middle)
+        const ovalFactor = Math.sin(rowRatio * Math.PI);
+        const rowWidth = fw * (0.3 + 0.7 * ovalFactor);
+
+        for (let col = 0; col <= cols; col++) {
+          const colRatio = col / cols;
+          const x = cx - rowWidth/2 + colRatio * rowWidth;
+
+          // Add some organic variation
+          const jitterX = (Math.random() - 0.5) * 8;
+          const jitterY = (Math.random() - 0.5) * 8;
+
+          points.push({
+            x: x + jitterX,
+            y: y + jitterY,
+            row, col
+          });
+        }
+      }
+
+      return points;
+    }
+
+    drawMeshOverlay(ctx, points, w, h) {
+      if (points.length < 3) return;
+
+      // Create a semi-transparent purple/blue base overlay using radial gradient
+      const cx = w * 0.5;
+      const cy = h * 0.45;
+      const radius = Math.min(w, h) * 0.45;
+
+      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      gradient.addColorStop(0, 'rgba(139, 92, 246, 0.15)');   // Purple center
+      gradient.addColorStop(0.5, 'rgba(99, 102, 241, 0.2)');  // Indigo
+      gradient.addColorStop(0.8, 'rgba(79, 70, 229, 0.15)');  // Darker indigo
+      gradient.addColorStop(1, 'rgba(67, 56, 202, 0.05)');    // Edge fade
+
+      // Draw oval mask for the face region
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, w * 0.3, h * 0.4, 0, 0, Math.PI * 2);
+      ctx.clip();
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+
+    drawProblemHeatmaps(ctx, analysis, w, h, cx, cy, fw, fh) {
+      // Define problem regions with their heat intensities
+      const problemAreas = [];
+
+      // T-zone oiliness (forehead + nose)
+      const oiliness = analysis.oiliness_score || 0;
+      if (oiliness > 30) {
+        const intensity = Math.min(1, oiliness / 100);
+        // Forehead hotspot
+        problemAreas.push({
+          x: cx, y: cy - fh * 0.25,
+          radius: fw * 0.25,
+          intensity: intensity * 0.8,
+          color: 'orange'
+        });
+        // Nose hotspot
+        problemAreas.push({
+          x: cx, y: cy + fh * 0.05,
+          radius: fw * 0.12,
+          intensity: intensity,
+          color: 'orange'
+        });
+      }
+
+      // Cheek redness
+      const redness = analysis.redness_score || 0;
+      if (redness > 25) {
+        const intensity = Math.min(1, redness / 100);
+        // Left cheek
+        problemAreas.push({
+          x: cx - fw * 0.25, y: cy + fh * 0.05,
+          radius: fw * 0.18,
+          intensity: intensity * 0.7,
+          color: 'red'
+        });
+        // Right cheek
+        problemAreas.push({
+          x: cx + fw * 0.25, y: cy + fh * 0.05,
+          radius: fw * 0.18,
+          intensity: intensity * 0.7,
+          color: 'red'
+        });
+      }
+
+      // Acne spots
+      const acneScore = analysis.acne_score || 0;
+      if (analysis.acne_locations && analysis.acne_locations.length > 0) {
+        analysis.acne_locations.forEach(loc => {
+          if (loc.view === 'front' || !loc.view) {
+            problemAreas.push({
+              x: loc.x * w, y: loc.y * h,
+              radius: 15 + (loc.size === 'large' ? 10 : 0),
+              intensity: 0.9,
+              color: 'yellow'
+            });
+          }
+        });
+      } else if (acneScore > 20) {
+        // Fallback: show general acne zone
+        problemAreas.push({
+          x: cx + fw * 0.15, y: cy + fh * 0.12,
+          radius: fw * 0.12,
+          intensity: Math.min(1, acneScore / 80),
+          color: 'yellow'
+        });
+      }
+
+      // Dark spots / pigmentation
+      if (analysis.dark_spots_locations && analysis.dark_spots_locations.length > 0) {
+        analysis.dark_spots_locations.forEach(loc => {
+          if (loc.view === 'front' || !loc.view) {
+            problemAreas.push({
+              x: loc.x * w, y: loc.y * h,
+              radius: 12 + (loc.size || 0.02) * 300,
+              intensity: 0.6,
+              color: 'brown'
+            });
+          }
+        });
+      }
+
+      // Under-eye dark circles
+      const darkCircles = analysis.dark_circles_score || 0;
+      if (darkCircles > 20) {
+        const intensity = Math.min(1, darkCircles / 100);
+        // Left under-eye
+        problemAreas.push({
+          x: cx - fw * 0.12, y: cy - fh * 0.08,
+          radius: fw * 0.1,
+          intensity: intensity * 0.5,
+          color: 'purple'
+        });
+        // Right under-eye
+        problemAreas.push({
+          x: cx + fw * 0.12, y: cy - fh * 0.08,
+          radius: fw * 0.1,
+          intensity: intensity * 0.5,
+          color: 'purple'
+        });
+      }
+
+      // Draw each problem area as a gradient hotspot
+      problemAreas.forEach(area => {
+        this.drawHotspot(ctx, area.x, area.y, area.radius, area.intensity, area.color);
+      });
+    }
+
+    drawHotspot(ctx, x, y, radius, intensity, colorType) {
+      // Color schemes for different problem types
+      const colorSchemes = {
+        orange: {
+          inner: `rgba(251, 191, 36, ${intensity * 0.7})`,    // Amber/yellow
+          mid: `rgba(245, 158, 11, ${intensity * 0.5})`,      // Orange
+          outer: `rgba(234, 88, 12, ${intensity * 0.2})`      // Dark orange
+        },
+        yellow: {
+          inner: `rgba(254, 240, 138, ${intensity * 0.8})`,   // Light yellow
+          mid: `rgba(250, 204, 21, ${intensity * 0.5})`,      // Yellow
+          outer: `rgba(234, 179, 8, ${intensity * 0.2})`      // Dark yellow
+        },
+        red: {
+          inner: `rgba(252, 165, 165, ${intensity * 0.6})`,   // Light red
+          mid: `rgba(248, 113, 113, ${intensity * 0.4})`,     // Red
+          outer: `rgba(239, 68, 68, ${intensity * 0.15})`     // Dark red
+        },
+        purple: {
+          inner: `rgba(196, 181, 253, ${intensity * 0.5})`,   // Light purple
+          mid: `rgba(167, 139, 250, ${intensity * 0.35})`,    // Purple
+          outer: `rgba(139, 92, 246, ${intensity * 0.15})`    // Dark purple
+        },
+        brown: {
+          inner: `rgba(180, 130, 100, ${intensity * 0.5})`,   // Light brown
+          mid: `rgba(150, 100, 70, ${intensity * 0.35})`,     // Brown
+          outer: `rgba(120, 80, 50, ${intensity * 0.15})`     // Dark brown
+        }
+      };
+
+      const colors = colorSchemes[colorType] || colorSchemes.orange;
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, colors.inner);
+      gradient.addColorStop(0.5, colors.mid);
+      gradient.addColorStop(1, colors.outer);
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    drawMeshLines(ctx, points, w, h) {
+      if (points.length < 3) return;
+
+      ctx.strokeStyle = 'rgba(200, 200, 220, 0.25)';
+      ctx.lineWidth = 0.5;
+
+      // Draw triangulated mesh by connecting nearby points
+      const maxDist = Math.min(w, h) * 0.12;
+
+      for (let i = 0; i < points.length; i++) {
+        for (let j = i + 1; j < points.length; j++) {
+          const dx = points[j].x - points[i].x;
+          const dy = points[j].y - points[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < maxDist) {
+            ctx.beginPath();
+            ctx.moveTo(points[i].x, points[i].y);
+            ctx.lineTo(points[j].x, points[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw small dots at mesh vertices
+      ctx.fillStyle = 'rgba(200, 200, 220, 0.4)';
+      points.forEach(pt => {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
     }
 
     drawHighlightRegion(highlightRegion, severity = 'moderate') {
