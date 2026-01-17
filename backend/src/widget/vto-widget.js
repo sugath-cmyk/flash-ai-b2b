@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.5.0 (Fix black rectangle - block external CSS interference)
+ * Version: 2.6.0 (Fix frosted rectangle - remove inset shadow, force remove blur via JS)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.5.0 - Fix black rectangle - block external CSS interference');
+  console.log('[Flash AI Widget] Version 2.6.0 - Fix frosted rectangle - remove inset shadow, force remove blur via JS');
 
   // ==========================================================================
   // Main Widget Class
@@ -365,20 +365,20 @@
               <p id="flashai-vto-face-angle-instruction">Align your face within the boundary</p>
             </div>
 
-            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%) !important;">
+            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
               <!-- Loading overlay that hides the black video placeholder -->
-              <div id="flashai-vto-camera-loading" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s ease;">
+              <div id="flashai-vto-camera-loading" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
                 <div style="width:50px;height:50px;border:4px solid #e9d5ff;border-top-color:#8b5cf6;border-radius:50%;animation:flashai-spin 1s linear infinite;"></div>
                 <p style="margin-top:16px;color:#6b21a8;font-size:14px;font-weight:500;">Starting camera...</p>
               </div>
               <style>@keyframes flashai-spin{to{transform:rotate(360deg)}}</style>
 
-              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;opacity:0;transition:opacity 0.3s ease;"></video>
+              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;opacity:0;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;-webkit-filter:none !important;"></video>
 
               <!-- Face Boundary Guide Overlay - transparent, no backgrounds -->
-              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:none !important;">
-                <!-- Animated oval border only (no dark overlay) -->
-                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:60%;height:72%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 25px rgba(139,92,246,0.6),inset 0 0 25px rgba(139,92,246,0.15);animation:flashai-boundary-pulse 2s ease-in-out infinite;"></div>
+              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
+                <!-- Animated oval border only - NO inset shadow, just outer glow -->
+                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:60%;height:72%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 20px rgba(139,92,246,0.5);animation:flashai-boundary-pulse 2s ease-in-out infinite;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;"></div>
 
                 <!-- Corner brackets for alignment -->
                 <div style="position:absolute;top:8%;left:20%;width:35px;height:35px;border-left:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:8px 0 0 0;"></div>
@@ -904,6 +904,21 @@
         const photosContainer = document.getElementById('flashai-vto-face-photos');
         if (photosContainer) photosContainer.innerHTML = '';
 
+        // Forcibly remove any blur/frosted effects from all camera elements
+        const removeBlurEffects = () => {
+          const cameraContainer = document.querySelector('.flashai-vto-camera-container');
+          if (cameraContainer) {
+            const allElements = cameraContainer.querySelectorAll('*');
+            allElements.forEach(el => {
+              el.style.backdropFilter = 'none';
+              el.style.webkitBackdropFilter = 'none';
+              el.style.filter = 'none';
+              el.style.webkitFilter = 'none';
+            });
+            console.log('[Flash AI Widget] Removed blur effects from', allElements.length, 'elements');
+          }
+        };
+
         // Hide loading overlay and show video once it's actually playing
         const hideLoadingAndShowVideo = () => {
           console.log('[Flash AI Widget] Camera stream started, hiding loading overlay');
@@ -914,6 +929,8 @@
             }, 300);
           }
           video.style.opacity = '1';
+          // Remove any blur effects after video is shown
+          setTimeout(removeBlurEffects, 100);
         };
 
         // Listen for when video actually has frames to display
