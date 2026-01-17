@@ -437,7 +437,7 @@
 
             <div class="flashai-vto-face-photos-preview" id="flashai-vto-face-photos"></div>
 
-            <div class="flashai-vto-actions">
+            <div class="flashai-vto-actions" style="padding:12px 20px;">
               <button id="flashai-vto-face-capture" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
@@ -445,8 +445,12 @@
                 </svg>
                 Capture Front View
               </button>
-              <button id="flashai-vto-face-analyze" class="flashai-vto-btn-success" style="display: none;">
-                Analyze Skin
+              <button id="flashai-vto-face-analyze" class="flashai-vto-btn-primary" style="display:none;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;width:100%;padding:16px 24px;font-size:16px;font-weight:700;border-radius:12px;border:none;box-shadow:0 4px 15px rgba(139,92,246,0.4);cursor:pointer;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;vertical-align:middle;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 6v6l4 2"></path>
+                </svg>
+                Analyze My Skin
               </button>
             </div>
 
