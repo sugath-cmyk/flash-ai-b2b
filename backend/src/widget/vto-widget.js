@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 1.7.0 (Clean Numbered Pins with Issue List)
+ * Version: 1.8.0 (All Attributes + Red Highlight Regions)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 1.7.0 - Clean Numbered Pins with Issue List');
+  console.log('[Flash AI Widget] Version 1.8.0 - All Attributes + Red Highlight Regions');
 
   // ==========================================================================
   // Main Widget Class
@@ -77,6 +77,23 @@
       link.rel = 'stylesheet';
       link.href = this.config.apiBaseUrl.replace('/api/vto', '/widget/vto-styles.css');
       document.head.appendChild(link);
+
+      // Inject critical keyframe animations as inline style (fallback for CSS caching)
+      const criticalStyleId = 'flashai-vto-critical-styles';
+      if (!document.getElementById(criticalStyleId)) {
+        const style = document.createElement('style');
+        style.id = criticalStyleId;
+        style.textContent = `
+          @keyframes flashai-pin-pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+          }
+          .flashai-vto-pin:hover { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+          .flashai-vto-pin.highlight { transform: translate(-50%, -50%) scale(1.3); box-shadow: 0 0 0 4px rgba(255,255,255,0.9), 0 4px 12px rgba(0,0,0,0.4); z-index: 20; }
+          .flashai-vto-issue-item:hover { transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        `;
+        document.head.appendChild(style);
+      }
     }
 
     // ==========================================================================
@@ -414,55 +431,56 @@
             <div class="flashai-vto-face-results-content">
 
               <!-- Header with Score -->
-              <div class="flashai-vto-results-header-row">
-                <div class="flashai-vto-score-mini">
-                  <svg viewBox="0 0 80 80" class="flashai-vto-score-ring">
+              <div class="flashai-vto-results-header-row" style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(135deg,#fafafa 0%,#fff 100%);border-bottom:1px solid #e4e4e7;margin:-20px -20px 16px;">
+                <div class="flashai-vto-score-mini" style="position:relative;width:56px;height:56px;flex-shrink:0;">
+                  <svg viewBox="0 0 80 80" class="flashai-vto-score-ring" style="width:100%;height:100%;">
                     <circle cx="40" cy="40" r="36" fill="none" stroke="#e5e7eb" stroke-width="6"></circle>
                     <circle id="flashai-vto-score-circle" cx="40" cy="40" r="36" fill="none" stroke="${this.config.primaryColor}" stroke-width="6" stroke-dasharray="226.2" stroke-dashoffset="226.2" stroke-linecap="round" transform="rotate(-90 40 40)"></circle>
                   </svg>
-                  <span id="flashai-vto-skin-score" class="flashai-vto-score-number">--</span>
+                  <span id="flashai-vto-skin-score" class="flashai-vto-score-number" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:800;color:#18181b;">--</span>
                 </div>
                 <div class="flashai-vto-results-title">
-                  <h2>Skin Analysis</h2>
-                  <p>Age: <strong id="flashai-vto-skin-age">--</strong> • Tone: <strong id="flashai-vto-skin-tone">--</strong></p>
+                  <h2 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 4px;">Skin Analysis</h2>
+                  <p style="font-size:12px;color:#71717a;margin:0;">Age: <strong id="flashai-vto-skin-age" style="color:#3f3f46;">--</strong> • Tone: <strong id="flashai-vto-skin-tone" style="color:#3f3f46;">--</strong></p>
                 </div>
               </div>
 
-              <!-- Face Image with Numbered Pins -->
-              <div class="flashai-vto-analysis-main">
-                <div class="flashai-vto-face-container">
-                  <img id="flashai-vto-face-image" alt="Your face scan" />
-                  <div id="flashai-vto-pins-container"></div>
+              <!-- Face Image with Numbered Pins and Highlight Overlay -->
+              <div class="flashai-vto-analysis-main" style="margin-bottom:20px;">
+                <div class="flashai-vto-face-container" id="flashai-vto-face-container" style="position:relative;width:100%;max-width:320px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
+                  <img id="flashai-vto-face-image" alt="Your face scan" style="width:100%;height:auto;display:block;" />
+                  <canvas id="flashai-vto-highlight-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                  <div id="flashai-vto-pins-container" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
                 </div>
               </div>
 
               <!-- Issues List (Numbered to match pins) -->
-              <div class="flashai-vto-issues-section">
-                <h3 class="flashai-vto-issues-title">Detected Concerns</h3>
-                <div class="flashai-vto-issues-list" id="flashai-vto-issues-list">
+              <div class="flashai-vto-issues-section" style="margin-bottom:16px;">
+                <h3 class="flashai-vto-issues-title" style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 12px;">Detected Concerns</h3>
+                <div class="flashai-vto-issues-list" id="flashai-vto-issues-list" style="display:flex;flex-direction:column;gap:8px;">
                   <!-- Dynamically generated -->
                 </div>
               </div>
 
               <!-- Expanded Detail (shown when issue selected) -->
-              <div class="flashai-vto-issue-detail" id="flashai-vto-issue-detail" style="display:none;">
-                <div class="flashai-vto-detail-close" id="flashai-vto-detail-close">×</div>
-                <div class="flashai-vto-detail-content">
-                  <div class="flashai-vto-detail-top">
-                    <span class="flashai-vto-detail-num" id="flashai-vto-detail-num">1</span>
-                    <div class="flashai-vto-detail-info">
-                      <h4 id="flashai-vto-detail-title">Issue Name</h4>
-                      <span class="flashai-vto-detail-severity" id="flashai-vto-detail-severity">Moderate</span>
+              <div class="flashai-vto-issue-detail" id="flashai-vto-issue-detail" style="display:none;position:relative;background:#fff;border:1px solid #e4e4e7;border-radius:16px;margin-bottom:16px;overflow:hidden;border-left:4px solid #f59e0b;">
+                <div class="flashai-vto-detail-close" id="flashai-vto-detail-close" style="position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#f4f4f5;border:none;border-radius:50%;font-size:16px;color:#71717a;cursor:pointer;">×</div>
+                <div class="flashai-vto-detail-content" style="padding:16px;">
+                  <div class="flashai-vto-detail-top" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                    <span class="flashai-vto-detail-num" id="flashai-vto-detail-num" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:16px;font-weight:700;background:#f59e0b;color:#fff;">1</span>
+                    <div class="flashai-vto-detail-info" style="flex:1;">
+                      <h4 id="flashai-vto-detail-title" style="font-size:16px;font-weight:700;color:#18181b;margin:0 0 4px;">Issue Name</h4>
+                      <span class="flashai-vto-detail-severity" id="flashai-vto-detail-severity" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;color:#f59e0b;">Moderate</span>
                     </div>
                   </div>
-                  <div class="flashai-vto-detail-sections">
-                    <div class="flashai-vto-detail-block">
-                      <span class="flashai-vto-detail-label">Problem</span>
-                      <p id="flashai-vto-detail-problem">Description...</p>
+                  <div class="flashai-vto-detail-sections" style="display:flex;flex-direction:column;gap:12px;">
+                    <div class="flashai-vto-detail-block" style="padding:12px;background:#fafafa;border-radius:8px;">
+                      <span class="flashai-vto-detail-label" style="display:block;font-size:10px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Problem</span>
+                      <p id="flashai-vto-detail-problem" style="font-size:13px;line-height:1.5;color:#3f3f46;margin:0;">Description...</p>
                     </div>
-                    <div class="flashai-vto-detail-block solution">
-                      <span class="flashai-vto-detail-label">Solution</span>
-                      <p id="flashai-vto-detail-solution">Recommendation...</p>
+                    <div class="flashai-vto-detail-block solution" style="padding:12px;background:linear-gradient(135deg,rgba(16,185,129,0.05) 0%,#fafafa 100%);border-radius:8px;">
+                      <span class="flashai-vto-detail-label" style="display:block;font-size:10px;font-weight:700;color:#10b981;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Solution</span>
+                      <p id="flashai-vto-detail-solution" style="font-size:13px;line-height:1.5;color:#3f3f46;margin:0;">Recommendation...</p>
                     </div>
                   </div>
                 </div>
@@ -1177,13 +1195,100 @@
 
     initFaceImage() {
       const faceImg = document.getElementById('flashai-vto-face-image');
-      if (!faceImg || !this.state.faceImageData) return;
+      console.log('[Face Image] Setting up face image, element:', faceImg ? 'found' : 'NOT FOUND');
+      console.log('[Face Image] faceImageData:', this.state.faceImageData ? `${this.state.faceImageData.slice(0, 50)}...` : 'NOT SET');
 
-      faceImg.src = this.state.faceImageData;
+      if (!faceImg) {
+        console.error('[Face Image] Image element not found!');
+        return;
+      }
+
+      if (!this.state.faceImageData) {
+        console.error('[Face Image] No face image data stored!');
+        // Try to show a placeholder message
+        const container = faceImg.parentElement;
+        if (container) {
+          container.innerHTML = '<div style="padding:40px;text-align:center;background:#f5f5f5;border-radius:16px;"><p style="color:#666;">Face image not available</p></div>';
+        }
+        return;
+      }
+
+      faceImg.onerror = (e) => {
+        console.error('[Face Image] Error loading face image:', e);
+      };
 
       faceImg.onload = () => {
+        console.log('[Face Image] Image loaded successfully');
+        // Set up the highlight canvas to match image dimensions
+        this.setupHighlightCanvas();
         this.renderPins();
       };
+
+      faceImg.src = this.state.faceImageData;
+    }
+
+    setupHighlightCanvas() {
+      const faceImg = document.getElementById('flashai-vto-face-image');
+      const canvas = document.getElementById('flashai-vto-highlight-canvas');
+      if (!faceImg || !canvas) return;
+
+      // Match canvas dimensions to image
+      canvas.width = faceImg.naturalWidth || faceImg.offsetWidth;
+      canvas.height = faceImg.naturalHeight || faceImg.offsetHeight;
+      console.log('[Highlight Canvas] Set up:', canvas.width, 'x', canvas.height);
+    }
+
+    drawHighlightRegion(highlightRegion) {
+      const canvas = document.getElementById('flashai-vto-highlight-canvas');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Clear previous highlight
+      ctx.clearRect(0, 0, w, h);
+
+      if (!highlightRegion) return;
+
+      // Calculate region coordinates from percentage
+      const x = (highlightRegion.x / 100) * w;
+      const y = (highlightRegion.y / 100) * h;
+      const rw = (highlightRegion.w / 100) * w;
+      const rh = (highlightRegion.h / 100) * h;
+
+      // Draw semi-transparent red highlight with rounded corners
+      ctx.fillStyle = 'rgba(220, 38, 38, 0.25)'; // Red with 25% opacity
+      ctx.strokeStyle = 'rgba(220, 38, 38, 0.6)'; // Red border with 60% opacity
+      ctx.lineWidth = 3;
+
+      // Draw rounded rectangle
+      const radius = 15;
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + rw - radius, y);
+      ctx.quadraticCurveTo(x + rw, y, x + rw, y + radius);
+      ctx.lineTo(x + rw, y + rh - radius);
+      ctx.quadraticCurveTo(x + rw, y + rh, x + rw - radius, y + rh);
+      ctx.lineTo(x + radius, y + rh);
+      ctx.quadraticCurveTo(x, y + rh, x, y + rh - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Add pulsing border animation effect with a second stroke
+      ctx.strokeStyle = 'rgba(220, 38, 38, 0.3)';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+    }
+
+    clearHighlightRegion() {
+      const canvas = document.getElementById('flashai-vto-highlight-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     generateDetectedIssues(analysis) {
@@ -1192,16 +1297,74 @@
       const issues = [];
       const attrs = this.getAttributeDefinitions();
 
-      // Define issue detection with positions on face
+      // Define ALL attributes with correct anatomical positions on face
+      // Positions are % from top-left of face image
+      // highlightRegion defines the area to highlight in red when selected
       const issueConfigs = [
-        { key: 'redness', threshold: 30, position: { x: 75, y: 45 }, region: 'Cheeks' },
-        { key: 'dark_circles', threshold: 30, position: { x: 28, y: 38 }, region: 'Under Eyes' },
-        { key: 'wrinkles', threshold: 20, position: { x: 50, y: 15 }, region: 'Forehead' },
-        { key: 'acne', threshold: 20, position: { x: 65, y: 58 }, region: 'Chin & Cheeks' },
-        { key: 'pigmentation', threshold: 20, position: { x: 35, y: 52 }, region: 'Cheeks' },
-        { key: 'pores', threshold: 25, scoreKey: 'pores_score', position: { x: 50, y: 48 }, region: 'T-Zone' },
-        { key: 'oiliness', threshold: 40, position: { x: 50, y: 25 }, region: 'T-Zone' },
-        { key: 'hydration', threshold: 50, isInverse: true, position: { x: 42, y: 65 }, region: 'Full Face' }
+        {
+          key: 'dark_circles',
+          threshold: 15, // Low threshold to always show
+          position: { x: 35, y: 38 }, // Left under-eye area
+          region: 'Under Eyes',
+          highlightRegion: { x: 25, y: 32, w: 50, h: 15 } // Both under-eye areas
+        },
+        {
+          key: 'wrinkles',
+          threshold: 10,
+          position: { x: 50, y: 18 }, // Forehead center
+          region: 'Forehead & Eyes',
+          highlightRegion: { x: 20, y: 10, w: 60, h: 20 } // Forehead area
+        },
+        {
+          key: 'pores',
+          threshold: 15,
+          position: { x: 50, y: 45 }, // Nose area
+          region: 'T-Zone (Nose)',
+          highlightRegion: { x: 40, y: 35, w: 20, h: 25 } // T-zone
+        },
+        {
+          key: 'acne',
+          threshold: 10,
+          position: { x: 65, y: 55 }, // Right cheek
+          region: 'Cheeks & Chin',
+          highlightRegion: { x: 20, y: 45, w: 60, h: 30 } // Lower face
+        },
+        {
+          key: 'redness',
+          threshold: 20,
+          position: { x: 30, y: 52 }, // Left cheek
+          region: 'Cheeks',
+          highlightRegion: { x: 15, y: 40, w: 70, h: 25 } // Cheek areas
+        },
+        {
+          key: 'oiliness',
+          threshold: 25,
+          position: { x: 50, y: 28 }, // Upper T-zone/forehead
+          region: 'T-Zone',
+          highlightRegion: { x: 35, y: 15, w: 30, h: 40 } // T-zone vertical
+        },
+        {
+          key: 'pigmentation',
+          threshold: 15,
+          position: { x: 70, y: 48 }, // Right cheek area
+          region: 'Cheeks & Forehead',
+          highlightRegion: { x: 20, y: 30, w: 60, h: 35 } // Mid-face
+        },
+        {
+          key: 'hydration',
+          threshold: 60, // Show if hydration is below 60%
+          isInverse: true,
+          position: { x: 50, y: 65 }, // Lower face/chin
+          region: 'Full Face',
+          highlightRegion: { x: 15, y: 15, w: 70, h: 70 } // Full face
+        },
+        {
+          key: 'texture',
+          threshold: 20,
+          position: { x: 38, y: 42 }, // Left mid-face
+          region: 'Overall Skin',
+          highlightRegion: { x: 20, y: 25, w: 60, h: 50 } // Face surface
+        }
       ];
 
       issueConfigs.forEach(config => {
@@ -1231,6 +1394,7 @@
             severityLabel,
             region: config.region,
             position: config.position,
+            highlightRegion: config.highlightRegion, // For red overlay when selected
             problem: attr.getProblem(analysis, score),
             solution: attr.getSolution(analysis, score)
           });
@@ -1251,14 +1415,24 @@
 
       const issues = this.state.detectedIssues;
 
-      container.innerHTML = issues.map((issue, index) => `
+      // Severity colors for pins
+      const severityColors = {
+        concern: { bg: '#ef4444', pulse: 'rgba(239, 68, 68, 0.4)' },
+        moderate: { bg: '#f59e0b', pulse: 'rgba(245, 158, 11, 0.4)' },
+        good: { bg: '#10b981', pulse: 'rgba(16, 185, 129, 0.4)' }
+      };
+
+      container.innerHTML = issues.map((issue, index) => {
+        const colors = severityColors[issue.severity] || severityColors.moderate;
+        return `
         <div class="flashai-vto-pin ${issue.severity}"
              data-index="${index}"
-             style="left: ${issue.position.x}%; top: ${issue.position.y}%;">
-          <span class="flashai-vto-pin-num">${index + 1}</span>
-          <span class="flashai-vto-pin-pulse"></span>
+             style="position:absolute;left:${issue.position.x}%;top:${issue.position.y}%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:${colors.bg};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);z-index:10;pointer-events:auto;transition:transform 0.2s,box-shadow 0.2s;">
+          <span class="flashai-vto-pin-num" style="font-size:12px;font-weight:700;color:#fff;">${index + 1}</span>
+          <span class="flashai-vto-pin-pulse" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;border-radius:50%;background:${colors.pulse};animation:flashai-pin-pulse 2s infinite;pointer-events:none;z-index:-1;"></span>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       // Add click handlers
       container.querySelectorAll('.flashai-vto-pin').forEach(pin => {
@@ -1277,27 +1451,38 @@
 
       if (issues.length === 0) {
         listContainer.innerHTML = `
-          <div class="flashai-vto-no-issues">
-            <span>✨</span>
-            <p>Great news! No significant skin concerns detected.</p>
+          <div class="flashai-vto-no-issues" style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;">
+            <span style="font-size:32px;">✨</span>
+            <p style="font-size:14px;color:#15803d;margin:8px 0 0;">Great news! No significant skin concerns detected.</p>
           </div>
         `;
         return;
       }
 
-      listContainer.innerHTML = issues.map((issue, index) => `
-        <div class="flashai-vto-issue-item ${issue.severity}" data-index="${index}">
-          <span class="flashai-vto-issue-num">${index + 1}</span>
-          <div class="flashai-vto-issue-info">
-            <span class="flashai-vto-issue-name">${issue.name}</span>
-            <span class="flashai-vto-issue-region">${issue.region}</span>
+      // Severity colors for badges and numbers
+      const severityColors = {
+        concern: { bg: '#fef2f2', border: '#fecaca', num: '#dc2626', badge: '#dc2626', badgeBg: '#fee2e2' },
+        moderate: { bg: '#fffbeb', border: '#fde68a', num: '#d97706', badge: '#d97706', badgeBg: '#fef3c7' },
+        good: { bg: '#f0fdf4', border: '#bbf7d0', num: '#16a34a', badge: '#16a34a', badgeBg: '#dcfce7' }
+      };
+
+      listContainer.innerHTML = issues.map((issue, index) => {
+        const colors = severityColors[issue.severity] || severityColors.moderate;
+        return `
+        <div class="flashai-vto-issue-item ${issue.severity}" data-index="${index}"
+             style="display:flex;align-items:center;gap:12px;padding:12px;background:${colors.bg};border:1px solid ${colors.border};border-radius:12px;cursor:pointer;transition:all 0.2s;">
+          <span class="flashai-vto-issue-num" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${colors.num};color:#fff;font-size:12px;font-weight:700;flex-shrink:0;">${index + 1}</span>
+          <div class="flashai-vto-issue-info" style="flex:1;min-width:0;">
+            <span class="flashai-vto-issue-name" style="display:block;font-size:14px;font-weight:600;color:#18181b;">${issue.name}</span>
+            <span class="flashai-vto-issue-region" style="display:block;font-size:12px;color:#71717a;margin-top:2px;">${issue.region}</span>
           </div>
-          <div class="flashai-vto-issue-badge ${issue.severity}">${issue.severityLabel}</div>
-          <svg class="flashai-vto-issue-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="flashai-vto-issue-badge ${issue.severity}" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${colors.badgeBg};color:${colors.badge};white-space:nowrap;">${issue.severityLabel}</div>
+          <svg class="flashai-vto-issue-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" style="flex-shrink:0;">
             <path d="M9 18l6-6-6-6"/>
           </svg>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       // Add click handlers
       listContainer.querySelectorAll('.flashai-vto-issue-item').forEach(item => {
@@ -1315,14 +1500,34 @@
       this.state.selectedIssue = index;
       const issue = issues[index];
 
-      // Highlight pin
+      // Draw red highlight region on the face image
+      this.drawHighlightRegion(issue.highlightRegion);
+
+      // Highlight pin (make it larger and add white border)
       document.querySelectorAll('.flashai-vto-pin').forEach((pin, i) => {
-        pin.classList.toggle('active', i === index);
+        if (i === index) {
+          pin.classList.add('active');
+          pin.style.transform = 'translate(-50%, -50%) scale(1.3)';
+          pin.style.boxShadow = '0 0 0 3px #fff, 0 4px 12px rgba(0,0,0,0.4)';
+          pin.style.zIndex = '20';
+        } else {
+          pin.classList.remove('active');
+          pin.style.transform = 'translate(-50%, -50%) scale(1)';
+          pin.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+          pin.style.zIndex = '10';
+        }
       });
 
       // Highlight list item
       document.querySelectorAll('.flashai-vto-issue-item').forEach((item, i) => {
         item.classList.toggle('active', i === index);
+        if (i === index) {
+          item.style.transform = 'translateX(4px)';
+          item.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+        } else {
+          item.style.transform = 'none';
+          item.style.boxShadow = 'none';
+        }
       });
 
       // Show detail panel
@@ -1350,9 +1555,21 @@
 
       this.state.selectedIssue = null;
 
-      // Remove active states
-      document.querySelectorAll('.flashai-vto-pin').forEach(pin => pin.classList.remove('active'));
-      document.querySelectorAll('.flashai-vto-issue-item').forEach(item => item.classList.remove('active'));
+      // Clear the red highlight region
+      this.clearHighlightRegion();
+
+      // Remove active states and reset styles
+      document.querySelectorAll('.flashai-vto-pin').forEach(pin => {
+        pin.classList.remove('active');
+        pin.style.transform = 'translate(-50%, -50%) scale(1)';
+        pin.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+        pin.style.zIndex = '10';
+      });
+      document.querySelectorAll('.flashai-vto-issue-item').forEach(item => {
+        item.classList.remove('active');
+        item.style.transform = 'none';
+        item.style.boxShadow = 'none';
+      });
     }
 
     // Legacy method for backward compatibility
