@@ -672,11 +672,10 @@ class FaceScanService:
             merged[field] = total
 
         # Aggregate score fields (weighted average - front view gets more weight)
-        # NOTE: sensitivity_level is a STRING ("low"/"medium"/"high"), not a number - handle separately
+        # NOTE: All scores must be integers for database compatibility
         score_fields = [
             'acne_score', 'wrinkle_score', 'texture_score',
-            'redness_score', 'pigmentation_score',
-            'smoothness_score', 'pore_size_average'
+            'redness_score', 'pigmentation_score', 'smoothness_score'
         ]
         for field in score_fields:
             weighted_sum = 0
@@ -690,7 +689,12 @@ class FaceScanService:
                         weighted_sum += value * weight
                         weight_total += weight
             if weight_total > 0:
-                merged[field] = round(weighted_sum / weight_total, 1)
+                merged[field] = int(round(weighted_sum / weight_total))
+
+        # Handle pore_size_average separately (float, average from views)
+        pore_sizes = [a.get('pore_size_average', 0) for _, a in view_analyses if 'pore_size_average' in a]
+        if pore_sizes:
+            merged['pore_size_average'] = round(sum(pore_sizes) / len(pore_sizes), 2)
 
         # Handle categorical fields (take from front view)
         if 'sensitivity_level' in front_analysis:
