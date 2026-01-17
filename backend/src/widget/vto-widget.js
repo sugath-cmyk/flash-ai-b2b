@@ -2174,7 +2174,8 @@
             problem: attr.getProblem(analysis, score),
             solution: attr.getSolution(analysis, score),
             ingredients: attr.getIngredients ? attr.getIngredients() : '',
-            usage: attr.getUsage ? attr.getUsage() : ''
+            usage: attr.getUsage ? attr.getUsage() : '',
+            products: attr.getProducts ? attr.getProducts() : []
           });
         }
       });
@@ -2360,10 +2361,22 @@
               <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.ingredients}</p>
             </div>
             <!-- How to Use/Apply -->
-            <div style="padding:12px;background:linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, #eff6ff 100%);border-radius:8px;border-left:3px solid #3b82f6;">
+            <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, #eff6ff 100%);border-radius:8px;border-left:3px solid #3b82f6;">
               <div style="font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📝 How to Use/Apply</div>
               <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.usage}</p>
             </div>
+            <!-- Recommended Products -->
+            ${issue.products && issue.products.length > 0 ? `
+            <div style="padding:12px;background:linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, #fff7ed 100%);border-radius:8px;border-left:3px solid #f97316;">
+              <div style="font-size:10px;font-weight:700;color:#c2410c;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🛒 Recommended Products</div>
+              ${issue.products.map(p => `
+                <div style="margin-bottom:10px;padding:8px;background:rgba(255,255,255,0.7);border-radius:6px;">
+                  <div style="font-size:12px;font-weight:600;color:#ea580c;margin-bottom:4px;">${p.name}</div>
+                  <div style="font-size:11px;color:#6b7280;line-height:1.4;"><strong style="color:#374151;">Top Brands:</strong> ${p.brands}</div>
+                </div>
+              `).join('')}
+            </div>
+            ` : ''}
           </div>
         </div>
       `;
@@ -2823,7 +2836,12 @@
             return 'Use an eye cream with Vitamin C, caffeine, or retinol. Ensure 7-8 hours of sleep and stay hydrated. Cold compresses can help reduce puffiness.';
           },
           getIngredients: () => 'Vitamin C, Caffeine, Vitamin K, Retinol, Niacinamide, Peptides, Hyaluronic Acid',
-          getUsage: () => 'Apply a pea-sized amount of eye cream to your ring finger. Gently pat (don\'t rub) around the orbital bone, from inner to outer corner. Use morning and night after cleansing and before moisturizer.'
+          getUsage: () => 'Apply a pea-sized amount of eye cream to your ring finger. Gently pat (don\'t rub) around the orbital bone, from inner to outer corner. Use morning and night after cleansing and before moisturizer.',
+          getProducts: () => [
+            { name: 'Eye Cream with Caffeine', brands: 'The Ordinary Caffeine Solution 5%, CeraVe Eye Repair Cream, Olay Eyes Brightening Eye Cream' },
+            { name: 'Vitamin C Eye Serum', brands: 'Kiehl\'s Powerful-Strength Line-Reducing Eye, La Roche-Posay Pigmentclar Eyes, Ole Henriksen Banana Bright Eye Cream' },
+            { name: 'Retinol Eye Cream', brands: 'Neutrogena Rapid Wrinkle Repair Eye, RoC Retinol Correxion Eye Cream, SkinCeuticals A.G.E. Eye Complex' }
+          ]
         },
         acne: {
           name: 'Acne & Blemishes',
@@ -2841,7 +2859,12 @@
             return 'Use a gentle cleanser with Salicylic Acid or Benzoyl Peroxide. Avoid touching your face and change pillowcases frequently. Consider a spot treatment for active breakouts.';
           },
           getIngredients: () => 'Salicylic Acid (BHA), Benzoyl Peroxide, Tea Tree Oil, Niacinamide, Zinc, Sulfur, Azelaic Acid',
-          getUsage: () => 'Cleanse face twice daily with acne cleanser. Apply spot treatment directly on blemishes at night. Use oil-free moisturizer. For prevention, use BHA toner 2-3 times per week on affected areas.'
+          getUsage: () => 'Cleanse face twice daily with acne cleanser. Apply spot treatment directly on blemishes at night. Use oil-free moisturizer. For prevention, use BHA toner 2-3 times per week on affected areas.',
+          getProducts: () => [
+            { name: 'Salicylic Acid Cleanser', brands: 'CeraVe Acne Foaming Cream Cleanser, La Roche-Posay Effaclar Medicated Gel Cleanser, Neutrogena Oil-Free Acne Wash' },
+            { name: 'Benzoyl Peroxide Treatment', brands: 'Paula\'s Choice Clear Regular Strength, Differin Acne Treatment Gel, La Roche-Posay Effaclar Duo' },
+            { name: 'Spot Treatment', brands: 'Mario Badescu Drying Lotion, COSRX Acne Pimple Master Patch, The Ordinary Niacinamide 10% + Zinc 1%' }
+          ]
         },
         wrinkles: {
           name: 'Lines & Wrinkles',
@@ -2858,7 +2881,12 @@
             return 'Use Retinol or Retinoid products at night. Apply SPF 30+ daily. Consider products with Peptides and Hyaluronic Acid for plumping effect.';
           },
           getIngredients: () => 'Retinol/Retinoid, Peptides, Hyaluronic Acid, Vitamin C, Bakuchiol (natural alternative), Collagen, CoQ10',
-          getUsage: () => 'Start with retinol 2x/week at night, gradually increasing to nightly use. Apply pea-sized amount to clean, dry skin. Wait 20 mins before moisturizer. Always use SPF next morning. Avoid mixing with Vitamin C or AHAs.'
+          getUsage: () => 'Start with retinol 2x/week at night, gradually increasing to nightly use. Apply pea-sized amount to clean, dry skin. Wait 20 mins before moisturizer. Always use SPF next morning. Avoid mixing with Vitamin C or AHAs.',
+          getProducts: () => [
+            { name: 'Retinol Serum', brands: 'The Ordinary Retinol 0.5% in Squalane, Neutrogena Rapid Wrinkle Repair, RoC Retinol Correxion Deep Wrinkle Serum' },
+            { name: 'Peptide Cream', brands: 'The Ordinary Buffet, Olay Regenerist Micro-Sculpting Cream, StriVectin SD Advanced Plus' },
+            { name: 'Sunscreen SPF 50+', brands: 'La Roche-Posay Anthelios, EltaMD UV Clear, Supergoop Unseen Sunscreen' }
+          ]
         },
         pigmentation: {
           name: 'Pigmentation',
@@ -2876,7 +2904,12 @@
             return 'Use Vitamin C serum in the morning and Niacinamide for brightening. Apply SPF 50 daily. Consider products with Alpha Arbutin or Kojic Acid for stubborn spots.';
           },
           getIngredients: () => 'Vitamin C (L-Ascorbic Acid), Niacinamide, Alpha Arbutin, Kojic Acid, Tranexamic Acid, Licorice Root Extract, Azelaic Acid',
-          getUsage: () => 'Apply Vitamin C serum every morning after cleansing, before SPF. Use brightening serums with Alpha Arbutin at night. Apply SPF 50 generously and reapply every 2 hours when outdoors. Be patient - results take 8-12 weeks.'
+          getUsage: () => 'Apply Vitamin C serum every morning after cleansing, before SPF. Use brightening serums with Alpha Arbutin at night. Apply SPF 50 generously and reapply every 2 hours when outdoors. Be patient - results take 8-12 weeks.',
+          getProducts: () => [
+            { name: 'Vitamin C Serum', brands: 'SkinCeuticals C E Ferulic, Timeless 20% Vitamin C + E + Ferulic Acid, La Roche-Posay Vitamin C Serum' },
+            { name: 'Brightening Serum', brands: 'The Ordinary Alpha Arbutin 2%, Good Molecules Discoloration Correcting Serum, Murad Rapid Age Spot Correcting Serum' },
+            { name: 'Sunscreen SPF 50+', brands: 'EltaMD UV Clear SPF 46, La Roche-Posay Anthelios Melt-in Milk SPF 60, Supergoop Unseen Sunscreen SPF 40' }
+          ]
         },
         redness: {
           name: 'Redness & Sensitivity',
@@ -2893,7 +2926,12 @@
             return 'Use fragrance-free, hypoallergenic products. Look for Centella Asiatica, Aloe Vera, or Green Tea. Avoid hot water and harsh scrubs. Consider Azelaic Acid for rosacea-prone skin.';
           },
           getIngredients: () => 'Centella Asiatica (Cica), Aloe Vera, Green Tea, Azelaic Acid, Allantoin, Chamomile, Oat Extract, Panthenol',
-          getUsage: () => 'Use lukewarm water only. Apply calming products with gentle patting motions. Layer Cica serum before moisturizer. Avoid actives (AHA, retinol) until redness subsides. Test new products on small area first.'
+          getUsage: () => 'Use lukewarm water only. Apply calming products with gentle patting motions. Layer Cica serum before moisturizer. Avoid actives (AHA, retinol) until redness subsides. Test new products on small area first.',
+          getProducts: () => [
+            { name: 'Calming Cleanser', brands: 'Cetaphil Gentle Skin Cleanser, La Roche-Posay Toleriane Hydrating Cleanser, Vanicream Gentle Facial Cleanser' },
+            { name: 'Cica/Centella Serum', brands: 'Dr. Jart+ Cicapair Serum, COSRX Centella Blemish Cream, Purito Centella Unscented Serum' },
+            { name: 'Soothing Moisturizer', brands: 'Avene Tolerance Extreme Cream, First Aid Beauty Ultra Repair Cream, La Roche-Posay Cicaplast Baume B5' }
+          ]
         },
         hydration: {
           name: 'Hydration',
@@ -2910,7 +2948,12 @@
             return 'Use Hyaluronic Acid serum on damp skin. Apply a rich moisturizer and consider overnight sleeping masks. Drink at least 8 glasses of water daily.';
           },
           getIngredients: () => 'Hyaluronic Acid, Glycerin, Ceramides, Squalane, Aloe Vera, Beta Glucan, Sodium PCA, Urea',
-          getUsage: () => 'Apply Hyaluronic Acid serum on DAMP skin (this is crucial!). Layer from thinnest to thickest: toner → serum → moisturizer. Use a sleeping mask 2-3x/week. Drink 8+ glasses of water daily.'
+          getUsage: () => 'Apply Hyaluronic Acid serum on DAMP skin (this is crucial!). Layer from thinnest to thickest: toner → serum → moisturizer. Use a sleeping mask 2-3x/week. Drink 8+ glasses of water daily.',
+          getProducts: () => [
+            { name: 'Hyaluronic Acid Serum', brands: 'The Ordinary Hyaluronic Acid 2% + B5, Neutrogena Hydro Boost Serum, Vichy Minéral 89' },
+            { name: 'Hydrating Moisturizer', brands: 'CeraVe Moisturizing Cream, Neutrogena Hydro Boost Gel-Cream, Tatcha The Dewy Skin Cream' },
+            { name: 'Sleeping Mask', brands: 'Laneige Water Sleeping Mask, Glow Recipe Watermelon Sleeping Mask, Kiehl\'s Ultra Facial Overnight Mask' }
+          ]
         },
         oiliness: {
           name: 'Oiliness',
@@ -2927,7 +2970,12 @@
             return 'Use a gentle foaming cleanser and oil-free moisturizer. Try Niacinamide to regulate sebum. Use clay masks 1-2x weekly. Avoid over-cleansing which can increase oil production.';
           },
           getIngredients: () => 'Niacinamide, Salicylic Acid, Kaolin Clay, Zinc, Tea Tree Oil, Witch Hazel, Green Tea Extract',
-          getUsage: () => 'Cleanse with foaming gel cleanser morning and night. Apply Niacinamide serum to T-zone after toning. Use oil-free gel moisturizer. Apply clay mask to oily areas 1-2x weekly for 10-15 mins. Blotting papers for midday touch-ups.'
+          getUsage: () => 'Cleanse with foaming gel cleanser morning and night. Apply Niacinamide serum to T-zone after toning. Use oil-free gel moisturizer. Apply clay mask to oily areas 1-2x weekly for 10-15 mins. Blotting papers for midday touch-ups.',
+          getProducts: () => [
+            { name: 'Oil-Control Cleanser', brands: 'CeraVe Foaming Facial Cleanser, La Roche-Posay Effaclar Purifying Gel, Fresh Soy Face Cleanser' },
+            { name: 'Niacinamide Serum', brands: 'The Ordinary Niacinamide 10% + Zinc 1%, Paula\'s Choice 10% Niacinamide Booster, Good Molecules Niacinamide Serum' },
+            { name: 'Clay Mask', brands: 'Aztec Secret Indian Healing Clay, Innisfree Super Volcanic Pore Clay Mask, Origins Clear Improvement Charcoal Mask' }
+          ]
         },
         pores: {
           name: 'Pores',
@@ -2945,7 +2993,12 @@
             return 'Use BHA (Salicylic Acid) to clean inside pores. Try Niacinamide to tighten appearance. Use non-comedogenic products and consider regular clay masks.';
           },
           getIngredients: () => 'Salicylic Acid (BHA), Niacinamide, Kaolin/Bentonite Clay, Retinol, Alpha Hydroxy Acids (AHA), Witch Hazel',
-          getUsage: () => 'Use BHA toner 2-3x/week at night. Apply to clean skin, wait 20 mins before next step. Use clay mask on nose/chin 1-2x weekly (15 mins max). Double cleanse at night with oil cleanser followed by water-based cleanser.'
+          getUsage: () => 'Use BHA toner 2-3x/week at night. Apply to clean skin, wait 20 mins before next step. Use clay mask on nose/chin 1-2x weekly (15 mins max). Double cleanse at night with oil cleanser followed by water-based cleanser.',
+          getProducts: () => [
+            { name: 'BHA Exfoliant', brands: 'Paula\'s Choice 2% BHA Liquid Exfoliant, COSRX BHA Blackhead Power Liquid, The Inkey List Beta Hydroxy Acid' },
+            { name: 'Pore-Minimizing Serum', brands: 'The Ordinary Niacinamide 10% + Zinc 1%, Benefit POREfessional Super Setter, Dr. Brandt Pores No More Primer' },
+            { name: 'Oil Cleanser', brands: 'DHC Deep Cleansing Oil, Banila Co Clean It Zero, Kose Softymo Speedy Cleansing Oil' }
+          ]
         },
         texture: {
           name: 'Skin Texture',
@@ -2962,7 +3015,12 @@
             return 'Incorporate AHA (Glycolic/Lactic Acid) for surface exfoliation. Use a gentle physical exfoliant 1-2x weekly. Retinol can help smooth texture over time.';
           },
           getIngredients: () => 'Glycolic Acid (AHA), Lactic Acid, Mandelic Acid, Retinol, Niacinamide, Polyhydroxy Acids (PHA), Enzyme Exfoliants',
-          getUsage: () => 'Use AHA exfoliant 2-3x/week at night on clean skin. Start with lower concentrations (5-8%) and increase gradually. Never use with retinol on same night. Follow with hydrating serum and moisturizer. Always use SPF next day.'
+          getUsage: () => 'Use AHA exfoliant 2-3x/week at night on clean skin. Start with lower concentrations (5-8%) and increase gradually. Never use with retinol on same night. Follow with hydrating serum and moisturizer. Always use SPF next day.',
+          getProducts: () => [
+            { name: 'AHA Exfoliating Toner', brands: 'Pixi Glow Tonic, The Ordinary Glycolic Acid 7% Toning Solution, Glow Recipe Watermelon Glow PHA+BHA Toner' },
+            { name: 'Resurfacing Serum', brands: 'Good Molecules Overnight Exfoliating Treatment, Sunday Riley Good Genes, Drunk Elephant T.L.C. Framboos Glycolic Night Serum' },
+            { name: 'Smoothing Moisturizer', brands: 'First Aid Beauty Ultra Repair Cream, CeraVe SA Cream for Rough & Bumpy Skin, AmLactin Daily Moisturizing Lotion' }
+          ]
         }
       };
     }
