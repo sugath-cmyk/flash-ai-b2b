@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.8.0 (Enhanced overlay system with ML region data)
+ * Version: 2.9.0 (Add heatmap gradients to zoomed problem regions)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.8.0 - Enhanced overlay system with ML region data');
+  console.log('[Flash AI Widget] Version 2.9.0 - Add heatmap gradients to zoomed problem regions');
 
   // ==========================================================================
   // Main Widget Class
@@ -2290,6 +2290,11 @@
       // Draw REAL markers from ML analysis data
       // Pass the source region bounds so we can transform coordinates
       const analysis = this.state.currentAnalysis || {};
+
+      // Draw heatmap gradient overlay for this issue type
+      this.drawZoomedHeatmap(ctx, canvas.width, canvas.height, issue, analysis);
+
+      // Draw issue-specific markers on top
       this.drawRealMarkers(ctx, canvas.width, canvas.height, issue, analysis, {
         srcX, srcY, srcW, srcH
       });
@@ -2305,6 +2310,102 @@
       ctx.strokeStyle = severityColors[issue.severity] || severityColors.moderate;
       ctx.lineWidth = 4;
       ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
+
+    drawZoomedHeatmap(ctx, width, height, issue, analysis) {
+      // Draw a gradient heatmap overlay based on issue type and severity
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.min(width, height) * 0.6;
+
+      // Get score for this issue
+      let score = 0;
+      let colorScheme = 'orange';
+
+      switch (issue.key) {
+        case 'oiliness':
+          score = analysis.oiliness_score || 0;
+          colorScheme = 'orange';
+          break;
+        case 'redness':
+          score = analysis.redness_score || 0;
+          colorScheme = 'red';
+          break;
+        case 'acne':
+          score = analysis.acne_score || 0;
+          colorScheme = 'yellow';
+          break;
+        case 'dark_circles':
+          score = analysis.dark_circles_score || 0;
+          colorScheme = 'purple';
+          break;
+        case 'pigmentation':
+          score = analysis.pigmentation_score || 0;
+          colorScheme = 'brown';
+          break;
+        case 'wrinkles':
+          score = analysis.wrinkle_score || 0;
+          colorScheme = 'orange';
+          break;
+        case 'pores':
+          score = (analysis.enlarged_pores_count || 0) * 5;
+          colorScheme = 'orange';
+          break;
+        case 'texture':
+          score = 100 - (analysis.texture_score || 70);
+          colorScheme = 'orange';
+          break;
+        case 'hydration':
+          score = 100 - (analysis.hydration_score || 65);
+          colorScheme = 'blue';
+          break;
+        default:
+          return; // No heatmap for unknown issues
+      }
+
+      // Only draw if score is significant
+      if (score < 15) return;
+
+      const intensity = Math.min(0.5, score / 150);
+
+      // Color schemes for different issue types
+      const schemes = {
+        orange: {
+          inner: `rgba(251, 191, 36, ${intensity})`,
+          outer: `rgba(245, 158, 11, ${intensity * 0.3})`
+        },
+        yellow: {
+          inner: `rgba(254, 240, 138, ${intensity})`,
+          outer: `rgba(250, 204, 21, ${intensity * 0.3})`
+        },
+        red: {
+          inner: `rgba(252, 165, 165, ${intensity})`,
+          outer: `rgba(248, 113, 113, ${intensity * 0.3})`
+        },
+        purple: {
+          inner: `rgba(196, 181, 253, ${intensity})`,
+          outer: `rgba(139, 92, 246, ${intensity * 0.3})`
+        },
+        brown: {
+          inner: `rgba(180, 130, 100, ${intensity})`,
+          outer: `rgba(120, 80, 50, ${intensity * 0.3})`
+        },
+        blue: {
+          inner: `rgba(147, 197, 253, ${intensity})`,
+          outer: `rgba(59, 130, 246, ${intensity * 0.3})`
+        }
+      };
+
+      const colors = schemes[colorScheme] || schemes.orange;
+
+      // Draw radial gradient heatmap
+      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      gradient.addColorStop(0, colors.inner);
+      gradient.addColorStop(0.7, colors.outer);
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
     }
 
     drawRealMarkers(ctx, width, height, issue, analysis, srcBounds) {
