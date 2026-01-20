@@ -1,6 +1,6 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.12.0 (Show skin tone with undertone and color swatch)
+ * Version: 2.13.0 (Indian brands + Landing page)
  *
  * Embeddable widget for virtual try-on and face scan functionality
  *
@@ -12,7 +12,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.12.0 - Show skin tone with undertone and color swatch');
+  console.log('[Flash AI Widget] Version 2.13.0 - Indian brands + Landing page');
 
   // ==========================================================================
   // Main Widget Class
