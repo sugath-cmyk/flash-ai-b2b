@@ -1166,9 +1166,9 @@
         const data = await response.json();
 
         if (data.success) {
-          this.state.authToken = data.data.token;
+          this.state.authToken = data.data.accessToken;
           this.state.user = data.data.user;
-          localStorage.setItem('flashai_auth_token', data.data.token);
+          localStorage.setItem('flashai_auth_token', data.data.accessToken);
           localStorage.setItem('flashai_user', JSON.stringify(data.data.user));
           this.updateAuthUI();
           this.hideAuthModal();
@@ -1176,7 +1176,7 @@
           this.linkVisitorScans();
         } else {
           if (errorEl) {
-            errorEl.textContent = data.message || 'Invalid credentials';
+            errorEl.textContent = data.error?.message || data.message || 'Invalid credentials';
             errorEl.style.display = 'block';
           }
         }
@@ -1230,15 +1230,15 @@
         const data = await response.json();
 
         if (data.success) {
-          this.state.authToken = data.data.token;
+          this.state.authToken = data.data.accessToken;
           this.state.user = data.data.user;
-          localStorage.setItem('flashai_auth_token', data.data.token);
+          localStorage.setItem('flashai_auth_token', data.data.accessToken);
           localStorage.setItem('flashai_user', JSON.stringify(data.data.user));
           this.updateAuthUI();
           this.hideAuthModal();
         } else {
           if (errorEl) {
-            errorEl.textContent = data.message || 'Registration failed';
+            errorEl.textContent = data.error?.message || data.message || 'Registration failed';
             errorEl.style.display = 'block';
           }
         }
