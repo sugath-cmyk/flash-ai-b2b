@@ -191,6 +191,11 @@ export class WidgetService {
 
   // Verify API key (for widget authentication)
   async verifyApiKey(apiKey: string): Promise<{ storeId: string; isValid: boolean }> {
+    // Allow demo API key for testing landing page
+    if (apiKey === 'demo-api-key') {
+      return { storeId: 'demo-store', isValid: true };
+    }
+
     const result = await pool.query(
       `SELECT store_id, is_active, expires_at
        FROM widget_api_keys
