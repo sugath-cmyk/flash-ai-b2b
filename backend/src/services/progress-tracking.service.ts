@@ -57,7 +57,7 @@ export class ProgressTrackingService {
     const result = await pool.query(
       `SELECT
         up.*,
-        fs.image_url
+        fs.front_image_url as image_url
        FROM user_progress up
        LEFT JOIN face_scans fs ON up.face_scan_id = fs.id
        WHERE up.user_id = $1
@@ -73,7 +73,7 @@ export class ProgressTrackingService {
     const result = await pool.query(
       `SELECT
         up.*,
-        fs.image_url
+        fs.front_image_url as image_url
        FROM user_progress up
        LEFT JOIN face_scans fs ON up.face_scan_id = fs.id
        WHERE up.user_id = $1
@@ -97,7 +97,7 @@ export class ProgressTrackingService {
     const snapshots = await pool.query(
       `SELECT
         up.*,
-        fs.image_url
+        fs.front_image_url as image_url
        FROM user_progress up
        LEFT JOIN face_scans fs ON up.face_scan_id = fs.id
        WHERE up.user_id = $1 AND up.face_scan_id IN ($2, $3)
@@ -140,7 +140,7 @@ export class ProgressTrackingService {
     const snapshots = await pool.query(
       `SELECT
         up.*,
-        fs.image_url
+        fs.front_image_url as image_url
        FROM user_progress up
        LEFT JOIN face_scans fs ON up.face_scan_id = fs.id
        WHERE up.user_id = $1
