@@ -14,15 +14,47 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'https://flash-ai-ml-infere
  * Handles face scanning, analysis, and product recommendations
  */
 
+// Demo store UUID - consistent ID for demo/test purposes
+const DEMO_STORE_UUID = '00000000-0000-0000-0000-000000000001';
+
+// Ensure demo store exists in database
+async function ensureDemoStoreExists() {
+  try {
+    // Check if demo store exists
+    const existing = await pool.query(
+      'SELECT id FROM stores WHERE id = $1',
+      [DEMO_STORE_UUID]
+    );
+
+    if (existing.rows.length === 0) {
+      // Create demo store with minimal required fields
+      await pool.query(
+        `INSERT INTO stores (id, user_id, name, domain, platform, created_at)
+         VALUES ($1, NULL, 'Demo Store', 'demo.flashai.com', 'demo', NOW())
+         ON CONFLICT (id) DO NOTHING`,
+        [DEMO_STORE_UUID]
+      );
+      console.log('[FaceScan] Created demo store:', DEMO_STORE_UUID);
+    }
+  } catch (error) {
+    console.error('[FaceScan] Error ensuring demo store exists:', error);
+  }
+}
+
 // Create face scan record
 export async function createFaceScan(data: {
   storeId: string;
   visitorId: string;
   status: string;
 }) {
-  // For demo stores, use NULL store_id since 'demo-store' isn't a valid UUID
+  // For demo stores, use a fixed demo store UUID
   const isDemoStore = data.storeId === 'demo-store' || data.storeId === 'demo' || data.storeId === 'test';
-  const storeIdValue = isDemoStore ? null : data.storeId;
+
+  if (isDemoStore) {
+    await ensureDemoStoreExists();
+  }
+
+  const storeIdValue = isDemoStore ? DEMO_STORE_UUID : data.storeId;
 
   const result = await pool.query(
     `INSERT INTO face_scans (store_id, visitor_id, status)
