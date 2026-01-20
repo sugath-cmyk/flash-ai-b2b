@@ -1180,14 +1180,6 @@
     </div>
   </footer>
 
-  <!-- Widget Modal -->
-  <div class="widget-modal" id="widget-modal">
-    <div class="widget-modal-content">
-      <button class="widget-modal-close" id="close-modal">×</button>
-      <div id="flashai-widget-container"></div>
-    </div>
-  </div>
-
   <!-- Flash AI Widget Script -->
   <script src="https://flash-ai-backend-rld7.onrender.com/vto/demo-store.js"></script>
 
@@ -1202,37 +1194,35 @@
       }
     });
 
-    // Widget Modal
-    const modal = document.getElementById('widget-modal');
+    // Launch widget directly when button is clicked
     const launchBtn = document.getElementById('launch-widget-btn');
-    const closeBtn = document.getElementById('close-modal');
 
     launchBtn.addEventListener('click', () => {
-      modal.classList.add('active');
-      // Trigger the widget to open in face scan mode
+      console.log('Launch button clicked');
+      console.log('FlashAI_VTO exists:', !!window.FlashAI_VTO);
+
       if (window.FlashAI_VTO) {
+        // Open widget directly to face scan
         window.FlashAI_VTO.open('facescan');
+      } else {
+        alert('Widget is loading, please try again in a moment.');
       }
     });
 
-    closeBtn.addEventListener('click', () => {
-      modal.classList.remove('active');
-      if (window.FlashAI_VTO) {
-        window.FlashAI_VTO.close();
-      }
-    });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active');
+    // Also add click handlers for hero CTA buttons
+    document.querySelectorAll('a[href="#try-it"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         if (window.FlashAI_VTO) {
-          window.FlashAI_VTO.close();
+          window.FlashAI_VTO.open('facescan');
+        } else {
+          document.getElementById('try-it').scrollIntoView({ behavior: 'smooth' });
         }
-      }
+      });
     });
 
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    // Smooth scroll for other anchor links
+    document.querySelectorAll('a[href^="#"]:not([href="#try-it"])').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
