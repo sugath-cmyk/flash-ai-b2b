@@ -1156,7 +1156,10 @@
       try {
         const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/login`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
           body: JSON.stringify({ email, password, storeId: this.config.storeId })
         });
 
@@ -1211,7 +1214,10 @@
       try {
         const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/register`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
           body: JSON.stringify({
             email,
             password,
