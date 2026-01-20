@@ -63,8 +63,8 @@ export const query = async (text: string, params?: any[]) => {
   }
 };
 
-// Auto-run pending migrations on startup
-export const runPendingMigrations = async () => {
+// Auto-run pending migrations on startup (called immediately)
+const runPendingMigrations = async () => {
   try {
     // Check if widget_users table exists
     const tableCheck = await pool.query(`
@@ -88,13 +88,7 @@ export const runPendingMigrations = async () => {
   }
 };
 
-// Run migrations after pool is ready
-pool.on('connect', async () => {
-  // Only run once
-  if (!(global as any).migrationsRun) {
-    (global as any).migrationsRun = true;
-    await runPendingMigrations();
-  }
-});
+// Run migrations immediately on module load
+runPendingMigrations().catch(console.error);
 
 export default pool;
