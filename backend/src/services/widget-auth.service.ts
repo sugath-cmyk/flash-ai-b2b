@@ -4,6 +4,9 @@ import crypto from 'crypto';
 import { pool } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 
+// Use existing store for demo/test - this store has working face scans
+const DEMO_FALLBACK_STORE_UUID = '62130715-ff42-4160-934e-c663fc1e7872';
+
 interface RegisterData {
   storeId: string;
   email?: string;
@@ -48,7 +51,11 @@ export class WidgetAuthService {
   private readonly JWT_REFRESH_EXPIRES_IN = '30d';
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    const { storeId, email, phone, password, firstName, lastName, visitorId } = data;
+    const { storeId: rawStoreId, email, phone, password, firstName, lastName, visitorId } = data;
+
+    // Handle demo stores - use fallback UUID for database foreign key
+    const isDemoStore = rawStoreId === 'demo-store' || rawStoreId === 'demo' || rawStoreId === 'test';
+    const storeId = isDemoStore ? DEMO_FALLBACK_STORE_UUID : rawStoreId;
 
     if (!email && !phone) {
       throw createError('Email or phone is required', 400);
@@ -119,7 +126,11 @@ export class WidgetAuthService {
   }
 
   async login(data: LoginData): Promise<AuthResponse> {
-    const { storeId, email, phone, password } = data;
+    const { storeId: rawStoreId, email, phone, password } = data;
+
+    // Handle demo stores
+    const isDemoStore = rawStoreId === 'demo-store' || rawStoreId === 'demo' || rawStoreId === 'test';
+    const storeId = isDemoStore ? DEMO_FALLBACK_STORE_UUID : rawStoreId;
 
     if (!email && !phone) {
       throw createError('Email or phone is required', 400);
