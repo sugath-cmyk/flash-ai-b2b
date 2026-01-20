@@ -184,6 +184,10 @@ safeLoadRoute('./routes/shopify.routes', '/api/shopify');
 safeLoadRoute('./routes/admin.routes', '/api/admin');
 safeLoadRoute('./routes/maintenance.routes', '/api/maintenance');
 
+// Widget user auth and progress routes (Phase 1 - Skincare Platform)
+safeLoadRoute('./routes/widget-auth.routes', '/api/widget/auth');
+safeLoadRoute('./routes/progress.routes', '/api/widget/progress');
+
 // Route status endpoint
 app.get('/routes-status', (req: Request, res: Response) => {
   res.json({
