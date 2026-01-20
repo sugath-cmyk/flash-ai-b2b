@@ -210,27 +210,41 @@ export class WidgetController {
         throw createError('Store ID is required', 400);
       }
 
-      // Check if VTO is enabled
-      const vtoEnabledResult = await widgetService.getVTOEnabled(storeId);
-      if (!vtoEnabledResult || !vtoEnabledResult.enabled) {
-        // Return empty script if VTO is disabled
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.send('// Flash AI VTO Widget: Virtual Try-On is disabled for this store');
-        return;
+      // Demo/test store bypass for landing page testing
+      const isDemoStore = storeId === 'demo-store' || storeId === 'demo' || storeId === 'test';
+
+      if (!isDemoStore) {
+        // Check if VTO is enabled for non-demo stores
+        const vtoEnabledResult = await widgetService.getVTOEnabled(storeId);
+        if (!vtoEnabledResult || !vtoEnabledResult.enabled) {
+          // Return empty script if VTO is disabled
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.send('// Flash AI VTO Widget: Virtual Try-On is disabled for this store');
+          return;
+        }
       }
 
-      // Get API key for this store
-      const apiKeys = await widgetService.getActiveApiKey(storeId);
+      // Get API key for this store (or use demo key for demo stores)
+      let apiKey = 'demo-api-key';
 
-      if (!apiKeys || apiKeys.length === 0) {
-        throw createError('No API key found for this store', 404);
+      if (!isDemoStore) {
+        const apiKeys = await widgetService.getActiveApiKey(storeId);
+        if (!apiKeys || apiKeys.length === 0) {
+          throw createError('No API key found for this store', 404);
+        }
+        apiKey = apiKeys[0].api_key;
       }
 
-      const apiKey = apiKeys[0].api_key;
-
-      // Get VTO settings
-      const vtoSettings = await widgetService.getVTOSettings(storeId);
+      // Get VTO settings (use defaults for demo stores)
+      let vtoSettings = null;
+      if (!isDemoStore) {
+        try {
+          vtoSettings = await widgetService.getVTOSettings(storeId);
+        } catch (e) {
+          console.log('Using default VTO settings for store:', storeId);
+        }
+      }
 
       // Read VTO widget file (from dist/widget after build copies it)
       const vtoWidgetPath = path.join(__dirname, '../widget/vto-widget.js');
