@@ -161,6 +161,31 @@
       this.showStep('selection');
     }
 
+    // API method for external use - can specify mode directly
+    open(mode) {
+      // Create modal if it doesn't exist
+      if (!this.elements.modal) {
+        this.createModal();
+      }
+
+      this.elements.modal.style.display = 'flex';
+      document.body.style.overflow = '';
+
+      // Go directly to specified mode or show selection
+      if (mode === 'facescan') {
+        this.showStep('facescan');
+      } else if (mode === 'tryon') {
+        this.showStep('scanning');
+      } else {
+        this.showStep('selection');
+      }
+    }
+
+    // API method for external use
+    close() {
+      this.closeModal();
+    }
+
     closeModal() {
       if (this.elements.modal) {
         this.elements.modal.style.display = 'none';
