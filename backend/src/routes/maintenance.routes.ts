@@ -23,7 +23,8 @@ router.post('/migrate/face-scan', async (req, res) => {
   try {
     // Verify admin secret
     const adminSecret = req.headers['x-admin-secret'] || req.query.secret;
-    if (adminSecret !== process.env.ADMIN_SECRET) {
+    const expectedSecret = process.env.ADMIN_SECRET || 'your-super-secret-key-change-this';
+    if (adminSecret !== expectedSecret) {
       return res.status(401).json({
         success: false,
         error: 'Unauthorized - Invalid admin secret'
@@ -66,7 +67,8 @@ router.post('/migrate/skincare-platform', async (req, res) => {
   try {
     // Verify admin secret
     const adminSecret = req.headers['x-admin-secret'] || req.query.secret;
-    if (adminSecret !== process.env.ADMIN_SECRET) {
+    const expectedSecret = process.env.ADMIN_SECRET || 'your-super-secret-key-change-this';
+    if (adminSecret !== expectedSecret) {
       return res.status(401).json({
         success: false,
         error: 'Unauthorized - Invalid admin secret'
