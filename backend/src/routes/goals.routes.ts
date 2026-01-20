@@ -13,11 +13,17 @@ router.get('/suggestions', authenticateWidgetUser, goalsController.getSuggestion
 // POST /api/widget/goals - Create a new goal (protected)
 router.post('/', authenticateWidgetUser, goalsController.createGoal.bind(goalsController));
 
+// POST /api/widget/goals/from-scan - Auto-create goals from face scan (protected)
+router.post('/from-scan', authenticateWidgetUser, goalsController.createFromScan.bind(goalsController));
+
 // GET /api/widget/goals - Get user's goals (protected)
 router.get('/', authenticateWidgetUser, goalsController.getUserGoals.bind(goalsController));
 
 // GET /api/widget/goals/:goalId - Get specific goal (protected)
 router.get('/:goalId', authenticateWidgetUser, goalsController.getGoalById.bind(goalsController));
+
+// GET /api/widget/goals/:goalId/monthly - Get monthly progress for goal (protected)
+router.get('/:goalId/monthly', authenticateWidgetUser, goalsController.getMonthlyProgress.bind(goalsController));
 
 // PATCH /api/widget/goals/:goalId/status - Update goal status (protected)
 router.patch('/:goalId/status', authenticateWidgetUser, goalsController.updateGoalStatus.bind(goalsController));

@@ -364,6 +364,138 @@ export class GoalService {
       completedAt: row.completed_at,
     };
   }
+
+  /**
+   * Auto-create goals based on face scan analysis
+   * Creates up to 3 priority goals based on detected concerns
+   */
+  async createGoalsFromScan(userId: string, storeId: string): Promise<UserGoal[]> {
+    // Get user's latest face scan analysis
+    const scanResult = await pool.query(
+      `SELECT fa.* FROM face_analysis fa
+       JOIN face_scans fs ON fa.scan_id = fs.id
+       JOIN widget_users wu ON (fs.visitor_id = wu.visitor_id OR fs.user_id = $1::text)
+       WHERE wu.id = $1
+       ORDER BY fa.created_at DESC
+       LIMIT 1`,
+      [userId]
+    );
+
+    if (scanResult.rows.length === 0) {
+      throw createError('No face scan found. Please complete a face scan first.', 404);
+    }
+
+    const analysis = scanResult.rows[0];
+
+    // Map concerns to templates
+    const concernToTemplate: Record<string, { metric: string; threshold: number }> = {
+      'clear_acne': { metric: 'acne_score', threshold: 30 },
+      'reduce_wrinkles': { metric: 'wrinkle_score', threshold: 30 },
+      'improve_hydration': { metric: 'hydration_score', threshold: 70 },
+      'even_tone': { metric: 'pigmentation_score', threshold: 30 },
+      'smooth_texture': { metric: 'texture_score', threshold: 70 },
+      'reduce_redness': { metric: 'redness_score', threshold: 30 },
+      'control_oil': { metric: 'oiliness_score', threshold: 30 },
+    };
+
+    // Identify concerns that need attention
+    const priorities: { type: string; severity: number }[] = [];
+
+    // Lower is better for these
+    if ((analysis.acne_score || 0) > 30) {
+      priorities.push({ type: 'clear_acne', severity: analysis.acne_score });
+    }
+    if ((analysis.wrinkle_score || 0) > 30) {
+      priorities.push({ type: 'reduce_wrinkles', severity: analysis.wrinkle_score });
+    }
+    if ((analysis.pigmentation_score || 0) > 30) {
+      priorities.push({ type: 'even_tone', severity: analysis.pigmentation_score });
+    }
+    if ((analysis.redness_score || 0) > 30) {
+      priorities.push({ type: 'reduce_redness', severity: analysis.redness_score });
+    }
+    if ((analysis.oiliness_score || 0) > 50) {
+      priorities.push({ type: 'control_oil', severity: analysis.oiliness_score });
+    }
+
+    // Higher is better for these - low values = concern
+    if ((analysis.hydration_score || 100) < 60) {
+      priorities.push({ type: 'improve_hydration', severity: 100 - (analysis.hydration_score || 0) });
+    }
+    if ((analysis.texture_score || 100) < 60) {
+      priorities.push({ type: 'smooth_texture', severity: 100 - (analysis.texture_score || 0) });
+    }
+
+    // Sort by severity (most severe first)
+    priorities.sort((a, b) => b.severity - a.severity);
+
+    // Get existing active goals for this user
+    const existingGoals = await pool.query(
+      `SELECT goal_type FROM user_goals WHERE user_id = $1 AND status = 'active'`,
+      [userId]
+    );
+    const existingTypes = new Set(existingGoals.rows.map((r: any) => r.goal_type));
+
+    // Create up to 3 goals (skip if user already has that goal)
+    const createdGoals: UserGoal[] = [];
+    const templates = await this.getTemplates();
+
+    for (const priority of priorities.slice(0, 3)) {
+      if (existingTypes.has(priority.type)) continue;
+
+      const template = templates.find(t => t.goalType === priority.type);
+      if (!template) continue;
+
+      try {
+        const goal = await this.createGoal({
+          userId,
+          storeId,
+          templateId: template.id,
+        });
+        createdGoals.push(goal);
+        existingTypes.add(priority.type);
+      } catch (error) {
+        console.error(`Error creating goal ${priority.type}:`, error);
+      }
+    }
+
+    return createdGoals;
+  }
+
+  /**
+   * Get monthly progress breakdown for a goal
+   */
+  async getGoalMonthlyProgress(goalId: string, userId: string): Promise<any[]> {
+    const goal = await this.getGoalById(goalId, userId);
+    if (!goal) {
+      throw createError('Goal not found', 404);
+    }
+
+    const metricColumn = this.getMetricColumn(goal.targetMetric);
+
+    // Get monthly snapshots since goal creation
+    const result = await pool.query(
+      `SELECT
+        DATE_TRUNC('month', snapshot_date) as month,
+        AVG(${metricColumn}) as avg_value,
+        MIN(${metricColumn}) as min_value,
+        MAX(${metricColumn}) as max_value,
+        COUNT(*) as scan_count
+       FROM user_progress
+       WHERE user_id = $1 AND snapshot_date >= $2
+       GROUP BY DATE_TRUNC('month', snapshot_date)
+       ORDER BY month ASC`,
+      [userId, goal.startDate]
+    );
+
+    return result.rows.map((row: any) => ({
+      month: row.month,
+      avgValue: Math.round(row.avg_value),
+      minValue: row.min_value,
+      maxValue: row.max_value,
+      scanCount: parseInt(row.scan_count),
+    }));
+  }
 }
 
 export default new GoalService();

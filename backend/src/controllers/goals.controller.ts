@@ -145,6 +145,53 @@ class GoalsController {
       next(error);
     }
   }
+
+  /**
+   * Auto-create goals based on user's face scan analysis
+   * POST /api/widget/goals/from-scan
+   */
+  async createFromScan(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.widgetUser) {
+        throw createError('Not authenticated', 401);
+      }
+
+      const goals = await goalService.createGoalsFromScan(
+        req.widgetUser.id,
+        req.widgetUser.storeId
+      );
+
+      res.status(201).json({
+        success: true,
+        data: { goals },
+        message: `Created ${goals.length} goal${goals.length !== 1 ? 's' : ''} based on your skin analysis`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get monthly progress for a specific goal
+   * GET /api/widget/goals/:goalId/monthly
+   */
+  async getMonthlyProgress(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.widgetUser) {
+        throw createError('Not authenticated', 401);
+      }
+
+      const { goalId } = req.params;
+      const monthlyProgress = await goalService.getGoalMonthlyProgress(goalId, req.widgetUser.id);
+
+      res.json({
+        success: true,
+        data: { monthlyProgress },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new GoalsController();

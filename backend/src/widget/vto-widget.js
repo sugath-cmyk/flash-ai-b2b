@@ -565,14 +565,14 @@
                 <button class="flashai-vto-tab active" data-tab="analysis" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid #8b5cf6;color:#8b5cf6;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
                   <span style="display:block;">📊</span>Analysis
                 </button>
-                <button class="flashai-vto-tab" data-tab="progress" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
-                  <span style="display:block;">📈</span>Progress
-                </button>
                 <button class="flashai-vto-tab" data-tab="goals" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
                   <span style="display:block;">🎯</span>Goals
                 </button>
                 <button class="flashai-vto-tab" data-tab="routine" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
                   <span style="display:block;">✨</span>Routine
+                </button>
+                <button class="flashai-vto-tab" data-tab="progress" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
+                  <span style="display:block;">📈</span>Progress
                 </button>
                 <button class="flashai-vto-tab" data-tab="predictions" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
                   <span style="display:block;">🔮</span>Predict
@@ -707,6 +707,19 @@
                   </div>
                   <!-- Goals Content -->
                   <div id="flashai-vto-goals-content" style="display:none;">
+                    <!-- Auto-Set Goals Banner -->
+                    <div id="flashai-vto-auto-goals-banner" style="margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);border-radius:12px;border:1px solid #86efac;">
+                      <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="font-size:28px;">🎯</div>
+                        <div style="flex:1;">
+                          <h4 style="font-size:14px;font-weight:700;color:#166534;margin:0 0 4px;">Auto-Set Goals from Your Scan</h4>
+                          <p style="font-size:12px;color:#15803d;margin:0;">We'll create personalized goals based on your skin analysis</p>
+                        </div>
+                        <button id="flashai-vto-auto-goals-btn" style="padding:10px 16px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+                          Set Goals
+                        </button>
+                      </div>
+                    </div>
                     <!-- Active Goals -->
                     <div style="margin-bottom:20px;">
                       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -719,7 +732,7 @@
                     </div>
                     <!-- Goal Templates -->
                     <div style="padding:16px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
-                      <h4 style="font-size:13px;font-weight:600;color:#71717a;margin:0 0 12px;">Suggested Goals</h4>
+                      <h4 style="font-size:13px;font-weight:600;color:#71717a;margin:0 0 12px;">Choose a Goal</h4>
                       <div id="flashai-vto-goal-templates" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
                         <!-- Populated dynamically -->
                       </div>
@@ -1031,6 +1044,10 @@
       // ========== NEW: Goals Events ==========
       modal.querySelector('#flashai-vto-add-goal')?.addEventListener('click', () => {
         this.showAddGoalModal();
+      });
+
+      modal.querySelector('#flashai-vto-auto-goals-btn')?.addEventListener('click', () => {
+        this.autoSetGoalsFromScan();
       });
 
       // ========== NEW: Prediction Timeframe ==========
@@ -1479,13 +1496,14 @@
       container.innerHTML = goals.map(goal => {
         const progress = Math.min(100, Math.max(0, goal.progress_percent || 0));
         const statusColor = goal.status === 'completed' ? '#16a34a' : goal.status === 'active' ? '#8b5cf6' : '#71717a';
+        const weeksLeft = goal.target_date ? Math.max(0, Math.ceil((new Date(goal.target_date) - new Date()) / (7 * 24 * 60 * 60 * 1000))) : null;
 
         return `
-          <div style="padding:16px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;">
+          <div class="flashai-goal-card" data-goal-id="${goal.id}" style="padding:16px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
               <div>
                 <h5 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 4px;">${goal.name || goal.goal_type}</h5>
-                <p style="font-size:11px;color:#71717a;margin:0;">${goal.target_date ? `Target: ${new Date(goal.target_date).toLocaleDateString()}` : ''}</p>
+                <p style="font-size:11px;color:#71717a;margin:0;">${weeksLeft !== null ? `${weeksLeft} week${weeksLeft !== 1 ? 's' : ''} remaining` : ''}</p>
               </div>
               <span style="padding:4px 10px;background:${statusColor}20;color:${statusColor};font-size:10px;font-weight:600;border-radius:12px;text-transform:capitalize;">${goal.status}</span>
             </div>
@@ -1497,18 +1515,140 @@
               <span style="font-size:11px;font-weight:600;color:#8b5cf6;">${progress}%</span>
               <span style="font-size:11px;color:#71717a;">Target: ${goal.target_value || 100}</span>
             </div>
+            <button class="flashai-goal-monthly-btn" data-goal-id="${goal.id}" style="margin-top:10px;padding:8px 12px;background:#f5f3ff;border:1px solid #e9d5ff;border-radius:8px;font-size:11px;font-weight:600;color:#7c3aed;cursor:pointer;width:100%;text-align:center;">
+              📊 View Monthly Progress
+            </button>
           </div>
         `;
       }).join('');
+
+      // Add click handlers for monthly progress buttons
+      container.querySelectorAll('.flashai-goal-monthly-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const goalId = btn.dataset.goalId;
+          this.showMonthlyProgress(goalId);
+        });
+      });
+    }
+
+    /**
+     * Show monthly progress modal for a specific goal
+     */
+    async showMonthlyProgress(goalId) {
+      if (!this.state.authToken) return;
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}/${goalId}/monthly`, {
+          headers: {
+            'Authorization': `Bearer ${this.state.authToken}`,
+            'X-API-Key': this.config.apiKey
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          this.renderMonthlyProgressModal(data.data.monthlyProgress, goalId);
+        } else {
+          console.error('Error fetching monthly progress:', data.message);
+        }
+      } catch (error) {
+        console.error('Error loading monthly progress:', error);
+      }
+    }
+
+    renderMonthlyProgressModal(progress, goalId) {
+      // Remove existing modal if any
+      const existingModal = document.getElementById('flashai-monthly-progress-modal');
+      if (existingModal) existingModal.remove();
+
+      const months = progress || [];
+
+      const modal = document.createElement('div');
+      modal.id = 'flashai-monthly-progress-modal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100001;';
+
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;max-width:400px;width:90%;max-height:80vh;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+          <div style="padding:20px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <h3 style="margin:0;font-size:18px;font-weight:700;">📊 Monthly Progress</h3>
+              <button id="flashai-close-monthly-modal" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;">&times;</button>
+            </div>
+          </div>
+          <div style="padding:20px;overflow-y:auto;max-height:60vh;">
+            ${months.length === 0 ? `
+              <div style="text-align:center;padding:30px;color:#71717a;">
+                <div style="font-size:40px;margin-bottom:12px;">📅</div>
+                <p style="font-size:14px;">No monthly data yet.</p>
+                <p style="font-size:12px;">Keep scanning to track your progress over time!</p>
+              </div>
+            ` : `
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                ${months.map((m, i) => {
+                  const change = m.change || 0;
+                  const changeColor = change > 0 ? '#16a34a' : change < 0 ? '#dc2626' : '#71717a';
+                  const changeIcon = change > 0 ? '↑' : change < 0 ? '↓' : '→';
+                  const isLatest = i === 0;
+
+                  return `
+                    <div style="padding:16px;background:${isLatest ? 'linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%)' : '#f9fafb'};border:1px solid ${isLatest ? '#e9d5ff' : '#e4e4e7'};border-radius:12px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:14px;font-weight:600;color:#18181b;">${m.month || 'Month ' + (months.length - i)}</span>
+                        ${isLatest ? '<span style="padding:2px 8px;background:#8b5cf6;color:#fff;font-size:10px;border-radius:10px;">Current</span>' : ''}
+                      </div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                          <span style="font-size:24px;font-weight:700;color:#8b5cf6;">${m.value || 0}</span>
+                          <span style="font-size:12px;color:#71717a;margin-left:4px;">score</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:4px;color:${changeColor};font-weight:600;font-size:13px;">
+                          <span>${changeIcon}</span>
+                          <span>${Math.abs(change)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Close handlers
+      modal.querySelector('#flashai-close-monthly-modal').addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
     }
 
     renderGoalTemplates(templates, container) {
       if (!container || !templates) return;
 
-      container.innerHTML = templates.map(t => `
+      // Deduplicate by name
+      const uniqueTemplates = [];
+      const seen = new Set();
+      for (const t of templates) {
+        if (!seen.has(t.name)) {
+          seen.add(t.name);
+          uniqueTemplates.push(t);
+        }
+      }
+
+      const icons = {
+        'Clear Acne': '✨', 'Reduce Wrinkles': '🕐', 'Hydrate Skin': '💧',
+        'Even Skin Tone': '☀️', 'Smooth Texture': '🪶', 'Reduce Redness': '❤️', 'Control Oil': '🛡️'
+      };
+
+      container.innerHTML = uniqueTemplates.map(t => `
         <button class="flashai-goal-template" data-template-id="${t.id}" style="padding:12px;background:#fff;border:1px solid #e4e4e7;border-radius:10px;text-align:left;cursor:pointer;transition:all 0.2s;">
-          <div style="font-size:13px;font-weight:600;color:#18181b;margin-bottom:4px;">${t.name}</div>
-          <div style="font-size:10px;color:#71717a;">${t.typical_duration_weeks} weeks</div>
+          <div style="font-size:16px;margin-bottom:4px;">${icons[t.name] || '🎯'}</div>
+          <div style="font-size:12px;font-weight:600;color:#18181b;margin-bottom:2px;">${t.name}</div>
+          <div style="font-size:10px;color:#71717a;">${t.typicalDurationWeeks || 8} weeks</div>
         </button>
       `).join('');
 
@@ -1546,6 +1686,78 @@
     showAddGoalModal() {
       // For now, just show the templates section more prominently
       alert('Select a goal template below to get started!');
+    }
+
+    /**
+     * Auto-create goals based on user's face scan analysis
+     */
+    async autoSetGoalsFromScan() {
+      if (!this.state.authToken) {
+        alert('Please sign in to set goals');
+        return;
+      }
+
+      const btn = document.getElementById('flashai-vto-auto-goals-btn');
+      const originalText = btn?.innerHTML || 'Set Goals';
+
+      try {
+        // Show loading state
+        if (btn) {
+          btn.innerHTML = '<span style="display:inline-block;animation:flashai-spin 1s linear infinite;">⏳</span> Creating...';
+          btn.disabled = true;
+        }
+
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}/from-scan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.state.authToken}`,
+            'X-API-Key': this.config.apiKey
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const count = data.data?.goals?.length || 0;
+
+          // Show success message
+          if (btn) {
+            btn.innerHTML = `✅ ${count} Goal${count !== 1 ? 's' : ''} Created!`;
+            btn.style.background = 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)';
+          }
+
+          // Refresh goals list
+          await this.loadGoalsData();
+
+          // Hide banner after success (optional - keep it visible for re-use)
+          setTimeout(() => {
+            const banner = document.getElementById('flashai-vto-auto-goals-banner');
+            if (banner && count > 0) {
+              banner.style.display = 'none';
+            } else if (btn) {
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+            }
+          }, 2000);
+        } else {
+          throw new Error(data.message || 'Failed to create goals');
+        }
+      } catch (error) {
+        console.error('Error auto-setting goals:', error);
+
+        // Show error message
+        if (btn) {
+          btn.innerHTML = '❌ ' + (error.message || 'Failed');
+          btn.style.background = '#dc2626';
+
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)';
+            btn.disabled = false;
+          }, 3000);
+        }
+      }
     }
 
     // ==========================================================================
