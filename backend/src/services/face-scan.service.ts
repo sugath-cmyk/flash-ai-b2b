@@ -20,11 +20,15 @@ export async function createFaceScan(data: {
   visitorId: string;
   status: string;
 }) {
+  // For demo stores, use NULL store_id since 'demo-store' isn't a valid UUID
+  const isDemoStore = data.storeId === 'demo-store' || data.storeId === 'demo' || data.storeId === 'test';
+  const storeIdValue = isDemoStore ? null : data.storeId;
+
   const result = await pool.query(
     `INSERT INTO face_scans (store_id, visitor_id, status)
      VALUES ($1, $2, $3)
      RETURNING *`,
-    [data.storeId, data.visitorId, data.status]
+    [storeIdValue, data.visitorId, data.status]
   );
   return result.rows[0];
 }

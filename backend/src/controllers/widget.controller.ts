@@ -253,6 +253,9 @@ export class WidgetController {
       // Get API base URL from environment
       const apiBaseUrl = process.env.API_BASE_URL || 'https://flash-ai-backend-rld7.onrender.com';
 
+      // For demo stores, use 'inline' mode to hide the floating button
+      const widgetMode = isDemoStore ? 'inline' : (vtoSettings?.vto_mode || 'floating');
+
       // Inject configuration at the top of the script
       const configScript = `
 // VTO Widget Configuration (Auto-injected by server)
@@ -264,7 +267,7 @@ export class WidgetController {
     primaryColor: '${vtoSettings?.vto_primary_color || '#8B5CF6'}',
     buttonPosition: '${vtoSettings?.vto_position || 'bottom-left'}',
     buttonText: '${vtoSettings?.vto_button_text || 'Try On'}',
-    mode: '${vtoSettings?.vto_mode || 'floating'}'
+    mode: '${widgetMode}'
   };
 })();
 
