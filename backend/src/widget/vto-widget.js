@@ -1,8 +1,9 @@
 /**
  * Flash AI Virtual Try-On & Face Scan Widget
- * Version: 2.13.0 (Indian brands + Landing page)
+ * Version: 3.0.0 (Full Skincare Platform)
  *
- * Embeddable widget for virtual try-on and face scan functionality
+ * Embeddable widget for virtual try-on, face scan, progress tracking,
+ * goal setting, personalized routines, and AI predictions.
  *
  * Usage:
  * <script src="https://your-domain.com/api/vto/YOUR_STORE_ID.js"></script>
@@ -12,7 +13,7 @@
   'use strict';
 
   // Version check for debugging
-  console.log('[Flash AI Widget] Version 2.13.0 - Indian brands + Landing page');
+  console.log('[Flash AI Widget] Version 3.0.0 - Full Skincare Platform');
 
   // ==========================================================================
   // Main Widget Class
@@ -39,6 +40,9 @@
         photos: [],
         cameraStream: null,
         visitorId: this.getOrCreateVisitorId(),
+        authToken: null,
+        user: null,
+        routines: null,
       };
 
       this.elements = {};
@@ -54,6 +58,9 @@
     init() {
       // Load styles
       this.injectStyles();
+
+      // Check for stored authentication
+      this.checkStoredAuth();
 
       // Initialize widget based on mode
       if (this.config.mode === 'floating' || this.config.mode === 'both') {
@@ -526,8 +533,8 @@
           <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
 
-              <!-- Header with Score -->
-              <div class="flashai-vto-results-header-row" style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(135deg,#fafafa 0%,#fff 100%);border-bottom:1px solid #e4e4e7;margin:-20px -20px 16px;">
+              <!-- Header with Score and User Account -->
+              <div class="flashai-vto-results-header-row" style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(135deg,#fafafa 0%,#fff 100%);border-bottom:1px solid #e4e4e7;margin:-20px -20px 0;">
                 <div class="flashai-vto-score-mini" style="position:relative;width:56px;height:56px;flex-shrink:0;">
                   <svg viewBox="0 0 80 80" class="flashai-vto-score-ring" style="width:100%;height:100%;">
                     <circle cx="40" cy="40" r="36" fill="none" stroke="#e5e7eb" stroke-width="6"></circle>
@@ -535,7 +542,7 @@
                   </svg>
                   <span id="flashai-vto-skin-score" class="flashai-vto-score-number" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:800;color:#18181b;">--</span>
                 </div>
-                <div class="flashai-vto-results-title">
+                <div class="flashai-vto-results-title" style="flex:1;">
                   <h2 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 4px;">Skin Analysis</h2>
                   <p style="font-size:12px;color:#71717a;margin:0;display:flex;align-items:center;gap:6px;">
                     Skin Tone:
@@ -543,7 +550,37 @@
                     <strong id="flashai-vto-skin-tone" style="color:#3f3f46;">--</strong>
                   </p>
                 </div>
+                <!-- User Account Button -->
+                <button id="flashai-vto-account-btn" style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(139,92,246,0.3);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span id="flashai-vto-account-text">Sign In</span>
+                </button>
               </div>
+
+              <!-- Navigation Tabs -->
+              <div class="flashai-vto-tabs" style="display:flex;gap:0;padding:0 16px;background:#fff;border-bottom:1px solid #e4e4e7;margin:0 -20px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <button class="flashai-vto-tab active" data-tab="analysis" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid #8b5cf6;color:#8b5cf6;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
+                  <span style="display:block;">📊</span>Analysis
+                </button>
+                <button class="flashai-vto-tab" data-tab="progress" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
+                  <span style="display:block;">📈</span>Progress
+                </button>
+                <button class="flashai-vto-tab" data-tab="goals" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
+                  <span style="display:block;">🎯</span>Goals
+                </button>
+                <button class="flashai-vto-tab" data-tab="routine" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
+                  <span style="display:block;">✨</span>Routine
+                </button>
+                <button class="flashai-vto-tab" data-tab="predictions" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
+                  <span style="display:block;">🔮</span>Predict
+                </button>
+              </div>
+
+              <!-- Tab Content: Analysis (Default) -->
+              <div id="flashai-vto-tab-analysis" class="flashai-vto-tab-content" style="display:block;">
 
               <!-- Face Image with Severity-Colored Pins -->
               <div class="flashai-vto-analysis-main" style="margin-bottom:20px;">
@@ -600,6 +637,182 @@
                   </span>
                 </div>
               </div>
+              </div><!-- End Tab: Analysis -->
+
+              <!-- Tab Content: Progress -->
+              <div id="flashai-vto-tab-progress" class="flashai-vto-tab-content" style="display:none;">
+                <div class="flashai-vto-progress-container" style="padding:0;">
+                  <!-- Login Prompt for non-authenticated users -->
+                  <div id="flashai-vto-progress-login-prompt" style="text-align:center;padding:40px 20px;">
+                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                      </svg>
+                    </div>
+                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Track Your Skin Journey</h3>
+                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Sign in to save your scans and track your progress over time</p>
+                    <button id="flashai-vto-progress-signin" style="padding:12px 32px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.3);transition:all 0.2s;">
+                      Sign In to Track Progress
+                    </button>
+                  </div>
+                  <!-- Progress Content (shown when logged in) -->
+                  <div id="flashai-vto-progress-content" style="display:none;">
+                    <!-- Timeline Chart -->
+                    <div style="margin-bottom:20px;padding:16px;background:#fff;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                        <span>📈</span> Skin Score Over Time
+                      </h4>
+                      <div id="flashai-vto-score-chart" style="height:150px;background:linear-gradient(180deg,#f5f3ff 0%,#fff 100%);border-radius:8px;display:flex;align-items:flex-end;justify-content:space-around;padding:16px 8px 8px;gap:4px;">
+                        <!-- Chart bars populated dynamically -->
+                        <div style="text-align:center;color:#71717a;font-size:12px;">Loading...</div>
+                      </div>
+                    </div>
+                    <!-- Recent Scans -->
+                    <div style="margin-bottom:20px;">
+                      <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0 0 12px;">Recent Scans</h4>
+                      <div id="flashai-vto-recent-scans" style="display:flex;flex-direction:column;gap:8px;">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+                    <!-- Milestones -->
+                    <div style="padding:16px;background:linear-gradient(135deg,#fef3c7 0%,#fff7ed 100%);border-radius:12px;border:1px solid #fed7aa;">
+                      <h4 style="font-size:14px;font-weight:700;color:#92400e;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                        <span>🏆</span> Milestones
+                      </h4>
+                      <div id="flashai-vto-milestones" style="display:flex;flex-direction:column;gap:8px;">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- End Tab: Progress -->
+
+              <!-- Tab Content: Goals -->
+              <div id="flashai-vto-tab-goals" class="flashai-vto-tab-content" style="display:none;">
+                <div class="flashai-vto-goals-container" style="padding:0;">
+                  <!-- Login Prompt -->
+                  <div id="flashai-vto-goals-login-prompt" style="text-align:center;padding:40px 20px;">
+                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="6"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                      </svg>
+                    </div>
+                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Set Your Skin Goals</h3>
+                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Create personalized goals and track your journey to better skin</p>
+                    <button id="flashai-vto-goals-signin" style="padding:12px 32px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(22,163,74,0.3);transition:all 0.2s;">
+                      Sign In to Set Goals
+                    </button>
+                  </div>
+                  <!-- Goals Content -->
+                  <div id="flashai-vto-goals-content" style="display:none;">
+                    <!-- Active Goals -->
+                    <div style="margin-bottom:20px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0;">My Goals</h4>
+                        <button id="flashai-vto-add-goal" style="padding:6px 12px;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:600;color:#3f3f46;cursor:pointer;">+ Add Goal</button>
+                      </div>
+                      <div id="flashai-vto-active-goals" style="display:flex;flex-direction:column;gap:12px;">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+                    <!-- Goal Templates -->
+                    <div style="padding:16px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#71717a;margin:0 0 12px;">Suggested Goals</h4>
+                      <div id="flashai-vto-goal-templates" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- End Tab: Goals -->
+
+              <!-- Tab Content: Routine -->
+              <div id="flashai-vto-tab-routine" class="flashai-vto-tab-content" style="display:none;">
+                <div class="flashai-vto-routine-container" style="padding:0;">
+                  <!-- Login Prompt -->
+                  <div id="flashai-vto-routine-login-prompt" style="text-align:center;padding:40px 20px;">
+                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                    </div>
+                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Your Personalized Routine</h3>
+                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Get a custom AM/PM skincare routine based on your analysis</p>
+                    <button id="flashai-vto-routine-signin" style="padding:12px 32px;background:linear-gradient(135deg,#db2777 0%,#be185d 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(219,39,119,0.3);transition:all 0.2s;">
+                      Sign In for Routine
+                    </button>
+                  </div>
+                  <!-- Routine Content -->
+                  <div id="flashai-vto-routine-content" style="display:none;">
+                    <!-- AM/PM Toggle -->
+                    <div style="display:flex;gap:0;margin-bottom:20px;background:#f4f4f5;border-radius:25px;padding:4px;">
+                      <button id="flashai-vto-routine-am" class="active" style="flex:1;padding:10px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:none;border-radius:22px;font-size:13px;font-weight:600;color:#92400e;cursor:pointer;transition:all 0.2s;">
+                        ☀️ Morning
+                      </button>
+                      <button id="flashai-vto-routine-pm" style="flex:1;padding:10px;background:transparent;border:none;border-radius:22px;font-size:13px;font-weight:600;color:#71717a;cursor:pointer;transition:all 0.2s;">
+                        🌙 Night
+                      </button>
+                    </div>
+                    <!-- Routine Steps -->
+                    <div id="flashai-vto-routine-steps" style="display:flex;flex-direction:column;gap:12px;">
+                      <!-- Populated dynamically -->
+                    </div>
+                    <!-- Generate Routine Button -->
+                    <button id="flashai-vto-generate-routine" style="width:100%;margin-top:20px;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                      </svg>
+                      Generate My Routine
+                    </button>
+                  </div>
+                </div>
+              </div><!-- End Tab: Routine -->
+
+              <!-- Tab Content: Predictions -->
+              <div id="flashai-vto-tab-predictions" class="flashai-vto-tab-content" style="display:none;">
+                <div class="flashai-vto-predictions-container" style="padding:0;">
+                  <!-- Login Prompt -->
+                  <div id="flashai-vto-predictions-login-prompt" style="text-align:center;padding:40px 20px;">
+                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16V12"></path>
+                        <path d="M12 8h.01"></path>
+                      </svg>
+                    </div>
+                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">See Your Future Skin</h3>
+                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Get AI predictions on how your skin will improve over time</p>
+                    <button id="flashai-vto-predictions-signin" style="padding:12px 32px;background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(79,70,229,0.3);transition:all 0.2s;">
+                      Sign In to See Predictions
+                    </button>
+                  </div>
+                  <!-- Predictions Content -->
+                  <div id="flashai-vto-predictions-content" style="display:none;">
+                    <!-- Timeframe Selector -->
+                    <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;">
+                      <button class="flashai-vto-timeframe active" data-weeks="4" style="padding:8px 16px;background:#8b5cf6;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">4 Weeks</button>
+                      <button class="flashai-vto-timeframe" data-weeks="8" style="padding:8px 16px;background:#f4f4f5;color:#71717a;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">8 Weeks</button>
+                      <button class="flashai-vto-timeframe" data-weeks="12" style="padding:8px 16px;background:#f4f4f5;color:#71717a;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">12 Weeks</button>
+                    </div>
+                    <!-- Predicted Improvements -->
+                    <div style="margin-bottom:20px;">
+                      <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0 0 12px;">Predicted Improvements</h4>
+                      <div id="flashai-vto-prediction-bars" style="display:flex;flex-direction:column;gap:12px;">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+                    <!-- Confidence Note -->
+                    <div style="padding:12px 16px;background:#f9fafb;border-radius:8px;border:1px solid #e4e4e7;">
+                      <p style="font-size:11px;color:#71717a;margin:0;line-height:1.5;">
+                        <strong>Note:</strong> Predictions are based on your current routine adherence and similar user outcomes. Actual results may vary based on consistency and individual factors.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- End Tab: Predictions -->
 
               <!-- Hidden elements for backward compatibility -->
               <div style="display:none;">
@@ -618,6 +831,59 @@
                 <div id="flashai-vto-detail-score"></div>
               </div>
 
+            </div>
+          </div>
+
+          <!-- Auth Modal -->
+          <div id="flashai-vto-auth-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10001;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+              <button id="flashai-vto-auth-close" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;color:#71717a;cursor:pointer;">&times;</button>
+
+              <!-- Auth Tabs -->
+              <div style="display:flex;gap:0;margin-bottom:24px;background:#f4f4f5;border-radius:25px;padding:4px;">
+                <button id="flashai-vto-auth-signin-tab" class="active" style="flex:1;padding:10px;background:#fff;border:none;border-radius:22px;font-size:13px;font-weight:600;color:#18181b;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);">Sign In</button>
+                <button id="flashai-vto-auth-signup-tab" style="flex:1;padding:10px;background:transparent;border:none;border-radius:22px;font-size:13px;font-weight:600;color:#71717a;cursor:pointer;">Sign Up</button>
+              </div>
+
+              <!-- Sign In Form -->
+              <div id="flashai-vto-signin-form">
+                <div style="margin-bottom:16px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Email</label>
+                  <input id="flashai-vto-signin-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:20px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Password</label>
+                  <input id="flashai-vto-signin-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <button id="flashai-vto-signin-submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                  Sign In
+                </button>
+                <div id="flashai-vto-signin-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
+              </div>
+
+              <!-- Sign Up Form -->
+              <div id="flashai-vto-signup-form" style="display:none;">
+                <div style="margin-bottom:16px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">First Name</label>
+                  <input id="flashai-vto-signup-name" type="text" placeholder="Your name" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:16px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Email</label>
+                  <input id="flashai-vto-signup-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:20px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Password</label>
+                  <input id="flashai-vto-signup-password" type="password" placeholder="At least 6 characters" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <button id="flashai-vto-signup-submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                  Create Account
+                </button>
+                <div id="flashai-vto-signup-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
+              </div>
+
+              <p style="margin-top:20px;font-size:11px;color:#a1a1aa;text-align:center;line-height:1.5;">
+                By continuing, you agree to our Terms of Service and Privacy Policy
+              </p>
             </div>
           </div>
 
@@ -703,6 +969,770 @@
         this.analyzeFaceScan();
       });
 
+      // ========== NEW: Tab Navigation ==========
+      modal.querySelectorAll('.flashai-vto-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          const tabName = e.currentTarget.dataset.tab;
+          this.switchTab(tabName);
+        });
+      });
+
+      // ========== NEW: Account Button ==========
+      modal.querySelector('#flashai-vto-account-btn').addEventListener('click', () => {
+        if (this.state.authToken) {
+          this.showAccountMenu();
+        } else {
+          this.showAuthModal();
+        }
+      });
+
+      // ========== NEW: Auth Modal Events ==========
+      modal.querySelector('#flashai-vto-auth-close')?.addEventListener('click', () => {
+        this.hideAuthModal();
+      });
+
+      modal.querySelector('#flashai-vto-auth-signin-tab')?.addEventListener('click', () => {
+        this.showSignInForm();
+      });
+
+      modal.querySelector('#flashai-vto-auth-signup-tab')?.addEventListener('click', () => {
+        this.showSignUpForm();
+      });
+
+      modal.querySelector('#flashai-vto-signin-submit')?.addEventListener('click', () => {
+        this.handleSignIn();
+      });
+
+      modal.querySelector('#flashai-vto-signup-submit')?.addEventListener('click', () => {
+        this.handleSignUp();
+      });
+
+      // ========== NEW: Sign In prompts in tabs ==========
+      ['progress', 'goals', 'routine', 'predictions'].forEach(tab => {
+        const btn = modal.querySelector(`#flashai-vto-${tab}-signin`);
+        if (btn) {
+          btn.addEventListener('click', () => this.showAuthModal());
+        }
+      });
+
+      // ========== NEW: Routine AM/PM Toggle ==========
+      modal.querySelector('#flashai-vto-routine-am')?.addEventListener('click', () => {
+        this.switchRoutineTime('am');
+      });
+
+      modal.querySelector('#flashai-vto-routine-pm')?.addEventListener('click', () => {
+        this.switchRoutineTime('pm');
+      });
+
+      modal.querySelector('#flashai-vto-generate-routine')?.addEventListener('click', () => {
+        this.generateRoutine();
+      });
+
+      // ========== NEW: Goals Events ==========
+      modal.querySelector('#flashai-vto-add-goal')?.addEventListener('click', () => {
+        this.showAddGoalModal();
+      });
+
+      // ========== NEW: Prediction Timeframe ==========
+      modal.querySelectorAll('.flashai-vto-timeframe').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const weeks = parseInt(e.currentTarget.dataset.weeks);
+          this.loadPredictions(weeks);
+        });
+      });
+    }
+
+    // ==========================================================================
+    // NEW: Tab Management
+    // ==========================================================================
+
+    switchTab(tabName) {
+      const modal = this.elements.modal;
+
+      // Update tab buttons
+      modal.querySelectorAll('.flashai-vto-tab').forEach(tab => {
+        if (tab.dataset.tab === tabName) {
+          tab.classList.add('active');
+          tab.style.borderBottomColor = '#8b5cf6';
+          tab.style.color = '#8b5cf6';
+        } else {
+          tab.classList.remove('active');
+          tab.style.borderBottomColor = 'transparent';
+          tab.style.color = '#71717a';
+        }
+      });
+
+      // Show/hide tab content
+      modal.querySelectorAll('.flashai-vto-tab-content').forEach(content => {
+        content.style.display = 'none';
+      });
+
+      const tabContent = document.getElementById(`flashai-vto-tab-${tabName}`);
+      if (tabContent) {
+        tabContent.style.display = 'block';
+      }
+
+      // Load data for authenticated tabs
+      if (this.state.authToken) {
+        if (tabName === 'progress') this.loadProgressData();
+        else if (tabName === 'goals') this.loadGoalsData();
+        else if (tabName === 'routine') this.loadRoutineData();
+        else if (tabName === 'predictions') this.loadPredictions(8);
+      }
+    }
+
+    // ==========================================================================
+    // NEW: Authentication
+    // ==========================================================================
+
+    showAuthModal() {
+      const authModal = document.getElementById('flashai-vto-auth-modal');
+      if (authModal) {
+        authModal.style.display = 'flex';
+        this.showSignInForm();
+      }
+    }
+
+    hideAuthModal() {
+      const authModal = document.getElementById('flashai-vto-auth-modal');
+      if (authModal) {
+        authModal.style.display = 'none';
+      }
+    }
+
+    showSignInForm() {
+      const signinForm = document.getElementById('flashai-vto-signin-form');
+      const signupForm = document.getElementById('flashai-vto-signup-form');
+      const signinTab = document.getElementById('flashai-vto-auth-signin-tab');
+      const signupTab = document.getElementById('flashai-vto-auth-signup-tab');
+
+      if (signinForm) signinForm.style.display = 'block';
+      if (signupForm) signupForm.style.display = 'none';
+      if (signinTab) {
+        signinTab.style.background = '#fff';
+        signinTab.style.color = '#18181b';
+        signinTab.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      }
+      if (signupTab) {
+        signupTab.style.background = 'transparent';
+        signupTab.style.color = '#71717a';
+        signupTab.style.boxShadow = 'none';
+      }
+    }
+
+    showSignUpForm() {
+      const signinForm = document.getElementById('flashai-vto-signin-form');
+      const signupForm = document.getElementById('flashai-vto-signup-form');
+      const signinTab = document.getElementById('flashai-vto-auth-signin-tab');
+      const signupTab = document.getElementById('flashai-vto-auth-signup-tab');
+
+      if (signinForm) signinForm.style.display = 'none';
+      if (signupForm) signupForm.style.display = 'block';
+      if (signupTab) {
+        signupTab.style.background = '#fff';
+        signupTab.style.color = '#18181b';
+        signupTab.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      }
+      if (signinTab) {
+        signinTab.style.background = 'transparent';
+        signinTab.style.color = '#71717a';
+        signinTab.style.boxShadow = 'none';
+      }
+    }
+
+    async handleSignIn() {
+      const email = document.getElementById('flashai-vto-signin-email')?.value;
+      const password = document.getElementById('flashai-vto-signin-password')?.value;
+      const errorEl = document.getElementById('flashai-vto-signin-error');
+
+      if (!email || !password) {
+        if (errorEl) {
+          errorEl.textContent = 'Please enter email and password';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, storeId: this.config.storeId })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          this.state.authToken = data.data.token;
+          this.state.user = data.data.user;
+          localStorage.setItem('flashai_auth_token', data.data.token);
+          localStorage.setItem('flashai_user', JSON.stringify(data.data.user));
+          this.updateAuthUI();
+          this.hideAuthModal();
+          // Link visitor scans to user
+          this.linkVisitorScans();
+        } else {
+          if (errorEl) {
+            errorEl.textContent = data.message || 'Invalid credentials';
+            errorEl.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Sign in error:', error);
+        if (errorEl) {
+          errorEl.textContent = 'Connection error. Please try again.';
+          errorEl.style.display = 'block';
+        }
+      }
+    }
+
+    async handleSignUp() {
+      const name = document.getElementById('flashai-vto-signup-name')?.value;
+      const email = document.getElementById('flashai-vto-signup-email')?.value;
+      const password = document.getElementById('flashai-vto-signup-password')?.value;
+      const errorEl = document.getElementById('flashai-vto-signup-error');
+
+      if (!name || !email || !password) {
+        if (errorEl) {
+          errorEl.textContent = 'Please fill in all fields';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      if (password.length < 6) {
+        if (errorEl) {
+          errorEl.textContent = 'Password must be at least 6 characters';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            firstName: name,
+            storeId: this.config.storeId,
+            visitorId: this.state.visitorId
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          this.state.authToken = data.data.token;
+          this.state.user = data.data.user;
+          localStorage.setItem('flashai_auth_token', data.data.token);
+          localStorage.setItem('flashai_user', JSON.stringify(data.data.user));
+          this.updateAuthUI();
+          this.hideAuthModal();
+        } else {
+          if (errorEl) {
+            errorEl.textContent = data.message || 'Registration failed';
+            errorEl.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Sign up error:', error);
+        if (errorEl) {
+          errorEl.textContent = 'Connection error. Please try again.';
+          errorEl.style.display = 'block';
+        }
+      }
+    }
+
+    async linkVisitorScans() {
+      if (!this.state.authToken || !this.state.visitorId) return;
+
+      try {
+        await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/link-visitor`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.state.authToken}`
+          },
+          body: JSON.stringify({ visitorId: this.state.visitorId })
+        });
+      } catch (error) {
+        console.error('Error linking visitor scans:', error);
+      }
+    }
+
+    updateAuthUI() {
+      const accountBtn = document.getElementById('flashai-vto-account-btn');
+      const accountText = document.getElementById('flashai-vto-account-text');
+
+      if (this.state.authToken && this.state.user) {
+        if (accountText) {
+          accountText.textContent = this.state.user.firstName || 'Account';
+        }
+
+        // Show content, hide login prompts
+        ['progress', 'goals', 'routine', 'predictions'].forEach(tab => {
+          const loginPrompt = document.getElementById(`flashai-vto-${tab}-login-prompt`);
+          const content = document.getElementById(`flashai-vto-${tab}-content`);
+          if (loginPrompt) loginPrompt.style.display = 'none';
+          if (content) content.style.display = 'block';
+        });
+      } else {
+        if (accountText) {
+          accountText.textContent = 'Sign In';
+        }
+
+        // Show login prompts, hide content
+        ['progress', 'goals', 'routine', 'predictions'].forEach(tab => {
+          const loginPrompt = document.getElementById(`flashai-vto-${tab}-login-prompt`);
+          const content = document.getElementById(`flashai-vto-${tab}-content`);
+          if (loginPrompt) loginPrompt.style.display = 'block';
+          if (content) content.style.display = 'none';
+        });
+      }
+    }
+
+    showAccountMenu() {
+      // Simple logout for now
+      if (confirm('Do you want to sign out?')) {
+        this.state.authToken = null;
+        this.state.user = null;
+        localStorage.removeItem('flashai_auth_token');
+        localStorage.removeItem('flashai_user');
+        this.updateAuthUI();
+      }
+    }
+
+    checkStoredAuth() {
+      const token = localStorage.getItem('flashai_auth_token');
+      const user = localStorage.getItem('flashai_user');
+
+      if (token && user) {
+        this.state.authToken = token;
+        this.state.user = JSON.parse(user);
+        this.updateAuthUI();
+      }
+    }
+
+    // ==========================================================================
+    // NEW: Progress Data
+    // ==========================================================================
+
+    async loadProgressData() {
+      if (!this.state.authToken) return;
+
+      const chartContainer = document.getElementById('flashai-vto-score-chart');
+      const scansContainer = document.getElementById('flashai-vto-recent-scans');
+      const milestonesContainer = document.getElementById('flashai-vto-milestones');
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/progress')}/timeline?days=90`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data.timeline) {
+          this.renderProgressChart(data.data.timeline, chartContainer);
+          this.renderRecentScans(data.data.timeline.slice(0, 5), scansContainer);
+        }
+
+        // Load milestones
+        const milestonesRes = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/progress')}/milestones`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const milestonesData = await milestonesRes.json();
+        if (milestonesData.success) {
+          this.renderMilestones(milestonesData.data.milestones, milestonesContainer);
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
+        if (chartContainer) {
+          chartContainer.innerHTML = '<div style="text-align:center;color:#71717a;font-size:12px;padding:20px;">Unable to load progress data</div>';
+        }
+      }
+    }
+
+    renderProgressChart(timeline, container) {
+      if (!container || !timeline || timeline.length === 0) {
+        if (container) {
+          container.innerHTML = '<div style="text-align:center;color:#71717a;font-size:12px;padding:40px 20px;">Complete more scans to see your progress chart</div>';
+        }
+        return;
+      }
+
+      const maxScore = Math.max(...timeline.map(t => t.skin_score || 0), 100);
+      const barWidth = Math.max(20, Math.min(40, (container.clientWidth - 40) / timeline.length - 4));
+
+      container.innerHTML = timeline.slice(-10).map((item, i) => {
+        const score = item.skin_score || 0;
+        const height = Math.max(10, (score / maxScore) * 100);
+        const date = new Date(item.snapshot_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        return `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="font-size:10px;font-weight:600;color:#8b5cf6;">${score}</div>
+            <div style="width:${barWidth}px;height:${height}px;background:linear-gradient(180deg,#8b5cf6 0%,#a78bfa 100%);border-radius:4px 4px 0 0;transition:height 0.3s;"></div>
+            <div style="font-size:9px;color:#a1a1aa;">${date}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderRecentScans(scans, container) {
+      if (!container) return;
+
+      if (!scans || scans.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#71717a;font-size:12px;padding:20px;">No scans yet</div>';
+        return;
+      }
+
+      container.innerHTML = scans.map(scan => {
+        const date = new Date(scan.snapshot_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const score = scan.skin_score || '--';
+        const change = scan.changes?.skin_score || 0;
+        const changeColor = change > 0 ? '#16a34a' : change < 0 ? '#dc2626' : '#71717a';
+        const changeIcon = change > 0 ? '↑' : change < 0 ? '↓' : '→';
+
+        return `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:1px solid #e4e4e7;border-radius:10px;">
+            <div style="width:40px;height:40px;background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#8b5cf6;">${score}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;color:#18181b;">${date}</div>
+              <div style="font-size:11px;color:${changeColor};font-weight:500;">${changeIcon} ${Math.abs(change)} points</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderMilestones(milestones, container) {
+      if (!container) return;
+
+      if (!milestones || milestones.length === 0) {
+        container.innerHTML = '<div style="font-size:12px;color:#78350f;">Keep scanning to unlock milestones!</div>';
+        return;
+      }
+
+      container.innerHTML = milestones.map(m => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff;border-radius:8px;">
+          <span style="font-size:20px;">${m.achieved_at ? '🏆' : '🔒'}</span>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;color:#92400e;">${m.title}</div>
+            <div style="font-size:10px;color:#a16207;">${m.description}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ==========================================================================
+    // NEW: Goals Data
+    // ==========================================================================
+
+    async loadGoalsData() {
+      if (!this.state.authToken) return;
+
+      const goalsContainer = document.getElementById('flashai-vto-active-goals');
+      const templatesContainer = document.getElementById('flashai-vto-goal-templates');
+
+      try {
+        // Load user goals
+        const goalsRes = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const goalsData = await goalsRes.json();
+        if (goalsData.success) {
+          this.renderGoals(goalsData.data.goals, goalsContainer);
+        }
+
+        // Load templates
+        const templatesRes = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}/templates`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const templatesData = await templatesRes.json();
+        if (templatesData.success) {
+          this.renderGoalTemplates(templatesData.data.templates, templatesContainer);
+        }
+      } catch (error) {
+        console.error('Error loading goals:', error);
+      }
+    }
+
+    renderGoals(goals, container) {
+      if (!container) return;
+
+      if (!goals || goals.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#71717a;font-size:13px;">No goals yet. Add a goal to get started!</div>';
+        return;
+      }
+
+      container.innerHTML = goals.map(goal => {
+        const progress = Math.min(100, Math.max(0, goal.progress_percent || 0));
+        const statusColor = goal.status === 'completed' ? '#16a34a' : goal.status === 'active' ? '#8b5cf6' : '#71717a';
+
+        return `
+          <div style="padding:16px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+              <div>
+                <h5 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 4px;">${goal.name || goal.goal_type}</h5>
+                <p style="font-size:11px;color:#71717a;margin:0;">${goal.target_date ? `Target: ${new Date(goal.target_date).toLocaleDateString()}` : ''}</p>
+              </div>
+              <span style="padding:4px 10px;background:${statusColor}20;color:${statusColor};font-size:10px;font-weight:600;border-radius:12px;text-transform:capitalize;">${goal.status}</span>
+            </div>
+            <div style="background:#f4f4f5;border-radius:6px;height:8px;overflow:hidden;">
+              <div style="width:${progress}%;height:100%;background:linear-gradient(90deg,#8b5cf6 0%,#7c3aed 100%);border-radius:6px;transition:width 0.3s;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px;">
+              <span style="font-size:11px;color:#71717a;">Current: ${goal.current_value || 0}</span>
+              <span style="font-size:11px;font-weight:600;color:#8b5cf6;">${progress}%</span>
+              <span style="font-size:11px;color:#71717a;">Target: ${goal.target_value || 100}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderGoalTemplates(templates, container) {
+      if (!container || !templates) return;
+
+      container.innerHTML = templates.map(t => `
+        <button class="flashai-goal-template" data-template-id="${t.id}" style="padding:12px;background:#fff;border:1px solid #e4e4e7;border-radius:10px;text-align:left;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:13px;font-weight:600;color:#18181b;margin-bottom:4px;">${t.name}</div>
+          <div style="font-size:10px;color:#71717a;">${t.typical_duration_weeks} weeks</div>
+        </button>
+      `).join('');
+
+      // Add click handlers
+      container.querySelectorAll('.flashai-goal-template').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const templateId = btn.dataset.templateId;
+          this.createGoalFromTemplate(templateId);
+        });
+      });
+    }
+
+    async createGoalFromTemplate(templateId) {
+      if (!this.state.authToken) return;
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.state.authToken}`
+          },
+          body: JSON.stringify({ templateId })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          this.loadGoalsData();
+        }
+      } catch (error) {
+        console.error('Error creating goal:', error);
+      }
+    }
+
+    showAddGoalModal() {
+      // For now, just show the templates section more prominently
+      alert('Select a goal template below to get started!');
+    }
+
+    // ==========================================================================
+    // NEW: Routine Data
+    // ==========================================================================
+
+    async loadRoutineData() {
+      if (!this.state.authToken) return;
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const data = await response.json();
+        if (data.success && data.data.routines) {
+          this.state.routines = data.data.routines;
+          this.renderRoutine('am');
+        } else {
+          this.renderEmptyRoutine();
+        }
+      } catch (error) {
+        console.error('Error loading routines:', error);
+        this.renderEmptyRoutine();
+      }
+    }
+
+    switchRoutineTime(time) {
+      const amBtn = document.getElementById('flashai-vto-routine-am');
+      const pmBtn = document.getElementById('flashai-vto-routine-pm');
+
+      if (time === 'am') {
+        amBtn.style.background = 'linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)';
+        amBtn.style.color = '#92400e';
+        pmBtn.style.background = 'transparent';
+        pmBtn.style.color = '#71717a';
+      } else {
+        pmBtn.style.background = 'linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%)';
+        pmBtn.style.color = '#4338ca';
+        amBtn.style.background = 'transparent';
+        amBtn.style.color = '#71717a';
+      }
+
+      this.renderRoutine(time);
+    }
+
+    renderRoutine(time) {
+      const container = document.getElementById('flashai-vto-routine-steps');
+      if (!container) return;
+
+      const routine = this.state.routines?.find(r => r.routine_type === time);
+
+      if (!routine || !routine.steps || routine.steps.length === 0) {
+        this.renderEmptyRoutine();
+        return;
+      }
+
+      container.innerHTML = routine.steps.map((step, i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;">
+          <div style="width:32px;height:32px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;">${i + 1}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:#18181b;text-transform:capitalize;">${step.step_type.replace(/_/g, ' ')}</div>
+            ${step.instructions ? `<div style="font-size:11px;color:#71717a;margin-top:2px;">${step.instructions}</div>` : ''}
+          </div>
+          <button class="flashai-routine-check" data-step-id="${step.id}" style="width:28px;height:28px;background:#f4f4f5;border:2px solid #e4e4e7;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    renderEmptyRoutine() {
+      const container = document.getElementById('flashai-vto-routine-steps');
+      if (!container) return;
+
+      container.innerHTML = `
+        <div style="text-align:center;padding:30px 20px;color:#71717a;">
+          <div style="font-size:32px;margin-bottom:12px;">✨</div>
+          <div style="font-size:14px;font-weight:500;">No routine yet</div>
+          <div style="font-size:12px;margin-top:4px;">Click "Generate My Routine" to get started</div>
+        </div>
+      `;
+    }
+
+    async generateRoutine() {
+      if (!this.state.authToken) return;
+
+      const btn = document.getElementById('flashai-vto-generate-routine');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:flashai-spin 1s linear infinite;"></div> Generating...';
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.state.authToken}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          this.loadRoutineData();
+        }
+      } catch (error) {
+        console.error('Error generating routine:', error);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path></svg> Generate My Routine';
+        }
+      }
+    }
+
+    // ==========================================================================
+    // NEW: Predictions
+    // ==========================================================================
+
+    async loadPredictions(weeks = 8) {
+      if (!this.state.authToken) return;
+
+      // Update timeframe buttons
+      document.querySelectorAll('.flashai-vto-timeframe').forEach(btn => {
+        if (parseInt(btn.dataset.weeks) === weeks) {
+          btn.style.background = '#8b5cf6';
+          btn.style.color = '#fff';
+        } else {
+          btn.style.background = '#f4f4f5';
+          btn.style.color = '#71717a';
+        }
+      });
+
+      const container = document.getElementById('flashai-vto-prediction-bars');
+      if (!container) return;
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/predictions')}/summary`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const data = await response.json();
+        if (data.success && data.data.metrics) {
+          this.renderPredictionBars(data.data.metrics, weeks, container);
+        } else {
+          container.innerHTML = '<div style="text-align:center;color:#71717a;font-size:12px;padding:20px;">Complete more scans to see predictions</div>';
+        }
+      } catch (error) {
+        console.error('Error loading predictions:', error);
+        container.innerHTML = '<div style="text-align:center;color:#71717a;font-size:12px;padding:20px;">Unable to load predictions</div>';
+      }
+    }
+
+    renderPredictionBars(metrics, weeks, container) {
+      if (!container) return;
+
+      const metricLabels = {
+        skin_score: { label: 'Overall Skin Health', icon: '✨' },
+        acne_score: { label: 'Acne Reduction', icon: '🎯' },
+        hydration_score: { label: 'Hydration Level', icon: '💧' },
+        wrinkle_score: { label: 'Fine Lines', icon: '🌟' },
+        pigmentation_score: { label: 'Even Skin Tone', icon: '🌈' }
+      };
+
+      container.innerHTML = Object.entries(metrics).map(([key, value]) => {
+        const meta = metricLabels[key] || { label: key, icon: '📊' };
+        const current = value.current || 50;
+        const predicted = Math.min(100, current + (value.improvement_rate || 2) * weeks);
+        const improvement = Math.round(predicted - current);
+
+        return `
+          <div style="padding:14px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px;">${meta.icon}</span>
+                <span style="font-size:13px;font-weight:600;color:#18181b;">${meta.label}</span>
+              </div>
+              <span style="padding:4px 10px;background:#dcfce7;color:#16a34a;font-size:11px;font-weight:600;border-radius:12px;">+${improvement}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:#71717a;width:40px;">${current}</span>
+              <div style="flex:1;background:#f4f4f5;border-radius:6px;height:10px;overflow:hidden;position:relative;">
+                <div style="width:${current}%;height:100%;background:#d1d5db;border-radius:6px;"></div>
+                <div style="position:absolute;top:0;left:0;width:${predicted}%;height:100%;background:linear-gradient(90deg,#8b5cf6 ${(current/predicted)*100}%,#22c55e 100%);border-radius:6px;opacity:0.8;"></div>
+              </div>
+              <span style="font-size:11px;font-weight:600;color:#16a34a;width:40px;text-align:right;">${Math.round(predicted)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // ==========================================================================
