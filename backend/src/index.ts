@@ -1,4 +1,7 @@
 // Startup diagnostic - MUST be first
+console.log('='.repeat(60));
+console.log('🚀 FLASH AI BACKEND v2.13.1 STARTING');
+console.log('='.repeat(60));
 console.log('🔧 Backend starting... Node:', process.version, 'PID:', process.pid);
 console.log('🔧 Working directory:', process.cwd());
 console.log('🔧 __dirname:', __dirname);
@@ -34,7 +37,7 @@ const PORT = process.env.PORT || 3000;
 // CRITICAL: Register basic endpoints BEFORE any other imports
 // These will work even if route imports fail
 app.get('/ping', (req: Request, res: Response) => {
-  res.send('pong-v2.13.0-static');
+  res.send('pong-v2.13.1-' + Date.now());
 });
 
 app.get('/health', (req: Request, res: Response) => {
