@@ -77,6 +77,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
+// Serve static files from public folder
+app.use(express.static(path.join(__dirname, 'public')));
+console.log('✅ Static files served from:', path.join(__dirname, 'public'));
+
 console.log('✅ Middleware configured');
 
 // Track which routes loaded successfully
