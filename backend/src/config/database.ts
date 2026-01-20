@@ -63,4 +63,38 @@ export const query = async (text: string, params?: any[]) => {
   }
 };
 
+// Auto-run pending migrations on startup
+export const runPendingMigrations = async () => {
+  try {
+    // Check if widget_users table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'widget_users'
+      )
+    `);
+
+    if (!tableCheck.rows[0].exists) {
+      console.log('📦 Running skincare platform migration...');
+      const { SKINCARE_PLATFORM_MIGRATION_SQL } = require('../migrations/skincare-platform-migration');
+      await pool.query(SKINCARE_PLATFORM_MIGRATION_SQL);
+      console.log('✅ Skincare platform migration completed');
+    } else {
+      console.log('✅ Skincare platform tables already exist');
+    }
+  } catch (error: any) {
+    console.error('⚠️ Migration check/run failed (non-fatal):', error.message);
+    // Don't crash the server - migrations can be run manually
+  }
+};
+
+// Run migrations after pool is ready
+pool.on('connect', async () => {
+  // Only run once
+  if (!(global as any).migrationsRun) {
+    (global as any).migrationsRun = true;
+    await runPendingMigrations();
+  }
+});
+
 export default pool;
