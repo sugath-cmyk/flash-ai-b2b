@@ -188,6 +188,22 @@ safeLoadRoute('./routes/maintenance.routes', '/api/maintenance');
 safeLoadRoute('./routes/widget-auth.routes', '/api/widget/auth');
 safeLoadRoute('./routes/progress.routes', '/api/widget/progress');
 
+// Goals and routines routes (Phase 2 - Skincare Platform)
+safeLoadRoute('./routes/goals.routes', '/api/widget/goals');
+safeLoadRoute('./routes/routines.routes', '/api/widget/routines');
+
+// Feedback and learning routes (Phase 3 - Skincare Platform)
+safeLoadRoute('./routes/feedback.routes', '/api/widget/feedback');
+
+// Safety checker routes (Phase 4 - Skincare Platform)
+safeLoadRoute('./routes/safety.routes', '/api/widget/safety');
+
+// Knowledge base routes (Phase 5 - Skincare Platform)
+safeLoadRoute('./routes/knowledge.routes', '/api/widget/knowledge');
+
+// Prediction and visualization routes (Phase 6 - Skincare Platform)
+safeLoadRoute('./routes/prediction.routes', '/api/widget/predictions');
+
 // Route status endpoint
 app.get('/routes-status', (req: Request, res: Response) => {
   res.json({

@@ -3,11 +3,13 @@ import { createError } from '../middleware/errorHandler';
 import Anthropic from '@anthropic-ai/sdk';
 import queryCategorizationService from './query-categorization.service';
 import queryCacheService from './query-cache.service';
+import skincareKnowledgeService from './skincare-knowledge.service';
 
 interface WidgetChatRequest {
   storeId: string;
   sessionId: string;
   visitorId?: string;
+  userId?: string; // Optional authenticated user ID for personalized context
   message: string;
   conversationId?: string;
   productContext?: {
@@ -104,11 +106,23 @@ export class WidgetChatService {
     // Get store context (products, info, etc.)
     const storeContext = await this.getStoreContext(storeId, productContext);
 
+    // Get user skin profile context if authenticated (Phase 5 enhancement)
+    const userContext = request.userId ? await this.getUserSkinContext(request.userId) : '';
+
+    // Get relevant knowledge base context (Phase 5 enhancement)
+    let knowledgeContext = '';
+    try {
+      const userConcerns = userContext ? this.extractConcernsFromContext(userContext) : [];
+      knowledgeContext = await skincareKnowledgeService.buildKnowledgeContext(message, userConcerns);
+    } catch (error) {
+      console.warn('Failed to fetch knowledge context:', error);
+    }
+
     // Get conversation history
     const history = await this.getConversationHistory(convId);
 
-    // Step 3: Generate AI response with store context
-    const aiResponse = await this.generateResponse(storeName, storeContext, history, message);
+    // Step 3: Generate AI response with store context + user context + knowledge
+    const aiResponse = await this.generateResponse(storeName, storeContext, history, message, userContext, knowledgeContext);
 
     // Step 4: Save AI response
     const cacheKey = queryCacheService.generateCacheKey(queryCacheService.normalizeQuery(message));
@@ -419,12 +433,168 @@ export class WidgetChatService {
     return context;
   }
 
-  private async generateResponse(storeName: string, storeContext: string, history: any[], newMessage: string): Promise<{ content: string; tokens: number }> {
+  /**
+   * Get user's skin profile context for personalized AI responses (Phase 5)
+   */
+  private async getUserSkinContext(userId: string): Promise<string> {
+    let context = '';
+
+    try {
+      // Get user's skin profile from widget_users
+      const userResult = await pool.query(
+        `SELECT skin_profile, preferences FROM widget_users WHERE id = $1`,
+        [userId]
+      );
+
+      if (userResult.rows.length > 0) {
+        const skinProfile = userResult.rows[0].skin_profile || {};
+        const preferences = userResult.rows[0].preferences || {};
+
+        if (Object.keys(skinProfile).length > 0) {
+          context += 'SKIN PROFILE:\n';
+          if (skinProfile.skinType) context += `• Skin Type: ${skinProfile.skinType}\n`;
+          if (skinProfile.concerns?.length) context += `• Primary Concerns: ${skinProfile.concerns.join(', ')}\n`;
+          if (skinProfile.sensitivity) context += `• Sensitivity Level: ${skinProfile.sensitivity}\n`;
+        }
+      }
+
+      // Get latest face scan results
+      const scanResult = await pool.query(
+        `SELECT analysis_results, created_at
+         FROM face_scans fs
+         JOIN widget_users wu ON (fs.visitor_id = wu.visitor_id OR fs.email = wu.email)
+         WHERE wu.id = $1
+         ORDER BY fs.created_at DESC
+         LIMIT 1`,
+        [userId]
+      );
+
+      if (scanResult.rows.length > 0) {
+        const analysis = scanResult.rows[0].analysis_results || {};
+        context += '\nLATEST SKIN ANALYSIS:\n';
+        if (analysis.skinType) context += `• Detected Skin Type: ${analysis.skinType}\n`;
+        if (analysis.primaryConcern) context += `• Primary Concern: ${analysis.primaryConcern}\n`;
+        if (analysis.skinScore) context += `• Overall Skin Score: ${analysis.skinScore}/100\n`;
+        if (analysis.hydrationLevel) context += `• Hydration: ${analysis.hydrationLevel}\n`;
+        if (analysis.concerns?.length) context += `• Detected Issues: ${analysis.concerns.slice(0, 5).join(', ')}\n`;
+      }
+
+      // Get active goals
+      const goalsResult = await pool.query(
+        `SELECT goal_name, goal_type, target_metric, progress_percent
+         FROM user_goals
+         WHERE user_id = $1 AND status = 'active'
+         ORDER BY created_at DESC
+         LIMIT 3`,
+        [userId]
+      );
+
+      if (goalsResult.rows.length > 0) {
+        context += '\nACTIVE SKINCARE GOALS:\n';
+        goalsResult.rows.forEach((goal: any) => {
+          context += `• ${goal.goal_name || goal.goal_type}: ${goal.progress_percent || 0}% progress\n`;
+        });
+      }
+
+      // Get safety preferences
+      const safetyResult = await pool.query(
+        `SELECT is_pregnant, is_breastfeeding, avoid_fragrance, sensitivity_level, skin_conditions
+         FROM user_safety_preferences
+         WHERE user_id = $1`,
+        [userId]
+      );
+
+      if (safetyResult.rows.length > 0) {
+        const safety = safetyResult.rows[0];
+        const warnings = [];
+        if (safety.is_pregnant) warnings.push('PREGNANT');
+        if (safety.is_breastfeeding) warnings.push('BREASTFEEDING');
+        if (safety.avoid_fragrance) warnings.push('Avoids fragrance');
+        if (safety.sensitivity_level === 'very_sensitive') warnings.push('Very sensitive skin');
+        if (safety.skin_conditions?.length) warnings.push(`Conditions: ${safety.skin_conditions.join(', ')}`);
+
+        if (warnings.length > 0) {
+          context += '\n⚠️ SAFETY CONSIDERATIONS:\n';
+          warnings.forEach(w => context += `• ${w}\n`);
+        }
+      }
+
+      // Get user allergens
+      const allergensResult = await pool.query(
+        `SELECT allergen_type, allergen_name, severity
+         FROM user_allergens
+         WHERE user_id = $1`,
+        [userId]
+      );
+
+      if (allergensResult.rows.length > 0) {
+        context += '\n🚫 ALLERGENS TO AVOID:\n';
+        allergensResult.rows.forEach((a: any) => {
+          context += `• ${a.allergen_name || a.allergen_type} (${a.severity})\n`;
+        });
+      }
+
+    } catch (error) {
+      console.warn('Failed to fetch user skin context:', error);
+    }
+
+    return context;
+  }
+
+  /**
+   * Extract concerns from user context for knowledge search (Phase 5)
+   */
+  private extractConcernsFromContext(userContext: string): string[] {
+    const concerns: string[] = [];
+    const concernPatterns = [
+      /concerns?:\s*([^.\n]+)/gi,
+      /primary concern:\s*([^.\n]+)/gi,
+      /detected issues?:\s*([^.\n]+)/gi,
+    ];
+
+    for (const pattern of concernPatterns) {
+      const matches = userContext.matchAll(pattern);
+      for (const match of matches) {
+        const found = match[1].split(/[,;]/).map(c => c.trim().toLowerCase());
+        concerns.push(...found);
+      }
+    }
+
+    return [...new Set(concerns)].slice(0, 5);
+  }
+
+  private async generateResponse(storeName: string, storeContext: string, history: any[], newMessage: string, userContext: string = '', knowledgeContext: string = ''): Promise<{ content: string; tokens: number }> {
     if (!this.anthropic) {
       throw createError('AI service not configured', 500);
     }
 
+    // Build personalized context section
+    const personalizedSection = userContext ? `
+═══════════════════════════════════════════════════════════
+👤 CUSTOMER SKIN PROFILE (Personalized Context)
+═══════════════════════════════════════════════════════════
+${userContext}
+
+IMPORTANT: Use this profile to personalize your recommendations!
+• Reference their skin type and concerns when suggesting products
+• Mention their goals if relevant to the conversation
+• If they have safety preferences (pregnant, allergies), respect them
+═══════════════════════════════════════════════════════════
+` : '';
+
+    // Build knowledge context section
+    const knowledgeSection = knowledgeContext ? `
+═══════════════════════════════════════════════════════════
+📚 SKINCARE KNOWLEDGE BASE
+═══════════════════════════════════════════════════════════
+${knowledgeContext}
+
+Use this knowledge to provide accurate, science-backed answers.
+═══════════════════════════════════════════════════════════
+` : '';
+
     const systemPrompt = `You are Flash AI ✨, a highly intelligent skincare & beauty advisor for ${storeName}. You combine deep ingredient knowledge, product expertise, and personalized guidance to help customers make confident purchase decisions.
+${personalizedSection}${knowledgeSection}
 
 ═══════════════════════════════════════════════════════════
 🚨🚨🚨 ABSOLUTE RULE #1 - NEVER USE COLONS WITH CATEGORIES 🚨🚨🚨
