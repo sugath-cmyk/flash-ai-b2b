@@ -34,17 +34,18 @@ const PORT = process.env.PORT || 3000;
 // CRITICAL: Register basic endpoints BEFORE any other imports
 // These will work even if route imports fail
 app.get('/ping', (req: Request, res: Response) => {
-  res.send('pong-v2.0.0');
+  res.send('pong-v2.13.0-static');
 });
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '2.0.0',
+    version: '2.13.0',
     node: process.version,
     env: process.env.NODE_ENV || 'development',
     dbConfigured: !!process.env.DATABASE_URL,
+    hasStaticFiles: true,
   });
 });
 
