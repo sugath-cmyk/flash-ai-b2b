@@ -715,16 +715,6 @@
                 </div>
               </div>
 
-              <!-- 12-Month Skincare Journey Timeline -->
-              <div class="flashai-vto-timeline" id="flashai-vto-timeline" style="margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:12px;border:1px solid #ddd6fe;">
-                <h3 style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#5b21b6;margin:0 0 12px;">
-                  <span style="font-size:18px;">📅</span> Your 12-Month Skincare Journey
-                </h3>
-                <div id="flashai-vto-timeline-content" style="display:flex;flex-direction:column;gap:10px;">
-                  <!-- Dynamically populated -->
-                </div>
-              </div>
-
               <!-- Healthcare Professional Recommendation -->
               <div class="flashai-vto-healthcare-notice" id="flashai-vto-healthcare-notice" style="display:none;margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#fef2f2 0%,#fff 100%);border-radius:12px;border:2px solid #fca5a5;">
                 <h3 style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#b91c1c;margin:0 0 8px;">
@@ -1085,6 +1075,16 @@
                           <div style="font-size:18px;font-weight:700;color:#16a34a;" id="flashai-cal-monthly">0%</div>
                           <div style="font-size:9px;color:#71717a;">This Month</div>
                         </div>
+                      </div>
+                    </div>
+
+                    <!-- 12-Month Skincare Journey Timeline -->
+                    <div class="flashai-vto-timeline" id="flashai-vto-timeline" style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:14px;border:1px solid #ddd6fe;">
+                      <h3 style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#5b21b6;margin:0 0 12px;">
+                        <span style="font-size:18px;">📅</span> Your 12-Month Skincare Journey
+                      </h3>
+                      <div id="flashai-vto-timeline-content" style="display:flex;flex-direction:column;gap:10px;">
+                        <!-- Dynamically populated -->
                       </div>
                     </div>
                   </div>
