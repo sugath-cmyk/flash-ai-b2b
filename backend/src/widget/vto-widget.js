@@ -735,49 +735,16 @@
               </div><!-- End Tab: Analysis -->
 
               <!-- Tab Content: Progress -->
+              <!-- Tab Content: Progress - Coming Soon -->
               <div id="flashai-vto-tab-progress" class="flashai-vto-tab-content" style="display:none;">
-                <div class="flashai-vto-progress-container" style="padding:0;">
-                  <!-- Login Prompt for non-authenticated users -->
-                  <div id="flashai-vto-progress-login-prompt" style="text-align:center;padding:40px 20px;">
-                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
-                      </svg>
+                <div style="padding:40px 20px;background:linear-gradient(135deg,#f9fafb 0%,#f4f4f5 100%);border-radius:14px;border:1px dashed #d4d4d8;margin:16px 0;">
+                  <div style="text-align:center;">
+                    <div style="width:64px;height:64px;margin:0 auto 16px;background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                      <span style="font-size:32px;">📈</span>
                     </div>
-                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Track Your Skin Journey</h3>
-                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Sign in to save your scans and track your progress over time</p>
-                    <button id="flashai-vto-progress-signin" style="padding:12px 32px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.3);transition:all 0.2s;">
-                      Sign In to Track Progress
-                    </button>
-                  </div>
-                  <!-- Progress Content (shown when logged in) -->
-                  <div id="flashai-vto-progress-content" style="display:none;">
-                    <!-- Timeline Chart -->
-                    <div style="margin-bottom:20px;padding:16px;background:#fff;border-radius:12px;border:1px solid #e4e4e7;">
-                      <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
-                        <span>📈</span> Skin Score Over Time
-                      </h4>
-                      <div id="flashai-vto-score-chart" style="height:150px;background:linear-gradient(180deg,#f5f3ff 0%,#fff 100%);border-radius:8px;display:flex;align-items:flex-end;justify-content:space-around;padding:16px 8px 8px;gap:4px;">
-                        <!-- Chart bars populated dynamically -->
-                        <div style="text-align:center;color:#71717a;font-size:12px;">Loading...</div>
-                      </div>
-                    </div>
-                    <!-- Recent Scans -->
-                    <div style="margin-bottom:20px;">
-                      <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0 0 12px;">Recent Scans</h4>
-                      <div id="flashai-vto-recent-scans" style="display:flex;flex-direction:column;gap:8px;">
-                        <!-- Populated dynamically -->
-                      </div>
-                    </div>
-                    <!-- Milestones -->
-                    <div style="padding:16px;background:linear-gradient(135deg,#fef3c7 0%,#fff7ed 100%);border-radius:12px;border:1px solid #fed7aa;">
-                      <h4 style="font-size:14px;font-weight:700;color:#92400e;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
-                        <span>🏆</span> Milestones
-                      </h4>
-                      <div id="flashai-vto-milestones" style="display:flex;flex-direction:column;gap:8px;">
-                        <!-- Populated dynamically -->
-                      </div>
-                    </div>
+                    <h3 style="font-size:18px;font-weight:700;color:#3f3f46;margin:0 0 8px;">Track Your Skin Journey</h3>
+                    <p style="font-size:13px;color:#71717a;margin:0 0 16px;line-height:1.5;">See your skin score history, recent scans, and milestones over time</p>
+                    <span style="display:inline-block;padding:8px 18px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border-radius:20px;font-size:12px;font-weight:600;">Coming Soon</span>
                   </div>
                 </div>
               </div><!-- End Tab: Progress -->
@@ -1039,44 +1006,16 @@
               </div><!-- End Tab: Routine -->
 
               <!-- Tab Content: Predictions -->
+              <!-- Tab Content: Predictions - Coming Soon -->
               <div id="flashai-vto-tab-predictions" class="flashai-vto-tab-content" style="display:none;">
-                <div class="flashai-vto-predictions-container" style="padding:0;">
-                  <!-- Login Prompt -->
-                  <div id="flashai-vto-predictions-login-prompt" style="text-align:center;padding:40px 20px;">
-                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 16V12"></path>
-                        <path d="M12 8h.01"></path>
-                      </svg>
+                <div style="padding:40px 20px;background:linear-gradient(135deg,#f9fafb 0%,#f4f4f5 100%);border-radius:14px;border:1px dashed #d4d4d8;margin:16px 0;">
+                  <div style="text-align:center;">
+                    <div style="width:64px;height:64px;margin:0 auto 16px;background:linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                      <span style="font-size:32px;">🔮</span>
                     </div>
-                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">See Your Future Skin</h3>
-                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Get AI predictions on how your skin will improve over time</p>
-                    <button id="flashai-vto-predictions-signin" style="padding:12px 32px;background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(79,70,229,0.3);transition:all 0.2s;">
-                      Sign In to See Predictions
-                    </button>
-                  </div>
-                  <!-- Predictions Content -->
-                  <div id="flashai-vto-predictions-content" style="display:none;">
-                    <!-- Timeframe Selector -->
-                    <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;">
-                      <button class="flashai-vto-timeframe active" data-weeks="4" style="padding:8px 16px;background:#8b5cf6;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">4 Weeks</button>
-                      <button class="flashai-vto-timeframe" data-weeks="8" style="padding:8px 16px;background:#f4f4f5;color:#71717a;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">8 Weeks</button>
-                      <button class="flashai-vto-timeframe" data-weeks="12" style="padding:8px 16px;background:#f4f4f5;color:#71717a;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">12 Weeks</button>
-                    </div>
-                    <!-- Predicted Improvements -->
-                    <div style="margin-bottom:20px;">
-                      <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0 0 12px;">Predicted Improvements</h4>
-                      <div id="flashai-vto-prediction-bars" style="display:flex;flex-direction:column;gap:12px;">
-                        <!-- Populated dynamically -->
-                      </div>
-                    </div>
-                    <!-- Confidence Note -->
-                    <div style="padding:12px 16px;background:#f9fafb;border-radius:8px;border:1px solid #e4e4e7;">
-                      <p style="font-size:11px;color:#71717a;margin:0;line-height:1.5;">
-                        <strong>Note:</strong> Predictions are based on your current routine adherence and similar user outcomes. Actual results may vary based on consistency and individual factors.
-                      </p>
-                    </div>
+                    <h3 style="font-size:18px;font-weight:700;color:#3f3f46;margin:0 0 8px;">See Your Future Skin</h3>
+                    <p style="font-size:13px;color:#71717a;margin:0 0 16px;line-height:1.5;">Get AI predictions on how your skin will improve at 4, 8, and 12 weeks</p>
+                    <span style="display:inline-block;padding:8px 18px;background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border-radius:20px;font-size:12px;font-weight:600;">Coming Soon</span>
                   </div>
                 </div>
               </div><!-- End Tab: Predictions -->
