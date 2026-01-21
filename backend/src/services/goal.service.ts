@@ -388,7 +388,7 @@ export class GoalService {
       `SELECT fa.* FROM face_analysis fa
        JOIN face_scans fs ON fa.face_scan_id = fs.id
        WHERE fs.visitor_id = $1 OR fs.user_id = $2
-       ORDER BY fa.created_at DESC
+       ORDER BY fs.created_at DESC
        LIMIT 1`,
       [visitorId, userId]
     );
