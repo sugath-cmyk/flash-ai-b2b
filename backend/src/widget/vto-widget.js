@@ -43,6 +43,15 @@
         authToken: null,
         user: null,
         routines: null,
+        // NEW: Skin context for improved accuracy
+        skinContext: {
+          freckles: null, // none | some | many
+          conditions: [], // rosacea, eczema, psoriasis, melasma
+          skinType: null, // dry | oily | combination | normal
+          sensitivity: null, // no | slightly | very
+        },
+        // NEW: Regional analysis grid (4x4 = 16 regions)
+        regionalAnalysis: null,
       };
 
       this.elements = {};
@@ -253,6 +262,92 @@
                 </div>
                 <h3 style="color: #6d28d9; font-weight: 700;">Find My Shade</h3>
                 <p style="color: #7c3aed;">AI skin analysis & product recommendations</p>
+              </button>
+            </div>
+          </div>
+
+          <!-- NEW: Skin Context Questionnaire (for better accuracy) -->
+          <div id="flashai-vto-step-skin-context" class="flashai-vto-step" style="display:none;">
+            <div class="flashai-vto-header">
+              <h2>Quick Skin Profile</h2>
+              <p>Help us analyze your skin more accurately (30 seconds)</p>
+            </div>
+
+            <div style="padding:0 20px;max-height:60vh;overflow-y:auto;">
+              <!-- Question 1: Freckles -->
+              <div style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                <h4 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                  <span>🌟</span> Do you have freckles?
+                </h4>
+                <div style="display:flex;gap:10px;">
+                  <button class="flashai-context-btn" data-question="freckles" data-value="none" style="flex:1;padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">No freckles</button>
+                  <button class="flashai-context-btn" data-question="freckles" data-value="some" style="flex:1;padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">Some freckles</button>
+                  <button class="flashai-context-btn" data-question="freckles" data-value="many" style="flex:1;padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">Many freckles</button>
+                </div>
+              </div>
+
+              <!-- Question 2: Known Conditions -->
+              <div style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                <h4 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                  <span>💊</span> Any known skin conditions?
+                </h4>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                  <button class="flashai-context-toggle" data-question="conditions" data-value="rosacea" style="padding:10px 16px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;">Rosacea</button>
+                  <button class="flashai-context-toggle" data-question="conditions" data-value="eczema" style="padding:10px 16px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;">Eczema</button>
+                  <button class="flashai-context-toggle" data-question="conditions" data-value="psoriasis" style="padding:10px 16px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;">Psoriasis</button>
+                  <button class="flashai-context-toggle" data-question="conditions" data-value="melasma" style="padding:10px 16px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;">Melasma</button>
+                  <button class="flashai-context-toggle" data-question="conditions" data-value="none" style="padding:10px 16px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;">None</button>
+                </div>
+              </div>
+
+              <!-- Question 3: Skin Type -->
+              <div style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                <h4 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                  <span>💧</span> How does your skin usually feel?
+                </h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <button class="flashai-context-btn" data-question="skintype" data-value="dry" style="padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+                    <span style="display:block;font-size:20px;margin-bottom:4px;">🏜️</span>Dry & Tight
+                  </button>
+                  <button class="flashai-context-btn" data-question="skintype" data-value="oily" style="padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+                    <span style="display:block;font-size:20px;margin-bottom:4px;">✨</span>Oily & Shiny
+                  </button>
+                  <button class="flashai-context-btn" data-question="skintype" data-value="combination" style="padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+                    <span style="display:block;font-size:20px;margin-bottom:4px;">⚖️</span>Combination
+                  </button>
+                  <button class="flashai-context-btn" data-question="skintype" data-value="normal" style="padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+                    <span style="display:block;font-size:20px;margin-bottom:4px;">👍</span>Normal
+                  </button>
+                </div>
+              </div>
+
+              <!-- Question 4: Sensitivity -->
+              <div style="margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                <h4 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                  <span>🌸</span> Is your skin sensitive?
+                </h4>
+                <div style="display:flex;gap:10px;">
+                  <button class="flashai-context-btn" data-question="sensitivity" data-value="no" style="flex:1;padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">Not sensitive</button>
+                  <button class="flashai-context-btn" data-question="sensitivity" data-value="slightly" style="flex:1;padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">Slightly</button>
+                  <button class="flashai-context-btn" data-question="sensitivity" data-value="very" style="flex:1;padding:12px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">Very sensitive</button>
+                </div>
+              </div>
+
+              <!-- Why we ask -->
+              <div style="padding:12px 16px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:10px;margin-bottom:20px;">
+                <p style="font-size:12px;color:#6b21a8;margin:0;display:flex;align-items:start;gap:8px;">
+                  <span>💡</span>
+                  <span>This helps us distinguish natural features (like freckles) from concerns, and provide more accurate analysis.</span>
+                </p>
+              </div>
+            </div>
+
+            <div style="padding:16px 20px;border-top:1px solid #e4e4e7;">
+              <button id="flashai-vto-context-continue" style="width:100%;padding:16px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.3);transition:all 0.2s;">
+                Continue to Scan →
+              </button>
+              <button id="flashai-vto-context-skip" style="width:100%;padding:12px;background:transparent;color:#71717a;border:none;font-size:13px;cursor:pointer;margin-top:8px;">
+                Skip for now
               </button>
             </div>
           </div>
@@ -980,6 +1075,80 @@
       });
 
       modal.querySelector('#flashai-vto-select-facescan').addEventListener('click', () => {
+        // Go to skin context questionnaire first for better accuracy
+        this.showStep('skin-context');
+      });
+
+      // ========== NEW: Skin Context Questionnaire ==========
+      // Single-select buttons (freckles, skintype, sensitivity)
+      modal.querySelectorAll('.flashai-context-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const question = e.currentTarget.dataset.question;
+          const value = e.currentTarget.dataset.value;
+
+          // Update state
+          this.state.skinContext[question] = value;
+
+          // Update UI - highlight selected
+          modal.querySelectorAll(`.flashai-context-btn[data-question="${question}"]`).forEach(b => {
+            b.style.background = '#fff';
+            b.style.borderColor = '#e4e4e7';
+            b.style.color = '#3f3f46';
+          });
+          e.currentTarget.style.background = 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)';
+          e.currentTarget.style.borderColor = '#8b5cf6';
+          e.currentTarget.style.color = '#6d28d9';
+        });
+      });
+
+      // Multi-select toggles (conditions)
+      modal.querySelectorAll('.flashai-context-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const value = e.currentTarget.dataset.value;
+          const conditions = this.state.skinContext.conditions || [];
+
+          if (value === 'none') {
+            // Clear all conditions
+            this.state.skinContext.conditions = [];
+            modal.querySelectorAll('.flashai-context-toggle').forEach(b => {
+              b.style.background = '#fff';
+              b.style.borderColor = '#e4e4e7';
+            });
+            e.currentTarget.style.background = 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)';
+            e.currentTarget.style.borderColor = '#8b5cf6';
+          } else {
+            // Toggle this condition
+            const idx = conditions.indexOf(value);
+            if (idx > -1) {
+              conditions.splice(idx, 1);
+              e.currentTarget.style.background = '#fff';
+              e.currentTarget.style.borderColor = '#e4e4e7';
+            } else {
+              conditions.push(value);
+              e.currentTarget.style.background = 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)';
+              e.currentTarget.style.borderColor = '#8b5cf6';
+            }
+            // Deselect "none" if something else selected
+            if (conditions.length > 0) {
+              const noneBtn = modal.querySelector('.flashai-context-toggle[data-value="none"]');
+              if (noneBtn) {
+                noneBtn.style.background = '#fff';
+                noneBtn.style.borderColor = '#e4e4e7';
+              }
+            }
+            this.state.skinContext.conditions = conditions;
+          }
+        });
+      });
+
+      // Continue to scan
+      modal.querySelector('#flashai-vto-context-continue')?.addEventListener('click', () => {
+        console.log('Skin context collected:', this.state.skinContext);
+        this.showStep('facescan');
+      });
+
+      // Skip questionnaire
+      modal.querySelector('#flashai-vto-context-skip')?.addEventListener('click', () => {
         this.showStep('facescan');
       });
 
@@ -1979,6 +2148,7 @@
 
       const stepMap = {
         selection: 'flashai-vto-step-selection',
+        'skin-context': 'flashai-vto-step-skin-context',
         scanning: 'flashai-vto-step-scanning',
         processing: 'flashai-vto-step-processing',
         tryon: 'flashai-vto-step-tryon',
@@ -3364,6 +3534,14 @@
       const issues = [];
       const attrs = this.getAttributeDefinitions();
 
+      // ========== SKIN CONTEXT CALIBRATION ==========
+      // Apply adjustments based on user's pre-scan questionnaire answers
+      // This reduces false positives by accounting for natural features
+      const skinContext = this.state.skinContext || {};
+      const calibration = this.calculateCalibrationFactors(skinContext, analysis);
+
+      console.log('[Skin Analysis] Applying calibration:', calibration);
+
       // Define ALL attributes with correct anatomical positions on face
       // Positions are % from top-left of face image
       // highlightRegion defines the area to highlight in red when selected
@@ -3440,8 +3618,32 @@
         const attr = attrs[config.key];
         if (!attr) return;
 
-        const score = attr.getScore(analysis);
-        const meetsThreshold = config.isInverse ? score < config.threshold : score >= config.threshold;
+        let score = attr.getScore(analysis);
+
+        // ========== APPLY CALIBRATION ==========
+        // Adjust scores based on user's skin context
+        const calFactor = calibration[config.key] || 1.0;
+        const originalScore = score;
+
+        if (calFactor !== 1.0) {
+          // For "bad" attributes, reduce the score (multiply by factor < 1)
+          // For "good" attributes (isInverse), we keep score as-is since lower is already better
+          if (!config.isInverse) {
+            score = Math.max(0, Math.round(score * calFactor));
+          }
+          console.log(`[Calibration] ${config.key}: ${originalScore} → ${score} (factor: ${calFactor})`);
+        }
+
+        // Dynamic threshold adjustment based on context
+        let adjustedThreshold = config.threshold;
+
+        // If user confirmed they have a condition that explains the detection, raise threshold more
+        if (calibration.knownConditions && calibration.knownConditions.includes(config.key)) {
+          adjustedThreshold = Math.min(90, config.threshold + 30); // Much higher threshold for known conditions
+          console.log(`[Calibration] ${config.key} threshold raised to ${adjustedThreshold} (known condition)`);
+        }
+
+        const meetsThreshold = config.isInverse ? score < adjustedThreshold : score >= adjustedThreshold;
 
         if (meetsThreshold) {
           // Determine severity - CALIBRATED to be less alarming
@@ -3481,6 +3683,235 @@
 
       this.state.detectedIssues = issues;
       this.renderIssuesList();
+    }
+
+    // ========================================================================
+    // SKIN CONTEXT CALIBRATION & 4x4 GRID ANALYSIS
+    // ========================================================================
+
+    /**
+     * Calculate calibration factors based on user's pre-scan questionnaire
+     * Returns multipliers for each issue type (< 1.0 reduces score)
+     */
+    calculateCalibrationFactors(skinContext, analysis) {
+      const factors = {};
+      const knownConditions = [];
+
+      // ====== FRECKLES CALIBRATION ======
+      // If user has freckles, reduce pigmentation and acne scores
+      // Freckles are often misdetected as dark spots or acne
+      if (skinContext.freckles === 'many') {
+        factors.pigmentation = 0.4; // Reduce by 60%
+        factors.acne = 0.5;         // Reduce by 50%
+        console.log('[Calibration] Many freckles → significantly reducing pigmentation/acne scores');
+      } else if (skinContext.freckles === 'some') {
+        factors.pigmentation = 0.6; // Reduce by 40%
+        factors.acne = 0.7;         // Reduce by 30%
+        console.log('[Calibration] Some freckles → moderately reducing pigmentation/acne scores');
+      }
+
+      // ====== KNOWN CONDITIONS CALIBRATION ======
+      // If user has rosacea, acknowledge redness as condition, not just "redness"
+      if (skinContext.conditions && skinContext.conditions.length > 0) {
+        if (skinContext.conditions.includes('rosacea')) {
+          factors.redness = 0.3; // Significantly reduce - they know about it
+          knownConditions.push('redness');
+          console.log('[Calibration] Rosacea → reducing redness score significantly');
+        }
+        if (skinContext.conditions.includes('melasma')) {
+          factors.pigmentation = Math.min(factors.pigmentation || 1.0, 0.4);
+          knownConditions.push('pigmentation');
+          console.log('[Calibration] Melasma → reducing pigmentation score');
+        }
+        if (skinContext.conditions.includes('eczema')) {
+          factors.texture = 0.6;
+          factors.redness = Math.min(factors.redness || 1.0, 0.6);
+          knownConditions.push('texture');
+          console.log('[Calibration] Eczema → reducing texture/redness scores');
+        }
+        if (skinContext.conditions.includes('psoriasis')) {
+          factors.texture = Math.min(factors.texture || 1.0, 0.5);
+          factors.redness = Math.min(factors.redness || 1.0, 0.5);
+          knownConditions.push('texture');
+          console.log('[Calibration] Psoriasis → reducing texture/redness scores');
+        }
+      }
+
+      // ====== SKIN TYPE CALIBRATION ======
+      // Adjust for natural skin characteristics
+      if (skinContext.skinType === 'oily') {
+        factors.oiliness = 0.7; // They know their skin is oily
+        factors.pores = 0.8;    // Oily skin often has larger pores naturally
+        console.log('[Calibration] Oily skin type → reducing oiliness/pore scores');
+      } else if (skinContext.skinType === 'dry') {
+        factors.hydration = 1.2; // Be more sensitive to hydration issues
+        console.log('[Calibration] Dry skin type → increasing hydration sensitivity');
+      }
+
+      // ====== SENSITIVITY CALIBRATION ======
+      // Sensitive skin naturally shows more redness
+      if (skinContext.sensitivity === 'very') {
+        factors.redness = Math.min(factors.redness || 1.0, 0.5);
+        console.log('[Calibration] Very sensitive → significantly reducing redness score');
+      } else if (skinContext.sensitivity === 'slightly') {
+        factors.redness = Math.min(factors.redness || 1.0, 0.75);
+        console.log('[Calibration] Slightly sensitive → moderately reducing redness score');
+      }
+
+      // ====== 4x4 GRID REGIONAL ANALYSIS ======
+      // Analyze detection patterns to differentiate freckles from acne
+      if (analysis && (analysis.acne_locations || analysis.dark_spots_locations)) {
+        const gridAnalysis = this.perform4x4GridAnalysis(analysis);
+
+        if (gridAnalysis.isLikelyFreckles) {
+          factors.acne = Math.min(factors.acne || 1.0, 0.4);
+          factors.pigmentation = Math.min(factors.pigmentation || 1.0, 0.4);
+          console.log('[Grid Analysis] Pattern suggests freckles, not acne → reducing scores');
+        }
+
+        if (gridAnalysis.uniformDistribution) {
+          // Uniform distribution across face suggests natural features, not breakouts
+          factors.acne = Math.min(factors.acne || 1.0, 0.6);
+          console.log('[Grid Analysis] Uniform distribution suggests natural features');
+        }
+
+        // Store grid analysis for display
+        this.state.regionalAnalysis = gridAnalysis;
+      }
+
+      factors.knownConditions = knownConditions;
+      return factors;
+    }
+
+    /**
+     * 4x4 Grid Regional Analysis
+     * Divides face into 16 regions and analyzes patterns to differentiate:
+     * - Freckles (uniform, small, many) vs Acne (clustered, varied sizes)
+     * - Natural skin variations vs actual concerns
+     */
+    perform4x4GridAnalysis(analysis) {
+      const result = {
+        gridScores: Array(16).fill(null).map(() => ({
+          acneCount: 0,
+          darkSpotCount: 0,
+          avgSize: 0,
+          confidence: 0
+        })),
+        isLikelyFreckles: false,
+        uniformDistribution: false,
+        clusterDetected: false,
+        confidenceScore: 0
+      };
+
+      // Collect all detected spots
+      const allSpots = [];
+
+      // Process acne locations
+      if (analysis.acne_locations) {
+        analysis.acne_locations.forEach(loc => {
+          if (loc.x >= 0 && loc.x <= 1 && loc.y >= 0 && loc.y <= 1) {
+            allSpots.push({
+              x: loc.x,
+              y: loc.y,
+              type: 'acne',
+              size: loc.size === 'large' ? 3 : loc.size === 'medium' ? 2 : 1
+            });
+          }
+        });
+      }
+
+      // Process dark spots
+      if (analysis.dark_spots_locations) {
+        analysis.dark_spots_locations.forEach(loc => {
+          if (loc.x >= 0 && loc.x <= 1 && loc.y >= 0 && loc.y <= 1) {
+            allSpots.push({
+              x: loc.x,
+              y: loc.y,
+              type: 'darkspot',
+              size: (loc.size || 0.02) * 50 // Normalize size
+            });
+          }
+        });
+      }
+
+      if (allSpots.length < 3) {
+        // Not enough data for pattern analysis
+        result.confidenceScore = 0.3;
+        return result;
+      }
+
+      // Assign spots to 4x4 grid cells
+      allSpots.forEach(spot => {
+        const gridX = Math.min(3, Math.floor(spot.x * 4));
+        const gridY = Math.min(3, Math.floor(spot.y * 4));
+        const cellIndex = gridY * 4 + gridX;
+
+        if (cellIndex >= 0 && cellIndex < 16) {
+          const cell = result.gridScores[cellIndex];
+          if (spot.type === 'acne') cell.acneCount++;
+          else cell.darkSpotCount++;
+          cell.avgSize = (cell.avgSize * (cell.acneCount + cell.darkSpotCount - 1) + spot.size) / (cell.acneCount + cell.darkSpotCount);
+        }
+      });
+
+      // Analyze distribution pattern
+      const occupiedCells = result.gridScores.filter(c => c.acneCount > 0 || c.darkSpotCount > 0);
+      const totalDetections = allSpots.length;
+
+      // Calculate uniformity (how evenly distributed across cells)
+      const detectionsPerCell = occupiedCells.map(c => c.acneCount + c.darkSpotCount);
+      const avgPerCell = totalDetections / Math.max(1, occupiedCells.length);
+      const variance = detectionsPerCell.reduce((sum, count) => {
+        return sum + Math.pow(count - avgPerCell, 2);
+      }, 0) / Math.max(1, detectionsPerCell.length);
+
+      // Low variance + many occupied cells = uniform distribution (likely freckles)
+      const uniformityScore = 1 - Math.min(1, variance / 10);
+      const spreadScore = occupiedCells.length / 16;
+
+      result.uniformDistribution = uniformityScore > 0.6 && spreadScore > 0.3;
+
+      // Check for clustering (concentrated in few cells = likely acne breakout)
+      const maxInOneCell = Math.max(...detectionsPerCell, 0);
+      result.clusterDetected = maxInOneCell > 5 && spreadScore < 0.3;
+
+      // Freckle indicators:
+      // 1. Many small spots spread across multiple regions
+      // 2. Uniform size distribution
+      // 3. Present in typical freckle areas (cheeks, nose bridge)
+      const avgSpotSize = allSpots.reduce((sum, s) => sum + s.size, 0) / allSpots.length;
+      const sizeVariance = allSpots.reduce((sum, s) => sum + Math.pow(s.size - avgSpotSize, 2), 0) / allSpots.length;
+
+      // Small spots + low size variance + good spread = likely freckles
+      result.isLikelyFreckles = (
+        avgSpotSize < 2 &&          // Small spots
+        sizeVariance < 1.5 &&       // Uniform sizes
+        totalDetections > 5 &&      // Multiple detections
+        spreadScore > 0.25 &&       // Spread across face
+        !result.clusterDetected     // Not clustered
+      );
+
+      // Calculate confidence based on pattern strength
+      if (result.isLikelyFreckles) {
+        result.confidenceScore = Math.min(0.95, 0.5 + uniformityScore * 0.3 + spreadScore * 0.2);
+      } else if (result.clusterDetected) {
+        result.confidenceScore = Math.min(0.9, 0.6 + (maxInOneCell / 10) * 0.2);
+      } else {
+        result.confidenceScore = 0.5;
+      }
+
+      console.log('[Grid Analysis] Results:', {
+        totalSpots: allSpots.length,
+        occupiedCells: occupiedCells.length,
+        uniformityScore,
+        spreadScore,
+        avgSpotSize,
+        isLikelyFreckles: result.isLikelyFreckles,
+        clusterDetected: result.clusterDetected,
+        confidence: result.confidenceScore
+      });
+
+      return result;
     }
 
     renderPins() {
@@ -3597,9 +4028,49 @@
       if (!listContainer) return;
 
       const issues = this.state.detectedIssues;
+      const skinContext = this.state.skinContext || {};
+      const regionalAnalysis = this.state.regionalAnalysis;
+
+      // Build calibration note if context was provided
+      let calibrationNote = '';
+      const contextItems = [];
+
+      if (skinContext.freckles && skinContext.freckles !== 'none') {
+        contextItems.push(`${skinContext.freckles === 'many' ? 'many' : 'some'} freckles`);
+      }
+      if (skinContext.conditions && skinContext.conditions.length > 0 && !skinContext.conditions.includes('none')) {
+        contextItems.push(skinContext.conditions.join(', '));
+      }
+      if (skinContext.skinType) {
+        contextItems.push(`${skinContext.skinType} skin`);
+      }
+      if (skinContext.sensitivity && skinContext.sensitivity !== 'no') {
+        contextItems.push(`${skinContext.sensitivity} sensitive`);
+      }
+
+      if (contextItems.length > 0 || (regionalAnalysis && regionalAnalysis.isLikelyFreckles)) {
+        const freckleNote = regionalAnalysis?.isLikelyFreckles
+          ? '<br><span style="color:#16a34a;">✓ Pattern analysis suggests natural freckles</span>'
+          : '';
+
+        calibrationNote = `
+          <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:10px;border:1px solid #c4b5fd;">
+            <div style="display:flex;align-items:start;gap:8px;">
+              <span style="font-size:16px;">🎯</span>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#6d28d9;margin-bottom:4px;">PERSONALIZED ANALYSIS</div>
+                <p style="font-size:11px;color:#5b21b6;margin:0;line-height:1.4;">
+                  Results calibrated for: <strong>${contextItems.join(' • ') || 'your skin profile'}</strong>
+                  ${freckleNote}
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
       if (issues.length === 0) {
-        listContainer.innerHTML = `
+        listContainer.innerHTML = calibrationNote + `
           <div class="flashai-vto-no-issues" style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;">
             <span style="font-size:32px;">✨</span>
             <p style="font-size:14px;color:#15803d;margin:8px 0 0;">Great news! No significant skin concerns detected.</p>
@@ -3616,7 +4087,7 @@
       };
 
       // Accordion-style list items with inline expansion
-      listContainer.innerHTML = issues.map((issue, index) => {
+      listContainer.innerHTML = calibrationNote + issues.map((issue, index) => {
         const colors = severityColors[issue.severity] || severityColors.moderate;
         return `
         <div class="flashai-vto-accordion-item" data-index="${index}" style="margin-bottom:8px;">
