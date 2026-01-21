@@ -1973,17 +1973,21 @@
     // ==========================================================================
 
     async loadRoutineData() {
+      console.log('[Routine] loadRoutineData called');
       const loginPrompt = document.getElementById('flashai-vto-routine-login-prompt');
       const routineContent = document.getElementById('flashai-vto-routine-content');
       const generateBtn = document.getElementById('flashai-vto-generate-routine');
+      console.log('[Routine] Elements found: loginPrompt=' + !!loginPrompt + ', routineContent=' + !!routineContent + ', generateBtn=' + !!generateBtn);
 
       // Check if authenticated
       if (!this.state.authToken) {
+        console.log('[Routine] Not authenticated, showing login prompt');
         if (loginPrompt) loginPrompt.style.display = 'block';
         if (routineContent) routineContent.style.display = 'none';
         return;
       }
 
+      console.log('[Routine] User is authenticated');
       // User is authenticated - show content
       if (loginPrompt) loginPrompt.style.display = 'none';
       if (routineContent) routineContent.style.display = 'block';
@@ -1991,6 +1995,7 @@
       try {
         // Load stats and routines in parallel
         const routinesUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines');
+        console.log('[Routine] Fetching routines from:', routinesUrl);
         const [stats, routinesResponse] = await Promise.all([
           this.loadRoutineStats(),
           fetch(routinesUrl, {
@@ -2002,13 +2007,16 @@
         this.renderRoutineStats(stats);
 
         const data = await routinesResponse.json();
+        console.log('[Routine] Routines API response:', data);
 
-        if (data.success && data.data.routines && data.data.routines.length > 0) {
+        if (data.success && data.data && data.data.routines && data.data.routines.length > 0) {
+          console.log('[Routine] Found ' + data.data.routines.length + ' routines, rendering...');
           this.state.routines = data.data.routines;
           if (generateBtn) generateBtn.style.display = 'none';
           this.state.currentRoutineTime = 'am';
           this.renderRoutine('am');
         } else {
+          console.log('[Routine] No routines found, showing generate button');
           // No routines yet - show generate button
           if (generateBtn) generateBtn.style.display = 'block';
           this.renderEmptyRoutine();
@@ -2574,7 +2582,10 @@
     }
 
     async generateRoutine() {
+      console.log('[Routine] generateRoutine called');
+
       if (!this.state.authToken) {
+        console.log('[Routine] No auth token, showing auth modal');
         this.showAuthModal();
         return;
       }
@@ -2587,27 +2598,43 @@
 
       try {
         // Step 1: Check if user has active goals
+        console.log('[Routine] Step 1: Checking for active goals...');
         const goalsUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals') + '?status=active';
+        console.log('[Routine] Goals URL:', goalsUrl);
         const goalsResponse = await fetch(goalsUrl, {
           headers: { 'Authorization': 'Bearer ' + this.state.authToken }
         });
         const goalsData = await goalsResponse.json();
+        console.log('[Routine] Goals response:', goalsData);
 
         // Step 2: If no goals, auto-create from scan first
-        if (!goalsData.data?.goals || goalsData.data.goals.length === 0) {
-          console.log('[Routine] No active goals, creating from scan...');
+        const hasGoals = goalsData.success && goalsData.data && goalsData.data.goals && goalsData.data.goals.length > 0;
+        if (!hasGoals) {
+          console.log('[Routine] Step 2: No active goals, creating from scan...');
           const createGoalsUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals') + '/from-scan';
-          await fetch(createGoalsUrl, {
+          console.log('[Routine] Create goals URL:', createGoalsUrl);
+          const createGoalsResponse = await fetch(createGoalsUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer ' + this.state.authToken
             }
           });
+          const createGoalsData = await createGoalsResponse.json();
+          console.log('[Routine] Create goals response:', createGoalsData);
+
+          if (!createGoalsData.success) {
+            console.warn('[Routine] Goal creation failed:', createGoalsData.error || createGoalsData.message);
+            // Continue anyway - routine generation will use default templates
+          }
+        } else {
+          console.log('[Routine] User has', goalsData.data.goals.length, 'active goals');
         }
 
         // Step 3: Generate routine based on goals
+        console.log('[Routine] Step 3: Generating routine...');
         const generateUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/generate';
+        console.log('[Routine] Generate URL:', generateUrl);
         const response = await fetch(generateUrl, {
           method: 'POST',
           headers: {
@@ -2617,15 +2644,18 @@
         });
 
         const data = await response.json();
+        console.log('[Routine] Generate response:', data);
+
         if (data.success) {
+          console.log('[Routine] Routine generated successfully, reloading data...');
           // Reload routine data to show the new routine
           await this.loadRoutineData();
         } else {
-          throw new Error(data.message || 'Failed to generate routine');
+          throw new Error(data.error?.message || data.message || 'Failed to generate routine');
         }
       } catch (error) {
         console.error('[Routine] Error generating routine:', error);
-        alert('Failed to generate routine. Please try again.');
+        alert('Failed to generate routine: ' + (error.message || 'Unknown error'));
       } finally {
         if (btn) {
           btn.disabled = false;
