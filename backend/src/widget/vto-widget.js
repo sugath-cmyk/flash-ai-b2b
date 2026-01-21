@@ -792,54 +792,65 @@
                 </div>
               </div><!-- End Tab: Progress -->
 
-              <!-- Tab Content: Goals -->
+              <!-- Tab Content: Goals (INTELLIGENT - Synced with Analysis) -->
               <div id="flashai-vto-tab-goals" class="flashai-vto-tab-content" style="display:none;">
                 <div class="flashai-vto-goals-container" style="padding:0;">
-                  <!-- Login Prompt -->
-                  <div id="flashai-vto-goals-login-prompt" style="text-align:center;padding:40px 20px;">
-                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <circle cx="12" cy="12" r="6"></circle>
-                        <circle cx="12" cy="12" r="2"></circle>
-                      </svg>
+                  <!-- No Analysis Prompt -->
+                  <div id="flashai-vto-goals-no-analysis" style="display:none;text-align:center;padding:40px 20px;">
+                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                      <span style="font-size:36px;">📸</span>
                     </div>
-                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Set Your Skin Goals</h3>
-                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Create personalized goals and track your journey to better skin</p>
-                    <button id="flashai-vto-goals-signin" style="padding:12px 32px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(22,163,74,0.3);transition:all 0.2s;">
-                      Sign In to Set Goals
+                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Complete a Scan First</h3>
+                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Your goals will be automatically created based on your skin analysis</p>
+                    <button id="flashai-vto-goals-start-scan" style="padding:12px 32px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.3);">
+                      Start Skin Analysis
                     </button>
                   </div>
-                  <!-- Goals Content -->
+                  <!-- Goals Content (Synced with Analysis) -->
                   <div id="flashai-vto-goals-content" style="display:none;">
-                    <!-- Auto-Set Goals Banner -->
-                    <div id="flashai-vto-auto-goals-banner" style="margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);border-radius:12px;border:1px solid #86efac;">
+                    <!-- Weekly Scan Reminder -->
+                    <div id="flashai-vto-weekly-scan-reminder" style="margin-bottom:16px;padding:14px;background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);border-radius:12px;border:1px solid #93c5fd;">
                       <div style="display:flex;align-items:center;gap:12px;">
-                        <div style="font-size:28px;">🎯</div>
-                        <div style="flex:1;">
-                          <h4 style="font-size:14px;font-weight:700;color:#166534;margin:0 0 4px;">Auto-Set Goals from Your Scan</h4>
-                          <p style="font-size:12px;color:#15803d;margin:0;">We'll create personalized goals based on your skin analysis</p>
+                        <div style="width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                          <span style="font-size:22px;">📷</span>
                         </div>
-                        <button id="flashai-vto-auto-goals-btn" style="padding:10px 16px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
-                          Set Goals
+                        <div style="flex:1;">
+                          <h4 style="font-size:13px;font-weight:700;color:#1e40af;margin:0 0 2px;">Track Your Progress</h4>
+                          <p style="font-size:11px;color:#1d4ed8;margin:0;">Take a scan every week to see real improvements</p>
+                        </div>
+                        <button id="flashai-vto-take-new-scan" style="padding:8px 14px;background:#1d4ed8;color:#fff;border:none;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
+                          📸 New Scan
                         </button>
                       </div>
                     </div>
-                    <!-- Active Goals -->
-                    <div style="margin-bottom:20px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0;">My Goals</h4>
-                        <button id="flashai-vto-add-goal" style="padding:6px 12px;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:600;color:#3f3f46;cursor:pointer;">+ Add Goal</button>
-                      </div>
-                      <div id="flashai-vto-active-goals" style="display:flex;flex-direction:column;gap:12px;">
-                        <!-- Populated dynamically -->
-                      </div>
+                    <!-- Synced Goals Header -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                      <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0;display:flex;align-items:center;gap:6px;">
+                        🎯 Your Skin Goals
+                        <span style="font-size:10px;font-weight:500;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:10px;">Synced</span>
+                      </h4>
+                      <span id="flashai-vto-last-scan-date" style="font-size:10px;color:#71717a;"></span>
                     </div>
-                    <!-- Goal Templates -->
-                    <div style="padding:16px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
-                      <h4 style="font-size:13px;font-weight:600;color:#71717a;margin:0 0 12px;">Choose a Goal</h4>
-                      <div id="flashai-vto-goal-templates" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-                        <!-- Populated dynamically -->
+                    <!-- Goals Cards (Auto-generated from Analysis) -->
+                    <div id="flashai-vto-smart-goals" style="display:flex;flex-direction:column;gap:12px;">
+                      <!-- Populated dynamically from analysis concerns -->
+                    </div>
+                    <!-- How It Works -->
+                    <div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:10px;border:1px solid #e4e4e7;">
+                      <h5 style="font-size:11px;font-weight:700;color:#71717a;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.5px;">How Goals Work</h5>
+                      <div style="display:flex;flex-direction:column;gap:6px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <span style="width:20px;height:20px;background:#8b5cf6;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">1</span>
+                          <span style="font-size:11px;color:#52525b;">Goals auto-created from your analysis concerns</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <span style="width:20px;height:20px;background:#8b5cf6;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">2</span>
+                          <span style="font-size:11px;color:#52525b;">Tap any goal to adjust your target</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <span style="width:20px;height:20px;background:#8b5cf6;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">3</span>
+                          <span style="font-size:11px;color:#52525b;">Scan weekly to track your improvement</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1632,87 +1643,224 @@
     }
 
     // ==========================================================================
-    // NEW: Goals Data
+    // INTELLIGENT GOALS - Synced with Analysis
     // ==========================================================================
 
     async loadGoalsData() {
-      if (!this.state.authToken) return;
+      const noAnalysisPrompt = document.getElementById('flashai-vto-goals-no-analysis');
+      const goalsContent = document.getElementById('flashai-vto-goals-content');
+      const smartGoalsContainer = document.getElementById('flashai-vto-smart-goals');
+      const lastScanDate = document.getElementById('flashai-vto-last-scan-date');
 
-      const goalsContainer = document.getElementById('flashai-vto-active-goals');
-      const templatesContainer = document.getElementById('flashai-vto-goal-templates');
+      // Check if we have analysis data
+      const issues = this.state.detectedIssues || [];
+      const analysis = this.state.currentAnalysis;
 
-      try {
-        // Load user goals
-        const goalsRes = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}`, {
-          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
-        });
+      if (!analysis || issues.length === 0) {
+        // No analysis yet - show prompt to scan
+        if (noAnalysisPrompt) noAnalysisPrompt.style.display = 'block';
+        if (goalsContent) goalsContent.style.display = 'none';
 
-        const goalsData = await goalsRes.json();
-        if (goalsData.success) {
-          this.renderGoals(goalsData.data.goals, goalsContainer);
+        // Add event handler for start scan button
+        const startScanBtn = document.getElementById('flashai-vto-goals-start-scan');
+        if (startScanBtn) {
+          startScanBtn.onclick = () => this.showStep('facescan');
         }
-
-        // Load templates
-        const templatesRes = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}/templates`, {
-          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
-        });
-
-        const templatesData = await templatesRes.json();
-        if (templatesData.success) {
-          this.renderGoalTemplates(templatesData.data.templates, templatesContainer);
-        }
-      } catch (error) {
-        console.error('Error loading goals:', error);
-      }
-    }
-
-    renderGoals(goals, container) {
-      if (!container) return;
-
-      if (!goals || goals.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:20px;color:#71717a;font-size:13px;">No goals yet. Add a goal to get started!</div>';
         return;
       }
 
-      container.innerHTML = goals.map(goal => {
-        const progress = Math.min(100, Math.max(0, goal.progressPercent || 0));
-        const statusColor = goal.status === 'completed' ? '#16a34a' : goal.status === 'active' ? '#8b5cf6' : '#71717a';
-        const weeksLeft = goal.targetDate ? Math.max(0, Math.ceil((new Date(goal.targetDate) - new Date()) / (7 * 24 * 60 * 60 * 1000))) : null;
-        const targetVal = goal.targetValue || 100;
-        const currentVal = goal.currentValue || 0;
+      // We have analysis - show goals
+      if (noAnalysisPrompt) noAnalysisPrompt.style.display = 'none';
+      if (goalsContent) goalsContent.style.display = 'block';
 
-        return `
-          <div class="flashai-goal-card" data-goal-id="${goal.id}" style="padding:16px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
-              <div>
-                <h5 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 4px;">${goal.goalName || goal.goalType || 'Goal'}</h5>
-                <p style="font-size:11px;color:#71717a;margin:0;">${weeksLeft !== null ? `${weeksLeft} week${weeksLeft !== 1 ? 's' : ''} remaining` : '8 weeks program'}</p>
-              </div>
-              <span style="padding:4px 10px;background:${statusColor}20;color:${statusColor};font-size:10px;font-weight:600;border-radius:12px;text-transform:capitalize;">${goal.status}</span>
-            </div>
-            <div style="background:#f4f4f5;border-radius:6px;height:8px;overflow:hidden;">
-              <div style="width:${progress}%;height:100%;background:linear-gradient(90deg,#8b5cf6 0%,#7c3aed 100%);border-radius:6px;transition:width 0.3s;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:6px;">
-              <span style="font-size:11px;color:#71717a;">Current: ${currentVal}%</span>
-              <span style="font-size:11px;font-weight:600;color:#8b5cf6;">${progress}% complete</span>
-              <span style="font-size:11px;color:#71717a;">Target: ${targetVal}%</span>
-            </div>
-            <button class="flashai-goal-monthly-btn" data-goal-id="${goal.id}" style="margin-top:10px;padding:8px 12px;background:#f5f3ff;border:1px solid #e9d5ff;border-radius:8px;font-size:11px;font-weight:600;color:#7c3aed;cursor:pointer;width:100%;text-align:center;">
-              📊 View Monthly Progress
-            </button>
-          </div>
-        `;
-      }).join('');
+      // Update last scan date
+      if (lastScanDate) {
+        lastScanDate.textContent = 'Last scan: Today';
+      }
 
-      // Add click handlers for monthly progress buttons
-      container.querySelectorAll('.flashai-goal-monthly-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const goalId = btn.dataset.goalId;
-          this.showMonthlyProgress(goalId);
+      // Render smart goals from analysis
+      this.renderSmartGoals(issues, smartGoalsContainer);
+
+      // Add event handler for new scan button
+      const newScanBtn = document.getElementById('flashai-vto-take-new-scan');
+      if (newScanBtn) {
+        newScanBtn.onclick = () => this.showStep('facescan');
+      }
+    }
+
+    /**
+     * Render intelligent goals directly from analysis concerns
+     * Each concern becomes an editable goal card
+     */
+    renderSmartGoals(issues, container) {
+      if (!container) return;
+
+      // Separate concerns from healthy metrics
+      const concerns = issues.filter(i => i.isConcern);
+      const healthy = issues.filter(i => !i.isConcern);
+
+      let html = '';
+
+      // Priority concerns as goals
+      if (concerns.length > 0) {
+        html += '<div style="margin-bottom:8px;"><span style="font-size:11px;font-weight:600;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;">🎯 Priority Goals (' + concerns.length + ')</span></div>';
+
+        concerns.forEach((issue, idx) => {
+          const grade = issue.clinicalGrade || { grade: 0, label: 'N/A', scale: 'General', maxGrade: 4 };
+          const targetGrade = Math.max(0, grade.grade - 2); // Target is 2 grades better
+          const targetLabel = this.getGradeLabelForTarget(issue.key, targetGrade);
+          const progressPercent = grade.grade > 0 ? Math.round(((grade.maxGrade - grade.grade) / grade.maxGrade) * 100) : 100;
+
+          // Severity color
+          const severityColor = grade.grade >= 3 ? '#dc2626' : grade.grade >= 2 ? '#f59e0b' : '#16a34a';
+          const bgColor = grade.grade >= 3 ? '#fef2f2' : grade.grade >= 2 ? '#fffbeb' : '#f0fdf4';
+          const borderColor = grade.grade >= 3 ? '#fecaca' : grade.grade >= 2 ? '#fde68a' : '#bbf7d0';
+
+          html += '<div class="flashai-smart-goal" data-issue-key="' + issue.key + '" style="padding:14px;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:12px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">' +
+              '<div style="display:flex;align-items:center;gap:8px;">' +
+                '<span style="font-size:20px;">' + (issue.icon || '🎯') + '</span>' +
+                '<div>' +
+                  '<h5 style="font-size:13px;font-weight:700;color:#18181b;margin:0;">Improve ' + issue.name + '</h5>' +
+                  '<p style="font-size:10px;color:#71717a;margin:2px 0 0;">' + grade.scale + ' Scale • ' + issue.region + '</p>' +
+                '</div>' +
+              '</div>' +
+              '<span style="padding:3px 8px;background:' + severityColor + ';color:#fff;font-size:9px;font-weight:700;border-radius:10px;">' + grade.label + '</span>' +
+            '</div>' +
+            // Current vs Target
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+              '<div style="text-align:center;flex:1;">' +
+                '<div style="font-size:9px;color:#71717a;text-transform:uppercase;margin-bottom:2px;">Current</div>' +
+                '<div style="font-size:16px;font-weight:700;color:' + severityColor + ';">Grade ' + grade.grade + '</div>' +
+              '</div>' +
+              '<div style="font-size:18px;color:#d1d5db;">→</div>' +
+              '<div style="text-align:center;flex:1;">' +
+                '<div style="font-size:9px;color:#71717a;text-transform:uppercase;margin-bottom:2px;">Target</div>' +
+                '<div style="font-size:16px;font-weight:700;color:#16a34a;">Grade ' + targetGrade + '</div>' +
+              '</div>' +
+            '</div>' +
+            // Progress bar
+            '<div style="background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;">' +
+              '<div style="width:' + progressPercent + '%;height:100%;background:linear-gradient(90deg,#8b5cf6,#7c3aed);border-radius:4px;transition:width 0.3s;"></div>' +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
+              '<span style="font-size:9px;color:#71717a;">' + progressPercent + '% toward goal</span>' +
+              '<span style="font-size:9px;color:#8b5cf6;font-weight:600;">Tap to edit target ✏️</span>' +
+            '</div>' +
+          '</div>';
+        });
+      }
+
+      // Healthy metrics (maintain)
+      if (healthy.length > 0) {
+        html += '<div style="margin:16px 0 8px;"><span style="font-size:11px;font-weight:600;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;">✨ Maintain (' + healthy.length + ')</span></div>';
+
+        html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">';
+        healthy.forEach(issue => {
+          const grade = issue.clinicalGrade || { grade: 0, label: 'Good', maxGrade: 4 };
+          html += '<div style="padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;">' +
+            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
+              '<span style="font-size:14px;">' + (issue.icon || '✓') + '</span>' +
+              '<span style="font-size:11px;font-weight:600;color:#166534;">' + issue.name + '</span>' +
+            '</div>' +
+            '<div style="font-size:10px;color:#15803d;">Grade ' + grade.grade + '/' + grade.maxGrade + ' - ' + grade.label + '</div>' +
+          '</div>';
+        });
+        html += '</div>';
+      }
+
+      container.innerHTML = html;
+
+      // Add click handlers for editing goals
+      container.querySelectorAll('.flashai-smart-goal').forEach(card => {
+        card.addEventListener('click', () => {
+          const issueKey = card.dataset.issueKey;
+          this.showEditGoalModal(issueKey);
         });
       });
+    }
+
+    /**
+     * Get appropriate label for a target grade
+     */
+    getGradeLabelForTarget(issueKey, targetGrade) {
+      const labels = {
+        0: 'Clear',
+        1: 'Almost Clear',
+        2: 'Mild',
+        3: 'Moderate',
+        4: 'Severe'
+      };
+      return labels[targetGrade] || 'Improved';
+    }
+
+    /**
+     * Show modal to edit goal target
+     */
+    showEditGoalModal(issueKey) {
+      const issue = this.state.detectedIssues.find(i => i.key === issueKey);
+      if (!issue) return;
+
+      const grade = issue.clinicalGrade || { grade: 0, maxGrade: 4 };
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.id = 'flashai-edit-goal-modal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100000;';
+
+      let gradeOptions = '';
+      for (let i = 0; i <= grade.maxGrade; i++) {
+        const label = this.getGradeLabelForTarget(issueKey, i);
+        const selected = i === Math.max(0, grade.grade - 2) ? 'selected' : '';
+        const disabled = i >= grade.grade ? 'disabled' : '';
+        gradeOptions += '<option value="' + i + '" ' + selected + ' ' + disabled + '>Grade ' + i + ' - ' + label + '</option>';
+      }
+
+      modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:320px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,0.2);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+          '<h3 style="font-size:16px;font-weight:700;color:#18181b;margin:0;">Edit Goal Target</h3>' +
+          '<button id="flashai-close-edit-goal" style="background:none;border:none;font-size:20px;cursor:pointer;color:#71717a;">×</button>' +
+        '</div>' +
+        '<div style="margin-bottom:16px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+            '<span style="font-size:24px;">' + (issue.icon || '🎯') + '</span>' +
+            '<span style="font-size:14px;font-weight:600;color:#18181b;">' + issue.name + '</span>' +
+          '</div>' +
+          '<div style="padding:12px;background:#f4f4f5;border-radius:8px;margin-bottom:12px;">' +
+            '<div style="font-size:11px;color:#71717a;margin-bottom:4px;">Current Status</div>' +
+            '<div style="font-size:14px;font-weight:600;color:#dc2626;">' + grade.scale + ' Grade ' + grade.grade + ' - ' + (issue.clinicalGrade?.label || 'N/A') + '</div>' +
+          '</div>' +
+          '<label style="font-size:12px;font-weight:600;color:#18181b;display:block;margin-bottom:6px;">Target Grade</label>' +
+          '<select id="flashai-goal-target-select" style="width:100%;padding:12px;border:2px solid #e4e4e7;border-radius:10px;font-size:14px;font-weight:500;background:#fff;">' +
+            gradeOptions +
+          '</select>' +
+          '<p style="font-size:10px;color:#71717a;margin:8px 0 0;">Lower grade = better skin health. Take weekly scans to track progress!</p>' +
+        '</div>' +
+        '<button id="flashai-save-goal-target" style="width:100%;padding:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Save Target</button>' +
+      '</div>';
+
+      document.body.appendChild(modal);
+
+      // Event handlers
+      document.getElementById('flashai-close-edit-goal').onclick = () => modal.remove();
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      document.getElementById('flashai-save-goal-target').onclick = () => {
+        const targetGrade = document.getElementById('flashai-goal-target-select').value;
+        console.log('[Goals] Saved target for ' + issueKey + ': Grade ' + targetGrade);
+        // Store in state for tracking
+        if (!this.state.goalTargets) this.state.goalTargets = {};
+        this.state.goalTargets[issueKey] = parseInt(targetGrade);
+        modal.remove();
+        // Refresh goals display
+        this.loadGoalsData();
+      };
+    }
+
+    // Legacy method - kept for backwards compatibility
+    renderGoals(goals, container) {
+      // Now redirects to smart goals
+      this.loadGoalsData();
     }
 
     /**
