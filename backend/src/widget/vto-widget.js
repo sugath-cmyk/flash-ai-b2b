@@ -1929,23 +1929,24 @@
 
     /**
      * Migrate to phased routine system - clears old cached data
-     * Version 2: Phased routine system with questionnaire
+     * Version 3: MANDATORY questionnaire for all users (existing & new)
      */
     migrateToPhaseSystem() {
-      const CURRENT_VERSION = 2;
+      const CURRENT_VERSION = 3;
       const storedVersion = parseInt(localStorage.getItem('flashai_routine_version') || '0');
 
       if (storedVersion < CURRENT_VERSION) {
-        console.log('[Migration] Upgrading to phased routine system v' + CURRENT_VERSION);
+        console.log('[Migration] Upgrading to phased routine system v' + CURRENT_VERSION + ' - Mandatory questionnaire');
 
-        // Clear old routine-related cached data
+        // Clear ALL routine-related cached data
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key && (
             key.includes('routine') ||
             key.includes('flashai_goals') ||
-            key.includes('flashai_phase')
+            key.includes('flashai_phase') ||
+            key.includes('flashai_questionnaire')
           )) {
             keysToRemove.push(key);
           }
@@ -1956,14 +1957,14 @@
           localStorage.removeItem(key);
         });
 
-        // Clear state
+        // Clear state completely
         this.state.routines = null;
         this.state.currentPhase = null;
         this.state.questionnaireAnswers = null;
 
         // Set new version
         localStorage.setItem('flashai_routine_version', CURRENT_VERSION.toString());
-        console.log('[Migration] Migration complete. Users will see questionnaire.');
+        console.log('[Migration] Migration complete. ALL users will see questionnaire.');
       }
     }
 
