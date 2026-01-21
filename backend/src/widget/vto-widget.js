@@ -1011,55 +1011,27 @@
                       </span>
                     </button>
 
-                    <!-- Monthly Calendar -->
-                    <div id="flashai-vto-routine-calendar" style="margin-top:20px;padding:16px;background:#fff;border-radius:14px;border:1px solid #e4e4e7;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <button id="flashai-cal-prev" style="width:32px;height:32px;background:#f4f4f5;border:none;border-radius:8px;cursor:pointer;font-size:14px;">◀</button>
-                        <span id="flashai-cal-month" style="font-size:14px;font-weight:600;color:#18181b;">January 2026</span>
-                        <button id="flashai-cal-next" style="width:32px;height:32px;background:#f4f4f5;border:none;border-radius:8px;cursor:pointer;font-size:14px;">▶</button>
-                      </div>
-                      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px;">
-                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">S</span>
-                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">M</span>
-                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">T</span>
-                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">W</span>
-                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">T</span>
-                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">F</span>
-                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">S</span>
-                      </div>
-                      <div id="flashai-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
-                        <!-- Populated dynamically -->
-                      </div>
-                      <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid #f4f4f5;">
-                        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#71717a;">
-                          <span style="width:8px;height:8px;background:#16a34a;border-radius:50%;"></span> Both
-                        </span>
-                        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#71717a;">
-                          <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;"></span> One
-                        </span>
-                        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#71717a;">
-                          <span style="width:8px;height:8px;background:#e4e4e7;border-radius:50%;"></span> Missed
-                        </span>
-                      </div>
-                      <div id="flashai-cal-stats" style="display:flex;justify-content:space-around;margin-top:12px;padding:12px;background:#f9fafb;border-radius:10px;">
-                        <div style="text-align:center;">
-                          <div style="font-size:18px;font-weight:700;color:#8b5cf6;" id="flashai-cal-streak">0</div>
-                          <div style="font-size:9px;color:#71717a;">Day Streak</div>
+                    <!-- Monthly Calendar - Coming Soon -->
+                    <div id="flashai-vto-routine-calendar" style="margin-top:20px;padding:20px;background:linear-gradient(135deg,#f9fafb 0%,#f4f4f5 100%);border-radius:14px;border:1px dashed #d4d4d8;">
+                      <div style="text-align:center;padding:20px 0;">
+                        <div style="width:48px;height:48px;margin:0 auto 12px;background:#e4e4e7;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                          <span style="font-size:24px;">📅</span>
                         </div>
-                        <div style="text-align:center;">
-                          <div style="font-size:18px;font-weight:700;color:#16a34a;" id="flashai-cal-monthly">0%</div>
-                          <div style="font-size:9px;color:#71717a;">This Month</div>
-                        </div>
+                        <h4 style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 6px;">Monthly Calendar</h4>
+                        <p style="font-size:12px;color:#71717a;margin:0 0 12px;">Track your daily routine completion</p>
+                        <span style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border-radius:20px;font-size:11px;font-weight:600;">Coming Soon</span>
                       </div>
                     </div>
 
-                    <!-- 12-Month Skincare Journey Timeline -->
-                    <div class="flashai-vto-timeline" id="flashai-vto-timeline" style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:14px;border:1px solid #ddd6fe;">
-                      <h3 style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#5b21b6;margin:0 0 12px;">
-                        <span style="font-size:18px;">📅</span> Your 12-Month Skincare Journey
-                      </h3>
-                      <div id="flashai-vto-timeline-content" style="display:flex;flex-direction:column;gap:10px;">
-                        <!-- Dynamically populated -->
+                    <!-- 12-Month Skincare Journey Timeline - Coming Soon -->
+                    <div class="flashai-vto-timeline" id="flashai-vto-timeline" style="margin-top:20px;padding:20px;background:linear-gradient(135deg,#f9fafb 0%,#f4f4f5 100%);border-radius:14px;border:1px dashed #d4d4d8;">
+                      <div style="text-align:center;padding:20px 0;">
+                        <div style="width:48px;height:48px;margin:0 auto 12px;background:#ede9fe;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                          <span style="font-size:24px;">🗓️</span>
+                        </div>
+                        <h4 style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 6px;">12-Month Skincare Journey</h4>
+                        <p style="font-size:12px;color:#71717a;margin:0 0 12px;">See your personalized long-term plan</p>
+                        <span style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border-radius:20px;font-size:11px;font-weight:600;">Coming Soon</span>
                       </div>
                     </div>
                   </div>
