@@ -371,14 +371,26 @@ export class GoalService {
    */
   async createGoalsFromScan(userId: string, storeId: string): Promise<UserGoal[]> {
     // Get user's latest face scan analysis
+    // First get the user's visitor_id
+    const userResult = await pool.query(
+      `SELECT visitor_id FROM widget_users WHERE id = $1`,
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw createError('User not found', 404);
+    }
+
+    const visitorId = userResult.rows[0].visitor_id;
+
+    // Then get the latest face scan for this user (by visitor_id or user_id)
     const scanResult = await pool.query(
       `SELECT fa.* FROM face_analysis fa
        JOIN face_scans fs ON fa.face_scan_id = fs.id
-       JOIN widget_users wu ON (fs.visitor_id = wu.visitor_id OR fs.user_id = $1::text)
-       WHERE wu.id = $1
+       WHERE fs.visitor_id = $1 OR fs.user_id = $2
        ORDER BY fa.created_at DESC
        LIMIT 1`,
-      [userId]
+      [visitorId, userId]
     );
 
     if (scanResult.rows.length === 0) {
