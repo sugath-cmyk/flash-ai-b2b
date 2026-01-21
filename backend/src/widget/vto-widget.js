@@ -1503,16 +1503,18 @@
       }
 
       container.innerHTML = goals.map(goal => {
-        const progress = Math.min(100, Math.max(0, goal.progress_percent || 0));
+        const progress = Math.min(100, Math.max(0, goal.progressPercent || 0));
         const statusColor = goal.status === 'completed' ? '#16a34a' : goal.status === 'active' ? '#8b5cf6' : '#71717a';
-        const weeksLeft = goal.target_date ? Math.max(0, Math.ceil((new Date(goal.target_date) - new Date()) / (7 * 24 * 60 * 60 * 1000))) : null;
+        const weeksLeft = goal.targetDate ? Math.max(0, Math.ceil((new Date(goal.targetDate) - new Date()) / (7 * 24 * 60 * 60 * 1000))) : null;
+        const targetVal = goal.targetValue || 100;
+        const currentVal = goal.currentValue || 0;
 
         return `
           <div class="flashai-goal-card" data-goal-id="${goal.id}" style="padding:16px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
               <div>
-                <h5 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 4px;">${goal.name || goal.goal_type}</h5>
-                <p style="font-size:11px;color:#71717a;margin:0;">${weeksLeft !== null ? `${weeksLeft} week${weeksLeft !== 1 ? 's' : ''} remaining` : ''}</p>
+                <h5 style="font-size:14px;font-weight:600;color:#18181b;margin:0 0 4px;">${goal.goalName || goal.goalType || 'Goal'}</h5>
+                <p style="font-size:11px;color:#71717a;margin:0;">${weeksLeft !== null ? `${weeksLeft} week${weeksLeft !== 1 ? 's' : ''} remaining` : '8 weeks program'}</p>
               </div>
               <span style="padding:4px 10px;background:${statusColor}20;color:${statusColor};font-size:10px;font-weight:600;border-radius:12px;text-transform:capitalize;">${goal.status}</span>
             </div>
@@ -1520,9 +1522,9 @@
               <div style="width:${progress}%;height:100%;background:linear-gradient(90deg,#8b5cf6 0%,#7c3aed 100%);border-radius:6px;transition:width 0.3s;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;margin-top:6px;">
-              <span style="font-size:11px;color:#71717a;">Current: ${goal.current_value || 0}</span>
-              <span style="font-size:11px;font-weight:600;color:#8b5cf6;">${progress}%</span>
-              <span style="font-size:11px;color:#71717a;">Target: ${goal.target_value || 100}</span>
+              <span style="font-size:11px;color:#71717a;">Current: ${currentVal}%</span>
+              <span style="font-size:11px;font-weight:600;color:#8b5cf6;">${progress}% complete</span>
+              <span style="font-size:11px;color:#71717a;">Target: ${targetVal}%</span>
             </div>
             <button class="flashai-goal-monthly-btn" data-goal-id="${goal.id}" style="margin-top:10px;padding:8px 12px;background:#f5f3ff;border:1px solid #e9d5ff;border-radius:8px;font-size:11px;font-weight:600;color:#7c3aed;cursor:pointer;width:100%;text-align:center;">
               📊 View Monthly Progress
