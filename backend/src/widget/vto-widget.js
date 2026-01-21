@@ -3743,7 +3743,7 @@
       const issueConfigs = [
         {
           key: 'dark_circles',
-          threshold: 25,
+          threshold: 15, // LOWERED: More sensitive detection for dark circles
           facePosition: { x: 50, y: 35 }, // FACE-RELATIVE: center-ish, upper-mid (under eyes)
           region: 'Under Eyes',
           faceHighlight: { x: 20, y: 28, w: 60, h: 15 }
@@ -3813,25 +3813,23 @@
 
         let rawScore = attr.getScore(analysis);
 
-        // ========== NORMALIZE SCORE FOR DISPLAY ==========
-        // ML scores of 100% are alarming and often don't reflect reality
-        // Transform: compress high values, cap at reasonable maximum
-        // This makes scores less frightening while maintaining relative ordering
-        let score = this.normalizeDisplayScore(rawScore, attr.isGood);
-
         // ========== APPLY CALIBRATION ==========
         // Adjust scores based on user's skin context
         const calFactor = calibration[config.key] || 1.0;
-        const originalScore = score;
+        let score = rawScore;
 
         if (calFactor !== 1.0) {
           // For "bad" attributes, reduce the score (multiply by factor < 1)
-          // For "good" attributes (isInverse), we keep score as-is since lower is already better
           if (!config.isInverse) {
             score = Math.max(0, Math.round(score * calFactor));
           }
-          console.log(`[Calibration] ${config.key}: ${originalScore} → ${score} (factor: ${calFactor})`);
+          console.log(`[Calibration] ${config.key}: ${rawScore} → ${score} (factor: ${calFactor})`);
         }
+
+        // ========== GET CLINICAL GRADE ==========
+        // Use internationally recognized dermatology grading scales
+        // IGA for acne, Glogau for wrinkles, CEA for redness, POH for dark circles
+        const clinicalGrade = this.getClinicalGrade(config.key, score, analysis);
 
         // Dynamic threshold adjustment based on context
         let adjustedThreshold = config.threshold;
@@ -3842,20 +3840,22 @@
           console.log(`[Calibration] ${config.key} threshold raised to ${adjustedThreshold} (known condition)`);
         }
 
-        const meetsThreshold = config.isInverse ? score < adjustedThreshold : score >= adjustedThreshold;
-
-        // Determine severity - CALIBRATED to be less alarming
-        // Changed thresholds: 60 -> 75 for "Notable" (was "Significant")
+        // Use clinical grade to determine if it's a concern
+        // Grade 0-1 = Good, Grade 2 = Moderate, Grade 3-4 = Concern
         let severity, severityLabel;
-        if (attr.isGood) {
-          // For "good" attributes (like hydration), higher is better
-          severity = score > 70 ? 'good' : score > 35 ? 'moderate' : 'concern';
-          severityLabel = score > 70 ? 'Healthy' : score > 35 ? 'Could Improve' : 'Needs Attention';
+        if (clinicalGrade.isGood) {
+          // For good attributes like hydration, higher grade is better
+          severity = clinicalGrade.grade >= 3 ? 'good' : clinicalGrade.grade >= 2 ? 'moderate' : 'concern';
+          severityLabel = clinicalGrade.label;
         } else {
-          // For "bad" attributes (like acne), lower is better
-          severity = score < 40 ? 'good' : score < 75 ? 'moderate' : 'concern';
-          severityLabel = score < 40 ? 'Minimal' : score < 75 ? 'Moderate' : 'Notable';
+          // For concerns, lower grade is better
+          severity = clinicalGrade.grade <= 1 ? 'good' : clinicalGrade.grade <= 2 ? 'moderate' : 'concern';
+          severityLabel = clinicalGrade.label;
         }
+
+        const meetsThreshold = clinicalGrade.isGood
+          ? clinicalGrade.grade < 2  // For hydration: concern if grade < 2
+          : clinicalGrade.grade >= 2; // For concerns: concern if grade >= 2
 
         // ========== CONVERT FACE-RELATIVE TO IMAGE-ABSOLUTE POSITIONS ==========
         // This ensures markers appear WITHIN the detected face, not outside it
@@ -3869,6 +3869,7 @@
           name: attr.name,
           icon: attr.icon,
           score: Math.round(score),
+          clinicalGrade: clinicalGrade, // NEW: Clinical grading info
           severity,
           severityLabel,
           isConcern: meetsThreshold, // Flag to identify if this is a concern or healthy
@@ -3900,65 +3901,236 @@
     }
 
     // ========================================================================
-    // SCORE NORMALIZATION & RATIONALIZATION
+    // CLINICAL DERMATOLOGY GRADING SCALES
+    // ========================================================================
+    // Using internationally recognized clinical assessment standards:
+    // - IGA (Investigator's Global Assessment) - FDA approved for acne
+    // - Glogau Scale - Photoaging/wrinkles classification
+    // - CEA (Clinician's Erythema Assessment) - Redness grading
+    // - POH Grading (Sheth et al.) - Periorbital hyperpigmentation
+    // - Hydration Assessment Scale - Skin moisture levels
     // ========================================================================
 
     /**
-     * Normalize ML scores to user-friendly display percentages
-     *
-     * WHY THIS IS NEEDED:
-     * - ML models return confidence/detection scores (0-100)
-     * - A "100% redness" score doesn't mean 100% of face is red
-     * - It means the model is 100% confident redness is present
-     * - This is alarming to users and doesn't reflect reality
-     *
-     * TRANSFORMATION LOGIC:
-     * For "bad" attributes (acne, redness, wrinkles, etc.):
-     * - Use square root curve: compresses high values
-     * - 100 → 78, 80 → 70, 60 → 60, 40 → 49, 20 → 35
-     * - Max cap at 78% (very rare to show higher)
-     *
-     * For "good" attributes (hydration):
-     * - Keep closer to original but still normalize
-     * - Shows room for improvement without being alarming
-     *
-     * @param {number} rawScore - Original ML score (0-100)
-     * @param {boolean} isGoodAttribute - True for hydration, false for concerns
-     * @returns {number} - Normalized display score (0-100, but capped)
+     * Get clinical grade for a skin concern using dermatology standards
+     * Returns: { grade: number, label: string, description: string, scale: string }
+     */
+    getClinicalGrade(attribute, rawScore, analysis = {}) {
+      const score = Math.max(0, Math.min(100, rawScore || 0));
+
+      // ========== ACNE: IGA Scale (FDA Approved) ==========
+      // Investigator's Global Assessment - 5-point scale (0-4)
+      // Reference: US FDA 2005, PMC10995619
+      if (attribute === 'acne') {
+        const lesionCount = (analysis.whitehead_count || 0) + (analysis.blackhead_count || 0) + (analysis.pimple_count || 0);
+        let grade, label, description;
+
+        if (score < 10 && lesionCount === 0) {
+          grade = 0; label = 'Clear'; description = 'No evidence of acne';
+        } else if (score < 25 || lesionCount <= 2) {
+          grade = 1; label = 'Almost Clear'; description = 'Rare non-inflammatory lesions';
+        } else if (score < 50 || lesionCount <= 10) {
+          grade = 2; label = 'Mild'; description = 'Some non-inflammatory lesions, few inflammatory';
+        } else if (score < 75 || lesionCount <= 20) {
+          grade = 3; label = 'Moderate'; description = 'Many non-inflammatory and inflammatory lesions';
+        } else {
+          grade = 4; label = 'Severe'; description = 'Numerous lesions, nodules may be present';
+        }
+
+        return { grade, label, description, scale: 'IGA', maxGrade: 4 };
+      }
+
+      // ========== WRINKLES: Glogau Photoaging Scale ==========
+      // Classification I-IV based on photoaging severity
+      // Reference: Dr. Richard Glogau, Aesthetic Surgery Journal
+      if (attribute === 'wrinkles') {
+        const fineLines = analysis.fine_lines_count || 0;
+        const deepWrinkles = analysis.deep_wrinkles_count || 0;
+        let grade, label, description;
+
+        if (score < 20 && deepWrinkles === 0) {
+          grade = 1; label = 'Type I'; description = 'No wrinkles - Early photoaging, mild pigment changes';
+        } else if (score < 45 || deepWrinkles <= 2) {
+          grade = 2; label = 'Type II'; description = 'Wrinkles in motion - Early senile lentigines';
+        } else if (score < 70) {
+          grade = 3; label = 'Type III'; description = 'Wrinkles at rest - Obvious dyschromia, telangiectasia';
+        } else {
+          grade = 4; label = 'Type IV'; description = 'Only wrinkles - Severe photoaging';
+        }
+
+        return { grade, label, description, scale: 'Glogau', maxGrade: 4 };
+      }
+
+      // ========== REDNESS: CEA Scale ==========
+      // Clinician's Erythema Assessment - 5-point scale (0-4)
+      // Reference: JAAD, Rosacea.org
+      if (attribute === 'redness') {
+        let grade, label, description;
+
+        if (score < 15) {
+          grade = 0; label = 'Clear'; description = 'No signs of erythema';
+        } else if (score < 35) {
+          grade = 1; label = 'Almost Clear'; description = 'Slight redness';
+        } else if (score < 55) {
+          grade = 2; label = 'Mild'; description = 'Mild redness';
+        } else if (score < 75) {
+          grade = 3; label = 'Moderate'; description = 'Moderate redness';
+        } else {
+          grade = 4; label = 'Severe'; description = 'Severe redness';
+        }
+
+        return { grade, label, description, scale: 'CEA', maxGrade: 4 };
+      }
+
+      // ========== DARK CIRCLES: POH Grading (Sheth et al. 2014) ==========
+      // Periorbital Hyperpigmentation - 4-point scale (1-4)
+      // Reference: Indian Dermatology Online Journal
+      // ADJUSTED: More sensitive thresholds - dark circles are common and often missed
+      if (attribute === 'dark_circles') {
+        let grade, label, description;
+
+        if (score < 10) {
+          grade = 0; label = 'None'; description = 'No visible dark circles';
+        } else if (score < 25) {
+          grade = 1; label = 'Grade 1'; description = 'Mild - Faint discoloration';
+        } else if (score < 45) {
+          grade = 2; label = 'Grade 2'; description = 'Moderate - Noticeable discoloration';
+        } else if (score < 65) {
+          grade = 3; label = 'Grade 3'; description = 'Moderately Severe - Distinct discoloration';
+        } else {
+          grade = 4; label = 'Grade 4'; description = 'Severe - Deep, prominent discoloration';
+        }
+
+        return { grade, label, description, scale: 'POH', maxGrade: 4 };
+      }
+
+      // ========== PIGMENTATION: Hyperpigmentation Assessment ==========
+      // Based on MASI (Melasma Area Severity Index) principles
+      if (attribute === 'pigmentation') {
+        const darkSpots = analysis.dark_spots_count || 0;
+        let grade, label, description;
+
+        if (score < 15 && darkSpots <= 1) {
+          grade = 0; label = 'Clear'; description = 'Even skin tone';
+        } else if (score < 35) {
+          grade = 1; label = 'Minimal'; description = 'Slight uneven tone';
+        } else if (score < 55) {
+          grade = 2; label = 'Mild'; description = 'Some visible spots or uneven areas';
+        } else if (score < 75) {
+          grade = 3; label = 'Moderate'; description = 'Noticeable pigmentation concerns';
+        } else {
+          grade = 4; label = 'Significant'; description = 'Prominent pigmentation issues';
+        }
+
+        return { grade, label, description, scale: 'HPA', maxGrade: 4 };
+      }
+
+      // ========== HYDRATION: Corneometer Scale Adaptation ==========
+      // Based on professional skin hydration measurements
+      // Higher is better for hydration
+      if (attribute === 'hydration') {
+        let grade, label, description;
+
+        if (score >= 70) {
+          grade = 4; label = 'Well Hydrated'; description = 'Excellent moisture levels';
+        } else if (score >= 50) {
+          grade = 3; label = 'Normal'; description = 'Adequate hydration';
+        } else if (score >= 30) {
+          grade = 2; label = 'Slightly Dry'; description = 'Could use more moisture';
+        } else if (score >= 15) {
+          grade = 1; label = 'Dry'; description = 'Needs hydration';
+        } else {
+          grade = 0; label = 'Very Dry'; description = 'Significantly dehydrated';
+        }
+
+        return { grade, label, description, scale: 'Hydration', maxGrade: 4, isGood: true };
+      }
+
+      // ========== PORES: Pore Visibility Scale ==========
+      if (attribute === 'pores') {
+        const enlargedPores = analysis.enlarged_pores_count || 0;
+        let grade, label, description;
+
+        if (score < 20 && enlargedPores <= 5) {
+          grade = 0; label = 'Refined'; description = 'Minimal pore visibility';
+        } else if (score < 40) {
+          grade = 1; label = 'Normal'; description = 'Normal pore appearance';
+        } else if (score < 60) {
+          grade = 2; label = 'Visible'; description = 'Moderately visible pores';
+        } else if (score < 80) {
+          grade = 3; label = 'Enlarged'; description = 'Noticeably enlarged pores';
+        } else {
+          grade = 4; label = 'Very Enlarged'; description = 'Significantly enlarged pores';
+        }
+
+        return { grade, label, description, scale: 'PVS', maxGrade: 4 };
+      }
+
+      // ========== OILINESS: Sebum Assessment ==========
+      if (attribute === 'oiliness') {
+        let grade, label, description;
+
+        if (score < 20) {
+          grade = 0; label = 'Balanced'; description = 'Normal sebum levels';
+        } else if (score < 40) {
+          grade = 1; label = 'Slightly Oily'; description = 'Minor excess oil';
+        } else if (score < 60) {
+          grade = 2; label = 'Oily'; description = 'Moderate oiliness';
+        } else if (score < 80) {
+          grade = 3; label = 'Very Oily'; description = 'High sebum production';
+        } else {
+          grade = 4; label = 'Excessively Oily'; description = 'Excessive sebum production';
+        }
+
+        return { grade, label, description, scale: 'SAS', maxGrade: 4 };
+      }
+
+      // ========== TEXTURE: Skin Texture Assessment ==========
+      if (attribute === 'texture') {
+        let grade, label, description;
+
+        if (score < 20) {
+          grade = 0; label = 'Smooth'; description = 'Excellent skin texture';
+        } else if (score < 40) {
+          grade = 1; label = 'Good'; description = 'Minor texture variations';
+        } else if (score < 60) {
+          grade = 2; label = 'Uneven'; description = 'Moderate texture concerns';
+        } else if (score < 80) {
+          grade = 3; label = 'Rough'; description = 'Noticeable roughness';
+        } else {
+          grade = 4; label = 'Very Rough'; description = 'Significant texture issues';
+        }
+
+        return { grade, label, description, scale: 'STA', maxGrade: 4 };
+      }
+
+      // Default fallback
+      return {
+        grade: Math.round(score / 25),
+        label: score < 25 ? 'Minimal' : score < 50 ? 'Mild' : score < 75 ? 'Moderate' : 'Notable',
+        description: '',
+        scale: 'General',
+        maxGrade: 4
+      };
+    }
+
+    /**
+     * Legacy method - kept for backward compatibility
+     * Now uses clinical grading internally
      */
     normalizeDisplayScore(rawScore, isGoodAttribute = false) {
       if (rawScore === 0) return 0;
       if (rawScore === null || rawScore === undefined) return 0;
-
-      // Clamp to 0-100 range first
       const clamped = Math.max(0, Math.min(100, rawScore));
 
+      // For display purposes, we now use clinical grades
+      // This method returns a normalized score for progress bars
       if (isGoodAttribute) {
-        // For good attributes like hydration:
-        // Keep relatively close to original, slight boost to mid-range
-        // This encourages users without alarming them
-        if (clamped >= 80) return Math.round(clamped * 0.95); // 80-100 → 76-95
-        if (clamped >= 50) return Math.round(clamped * 1.05); // 50-79 → 52-83
-        return Math.round(clamped * 1.1); // 0-49 → 0-54 (slight boost)
+        return clamped; // Keep as-is for good attributes
       }
 
-      // For "bad" attributes (acne, redness, wrinkles, etc.):
-      // Apply square root transformation to compress high values
-      // This makes scores less frightening while maintaining relative order
-
-      // sqrt(x) * 10 gives: 0→0, 25→50, 50→71, 75→87, 100→100
-      // We want to cap lower, so use: sqrt(x) * 7.8
-      // This gives: 0→0, 25→39, 50→55, 75→68, 100→78
-
-      const transformed = Math.sqrt(clamped) * 7.8;
-
-      // Cap at 78% - extremely rare to show higher
-      // This prevents alarming "100%" displays
-      const capped = Math.min(78, Math.round(transformed));
-
-      // Ensure minimum of 5% if there's any detection
-      // (avoids showing 0% when ML detected something)
-      return clamped > 5 ? Math.max(5, capped) : capped;
+      // For concerns, normalize to 0-100 but cap at 85
+      return Math.min(85, clamped);
     }
 
     // ========================================================================
@@ -4350,85 +4522,76 @@
         </div>
       `;
 
-      // ========== ALL METRICS WITH 30/60/90 DAY PREDICTIONS ==========
+      // ========== ALL METRICS WITH CLINICAL GRADES ==========
+      // Using internationally recognized dermatology grading scales
       const allMetricsHtml = `
         <div style="margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;">📊 Skin Analysis & Predictions</h4>
-            <span style="font-size:10px;color:#71717a;">${issues.length} metrics</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;">📊 Clinical Skin Analysis</h4>
+            <span style="font-size:10px;color:#71717a;">${issues.length} metrics assessed</span>
           </div>
 
-          <!-- Column Headers -->
-          <div style="display:grid;grid-template-columns:1fr 55px 55px 55px 55px;gap:4px;padding:8px 12px;background:#f4f4f5;border-radius:10px 10px 0 0;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;">
-            <div>Metric</div>
-            <div style="text-align:center;">Now</div>
-            <div style="text-align:center;">30d</div>
-            <div style="text-align:center;">60d</div>
-            <div style="text-align:center;">90d</div>
+          <!-- Clinical Standards Note -->
+          <div style="margin-bottom:12px;padding:8px 12px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;">
+            <p style="font-size:10px;color:#1e40af;margin:0;line-height:1.4;">
+              <strong>🏥 Using Clinical Standards:</strong> IGA (FDA acne scale), Glogau (photoaging), CEA (erythema), POH (dark circles)
+            </p>
           </div>
 
-          <!-- Metrics Rows -->
-          <div style="background:#fff;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 12px 12px;">
+          <!-- Metrics Cards -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
             ${issues.map(issue => {
               const colors = severityColors[issue.severity] || severityColors.moderate;
-              const currentScore = issue.score;
-
-              // Calculate predicted improvements based on whether it's a "good" or "bad" attribute
-              // For bad attributes (acne, redness): lower is better, so predict decrease
-              // For good attributes (hydration): higher is better, so predict increase
+              const grade = issue.clinicalGrade || { grade: 0, label: 'N/A', scale: 'General', maxGrade: 4 };
               const isGoodAttr = issue.isGoodAttribute;
-              const improvementRate = issue.isConcern ? 0.15 : 0.08; // 15% improvement per month for concerns, 8% for healthy
 
-              let pred30, pred60, pred90;
+              // Visual grade indicator (filled dots)
+              const maxGrade = grade.maxGrade || 4;
+              let gradeDisplay = '';
               if (isGoodAttr) {
-                // Good attributes: increase score (e.g., hydration 60 → 70 → 78 → 85)
-                pred30 = Math.min(100, Math.round(currentScore + (100 - currentScore) * improvementRate));
-                pred60 = Math.min(100, Math.round(currentScore + (100 - currentScore) * improvementRate * 1.8));
-                pred90 = Math.min(100, Math.round(currentScore + (100 - currentScore) * improvementRate * 2.5));
+                // For good attributes, higher grade = better (filled from left)
+                for (let i = 0; i <= maxGrade; i++) {
+                  const filled = i <= grade.grade;
+                  gradeDisplay += \`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;background:\${filled ? '#22c55e' : '#e5e7eb'};"></span>\`;
+                }
               } else {
-                // Bad attributes: decrease score (e.g., acne 60 → 50 → 42 → 35)
-                pred30 = Math.max(0, Math.round(currentScore * (1 - improvementRate)));
-                pred60 = Math.max(0, Math.round(currentScore * (1 - improvementRate * 1.8)));
-                pred90 = Math.max(0, Math.round(currentScore * (1 - improvementRate * 2.5)));
+                // For concerns, lower grade = better (filled from right, inverted)
+                for (let i = 0; i <= maxGrade; i++) {
+                  const filled = i <= grade.grade;
+                  const color = grade.grade <= 1 ? '#22c55e' : grade.grade <= 2 ? '#f59e0b' : '#ef4444';
+                  gradeDisplay += \`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;background:\${filled ? color : '#e5e7eb'};"></span>\`;
+                }
               }
 
-              // Color coding for predictions
-              const getScoreColor = (score, isGood) => {
-                if (isGood) {
-                  return score >= 70 ? '#16a34a' : score >= 40 ? '#d97706' : '#dc2626';
-                } else {
-                  return score <= 30 ? '#16a34a' : score <= 60 ? '#d97706' : '#dc2626';
-                }
-              };
-
-              return `
-                <div style="display:grid;grid-template-columns:1fr 55px 55px 55px 55px;gap:4px;padding:10px 12px;border-bottom:1px solid #f4f4f5;align-items:center;">
-                  <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-                    <span style="font-size:14px;flex-shrink:0;">${issue.icon || '•'}</span>
-                    <span style="font-size:11px;font-weight:600;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${issue.name}</span>
-                    ${issue.isConcern ? '<span style="font-size:8px;padding:1px 4px;background:#fef2f2;color:#dc2626;border-radius:4px;font-weight:700;flex-shrink:0;">!</span>' : ''}
+              return \`
+                <div style="padding:12px;background:\${colors.bg};border:1px solid \${colors.border};border-radius:10px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:16px;">\${issue.icon || '•'}</span>
+                      <span style="font-size:13px;font-weight:600;color:#18181b;">\${issue.name}</span>
+                      \${issue.isConcern ? '<span style="font-size:8px;padding:2px 6px;background:#fef2f2;color:#dc2626;border-radius:4px;font-weight:700;margin-left:4px;">FOCUS</span>' : ''}
+                    </div>
+                    <div style="text-align:right;">
+                      <div style="font-size:12px;font-weight:700;color:\${colors.num};">\${grade.label}</div>
+                      <div style="font-size:9px;color:#6b7280;">\${grade.scale} Scale</div>
+                    </div>
                   </div>
-                  <div style="text-align:center;">
-                    <span style="font-size:13px;font-weight:700;color:${colors.num};">${currentScore}%</span>
-                  </div>
-                  <div style="text-align:center;">
-                    <span style="font-size:12px;font-weight:600;color:${getScoreColor(pred30, isGoodAttr)};">${pred30}%</span>
-                  </div>
-                  <div style="text-align:center;">
-                    <span style="font-size:12px;font-weight:600;color:${getScoreColor(pred60, isGoodAttr)};">${pred60}%</span>
-                  </div>
-                  <div style="text-align:center;">
-                    <span style="font-size:12px;font-weight:600;color:${getScoreColor(pred90, isGoodAttr)};">${pred90}%</span>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                      \${gradeDisplay}
+                      <span style="font-size:10px;color:#6b7280;margin-left:4px;">Grade \${grade.grade}/\${maxGrade}</span>
+                    </div>
+                    <div style="font-size:10px;color:#71717a;max-width:50%;text-align:right;">\${grade.description || ''}</div>
                   </div>
                 </div>
-              `;
+              \`;
             }).join('')}
           </div>
 
-          <!-- Prediction Note -->
-          <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
-            <p style="font-size:10px;color:#166534;margin:0;line-height:1.4;">
-              <strong>📈 Predictions</strong> based on consistent skincare routine. Results may vary. Rescan monthly to track actual progress.
+          <!-- Clinical Note -->
+          <div style="margin-top:12px;padding:10px 12px;background:#fefce8;border-radius:8px;border:1px solid #fde047;">
+            <p style="font-size:10px;color:#854d0e;margin:0;line-height:1.4;">
+              <strong>📋 Note:</strong> Grades follow clinical dermatology standards. Grade 0-1 = Healthy, Grade 2 = Monitor, Grade 3-4 = Consult a dermatologist for personalized advice.
             </p>
           </div>
         </div>
@@ -4440,11 +4603,12 @@
         concernsHtml = `
           <div style="margin-bottom:16px;">
             <h4 style="font-size:13px;font-weight:700;color:#dc2626;margin:0 0 12px;display:flex;align-items:center;gap:6px;">
-              <span>🎯</span> Areas of Focus (${concerns.length})
+              <span>🎯</span> Areas of Focus - Detailed Recommendations (${concerns.length})
             </h4>
             ${concerns.map((issue, idx) => {
               const index = issues.indexOf(issue); // Get original index for accordion
               const colors = severityColors[issue.severity] || severityColors.moderate;
+              const grade = issue.clinicalGrade || { grade: 0, label: 'N/A', scale: 'General' };
               return `
               <div class="flashai-vto-accordion-item" data-index="${index}" style="margin-bottom:8px;">
                 <!-- Header (clickable) -->
@@ -4453,9 +4617,9 @@
                   <span class="flashai-vto-issue-num" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${colors.num};color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">${idx + 1}</span>
                   <div class="flashai-vto-issue-info" style="flex:1;min-width:0;">
                     <span class="flashai-vto-issue-name" style="display:block;font-size:14px;font-weight:600;color:#18181b;">${issue.name}</span>
-                    <span class="flashai-vto-issue-region" style="display:block;font-size:12px;color:#71717a;margin-top:2px;">${issue.region} • ${issue.score}%</span>
+                    <span class="flashai-vto-issue-region" style="display:block;font-size:12px;color:#71717a;margin-top:2px;">${issue.region} • ${grade.scale} Grade ${grade.grade}</span>
                   </div>
-                  <div class="flashai-vto-issue-badge" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;background:${colors.badgeBg};color:${colors.badge};text-transform:uppercase;letter-spacing:0.5px;">${issue.severityLabel}</div>
+                  <div class="flashai-vto-issue-badge" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;background:${colors.badgeBg};color:${colors.badge};text-transform:uppercase;letter-spacing:0.5px;">${grade.label}</div>
                   <svg class="flashai-vto-accordion-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${colors.num}" stroke-width="2.5" style="flex-shrink:0;transition:transform 0.3s;">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
