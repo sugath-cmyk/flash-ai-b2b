@@ -1717,7 +1717,50 @@
       }
     }
 
+    /**
+     * Migrate to phased routine system - clears old cached data
+     * Version 2: Phased routine system with questionnaire
+     */
+    migrateToPhaseSystem() {
+      const CURRENT_VERSION = 2;
+      const storedVersion = parseInt(localStorage.getItem('flashai_routine_version') || '0');
+
+      if (storedVersion < CURRENT_VERSION) {
+        console.log('[Migration] Upgrading to phased routine system v' + CURRENT_VERSION);
+
+        // Clear old routine-related cached data
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (
+            key.includes('routine') ||
+            key.includes('flashai_goals') ||
+            key.includes('flashai_phase')
+          )) {
+            keysToRemove.push(key);
+          }
+        }
+
+        keysToRemove.forEach(key => {
+          console.log('[Migration] Removing cached:', key);
+          localStorage.removeItem(key);
+        });
+
+        // Clear state
+        this.state.routines = null;
+        this.state.currentPhase = null;
+        this.state.questionnaireAnswers = null;
+
+        // Set new version
+        localStorage.setItem('flashai_routine_version', CURRENT_VERSION.toString());
+        console.log('[Migration] Migration complete. Users will see questionnaire.');
+      }
+    }
+
     checkStoredAuth() {
+      // First, migrate to new phased system (clears old cached routines)
+      this.migrateToPhaseSystem();
+
       const token = localStorage.getItem('flashai_auth_token');
       const user = localStorage.getItem('flashai_user');
 
