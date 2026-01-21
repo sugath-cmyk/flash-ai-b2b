@@ -980,31 +980,6 @@
                       </button>
                     </div>
 
-                    <!-- Phase Milestone Timeline -->
-                    <div id="flashai-vto-phase-timeline" style="margin-bottom:16px;display:flex;justify-content:space-between;position:relative;padding:0 8px;">
-                      <div style="position:absolute;top:12px;left:24px;right:24px;height:2px;background:#e4e4e7;z-index:0;"></div>
-                      <div class="flashai-milestone completed" data-phase="1" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
-                        <div style="width:24px;height:24px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;">✓</div>
-                        <span style="font-size:9px;color:#8b5cf6;margin-top:4px;font-weight:600;">Foundation</span>
-                      </div>
-                      <div class="flashai-milestone" data-phase="2" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
-                        <div style="width:24px;height:24px;border-radius:50%;background:#e4e4e7;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:10px;font-weight:700;">2</div>
-                        <span style="font-size:9px;color:#71717a;margin-top:4px;">First Active</span>
-                      </div>
-                      <div class="flashai-milestone" data-phase="3" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
-                        <div style="width:24px;height:24px;border-radius:50%;background:#e4e4e7;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:10px;font-weight:700;">3</div>
-                        <span style="font-size:9px;color:#71717a;margin-top:4px;">Tolerance</span>
-                      </div>
-                      <div class="flashai-milestone" data-phase="4" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
-                        <div style="width:24px;height:24px;border-radius:50%;background:#e4e4e7;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:10px;font-weight:700;">4</div>
-                        <span style="font-size:9px;color:#71717a;margin-top:4px;">Full</span>
-                      </div>
-                    </div>
-
-                    <!-- Stats Header -->
-                    <div id="flashai-vto-routine-stats" style="margin-bottom:16px;">
-                      <!-- Populated dynamically -->
-                    </div>
                     <!-- AM/PM Toggle -->
                     <div style="display:flex;gap:0;margin-bottom:16px;background:#f4f4f5;border-radius:25px;padding:4px;">
                       <button id="flashai-vto-routine-am" class="active" style="flex:1;padding:10px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:none;border-radius:22px;font-size:13px;font-weight:600;color:#92400e;cursor:pointer;transition:all 0.2s;">
