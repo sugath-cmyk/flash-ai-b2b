@@ -3811,7 +3811,13 @@
         const attr = attrs[config.key];
         if (!attr) return;
 
-        let score = attr.getScore(analysis);
+        let rawScore = attr.getScore(analysis);
+
+        // ========== NORMALIZE SCORE FOR DISPLAY ==========
+        // ML scores of 100% are alarming and often don't reflect reality
+        // Transform: compress high values, cap at reasonable maximum
+        // This makes scores less frightening while maintaining relative ordering
+        let score = this.normalizeDisplayScore(rawScore, attr.isGood);
 
         // ========== APPLY CALIBRATION ==========
         // Adjust scores based on user's skin context
@@ -3891,6 +3897,68 @@
 
       this.state.detectedIssues = issues;
       this.renderIssuesList();
+    }
+
+    // ========================================================================
+    // SCORE NORMALIZATION & RATIONALIZATION
+    // ========================================================================
+
+    /**
+     * Normalize ML scores to user-friendly display percentages
+     *
+     * WHY THIS IS NEEDED:
+     * - ML models return confidence/detection scores (0-100)
+     * - A "100% redness" score doesn't mean 100% of face is red
+     * - It means the model is 100% confident redness is present
+     * - This is alarming to users and doesn't reflect reality
+     *
+     * TRANSFORMATION LOGIC:
+     * For "bad" attributes (acne, redness, wrinkles, etc.):
+     * - Use square root curve: compresses high values
+     * - 100 → 78, 80 → 70, 60 → 60, 40 → 49, 20 → 35
+     * - Max cap at 78% (very rare to show higher)
+     *
+     * For "good" attributes (hydration):
+     * - Keep closer to original but still normalize
+     * - Shows room for improvement without being alarming
+     *
+     * @param {number} rawScore - Original ML score (0-100)
+     * @param {boolean} isGoodAttribute - True for hydration, false for concerns
+     * @returns {number} - Normalized display score (0-100, but capped)
+     */
+    normalizeDisplayScore(rawScore, isGoodAttribute = false) {
+      if (rawScore === 0) return 0;
+      if (rawScore === null || rawScore === undefined) return 0;
+
+      // Clamp to 0-100 range first
+      const clamped = Math.max(0, Math.min(100, rawScore));
+
+      if (isGoodAttribute) {
+        // For good attributes like hydration:
+        // Keep relatively close to original, slight boost to mid-range
+        // This encourages users without alarming them
+        if (clamped >= 80) return Math.round(clamped * 0.95); // 80-100 → 76-95
+        if (clamped >= 50) return Math.round(clamped * 1.05); // 50-79 → 52-83
+        return Math.round(clamped * 1.1); // 0-49 → 0-54 (slight boost)
+      }
+
+      // For "bad" attributes (acne, redness, wrinkles, etc.):
+      // Apply square root transformation to compress high values
+      // This makes scores less frightening while maintaining relative order
+
+      // sqrt(x) * 10 gives: 0→0, 25→50, 50→71, 75→87, 100→100
+      // We want to cap lower, so use: sqrt(x) * 7.8
+      // This gives: 0→0, 25→39, 50→55, 75→68, 100→78
+
+      const transformed = Math.sqrt(clamped) * 7.8;
+
+      // Cap at 78% - extremely rare to show higher
+      // This prevents alarming "100%" displays
+      const capped = Math.min(78, Math.round(transformed));
+
+      // Ensure minimum of 5% if there's any detection
+      // (avoids showing 0% when ML detected something)
+      return clamped > 5 ? Math.max(5, capped) : capped;
     }
 
     // ========================================================================
@@ -4123,61 +4191,16 @@
     }
 
     renderPins() {
+      // DISABLED: Pin markers have been removed because:
+      // 1. Face detection positioning is unreliable
+      // 2. Markers often appear outside the actual face region
+      // 3. This caused confusion for users
+      // Instead, users can see their concerns in the detailed list below
       const container = document.getElementById('flashai-vto-pins-container');
-      if (!container) return;
-
-      const issues = this.state.detectedIssues;
-      const currentView = this.state.currentFaceView || 'front';
-      const analysis = this.state.currentAnalysis || {};
-
-      // Only show pins for concerns (not healthy metrics)
-      const concerns = issues.filter(i => i.isConcern);
-
-      // Severity colors for pins
-      const severityColors = {
-        concern: { bg: '#ef4444', pulse: 'rgba(239, 68, 68, 0.4)' },
-        moderate: { bg: '#f59e0b', pulse: 'rgba(245, 158, 11, 0.4)' },
-        good: { bg: '#10b981', pulse: 'rgba(16, 185, 129, 0.4)' }
-      };
-
-      // Render pins only for concerns (numbered circles on face)
-      let pinsHtml = concerns.map((issue, idx) => {
-        const index = issues.indexOf(issue); // Get original index for accordion linking
-        const colors = severityColors[issue.severity] || severityColors.moderate;
-        return `
-        <div class="flashai-vto-pin ${issue.severity}"
-             data-index="${index}"
-             style="position:absolute;left:${issue.position.x}%;top:${issue.position.y}%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:${colors.bg};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);z-index:10;pointer-events:auto;transition:transform 0.2s,box-shadow 0.2s;">
-          <span class="flashai-vto-pin-num" style="font-size:12px;font-weight:700;color:#fff;">${idx + 1}</span>
-          <span class="flashai-vto-pin-pulse" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;border-radius:50%;background:${colors.pulse};animation:flashai-pin-pulse 2s infinite;pointer-events:none;z-index:-1;"></span>
-        </div>
-      `;
-      }).join('');
-
-      // Also render real detection markers from ML service (smaller dots for actual locations)
-      // These show actual detected spots for current view
-      const realMarkers = this.getRealMarkersForView(analysis, currentView);
-      pinsHtml += realMarkers.map(marker => {
-        const colors = severityColors[marker.severity] || severityColors.moderate;
-        return `
-        <div class="flashai-vto-real-marker ${marker.type}"
-             style="position:absolute;left:${marker.x * 100}%;top:${marker.y * 100}%;transform:translate(-50%,-50%);width:${marker.size || 8}px;height:${marker.size || 8}px;border-radius:50%;background:${colors.bg};opacity:0.7;box-shadow:0 0 4px ${colors.pulse};pointer-events:none;z-index:5;"
-             title="${marker.label}">
-        </div>
-      `;
-      }).join('');
-
-      container.innerHTML = pinsHtml;
-
-      // Add click handlers for issue pins
-      container.querySelectorAll('.flashai-vto-pin').forEach(pin => {
-        pin.addEventListener('click', () => {
-          const index = parseInt(pin.dataset.index);
-          this.selectIssue(index);
-        });
-      });
-
-      console.log(`[Pins] Rendered ${concerns.length} concern pins for ${currentView} view (${issues.length} total metrics)`);
+      if (container) {
+        container.innerHTML = ''; // Clear any existing pins
+      }
+      console.log('[Pins] Pin markers disabled - using list-based display instead');
     }
 
     getRealMarkersForView(analysis, currentView) {
