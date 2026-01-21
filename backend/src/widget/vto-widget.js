@@ -857,7 +857,7 @@
                 </div>
               </div><!-- End Tab: Goals -->
 
-              <!-- Tab Content: Routine -->
+              <!-- Tab Content: Routine (Goal-based from Backend) -->
               <div id="flashai-vto-tab-routine" class="flashai-vto-tab-content" style="display:none;">
                 <div class="flashai-vto-routine-container" style="padding:0;">
                   <!-- Login Prompt -->
@@ -869,15 +869,19 @@
                       </svg>
                     </div>
                     <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Your Personalized Routine</h3>
-                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Get a custom AM/PM skincare routine based on your analysis</p>
+                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Sign in to get a custom AM/PM skincare routine based on your goals</p>
                     <button id="flashai-vto-routine-signin" style="padding:12px 32px;background:linear-gradient(135deg,#db2777 0%,#be185d 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(219,39,119,0.3);transition:all 0.2s;">
                       Sign In for Routine
                     </button>
                   </div>
                   <!-- Routine Content -->
                   <div id="flashai-vto-routine-content" style="display:none;">
+                    <!-- Stats Header -->
+                    <div id="flashai-vto-routine-stats" style="margin-bottom:16px;">
+                      <!-- Populated dynamically -->
+                    </div>
                     <!-- AM/PM Toggle -->
-                    <div style="display:flex;gap:0;margin-bottom:20px;background:#f4f4f5;border-radius:25px;padding:4px;">
+                    <div style="display:flex;gap:0;margin-bottom:16px;background:#f4f4f5;border-radius:25px;padding:4px;">
                       <button id="flashai-vto-routine-am" class="active" style="flex:1;padding:10px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:none;border-radius:22px;font-size:13px;font-weight:600;color:#92400e;cursor:pointer;transition:all 0.2s;">
                         ☀️ Morning
                       </button>
@@ -885,16 +889,26 @@
                         🌙 Night
                       </button>
                     </div>
+                    <!-- Routine Time Display -->
+                    <div id="flashai-vto-routine-time-header" style="display:none;margin-bottom:12px;">
+                      <!-- Total time shown here -->
+                    </div>
                     <!-- Routine Steps -->
-                    <div id="flashai-vto-routine-steps" style="display:flex;flex-direction:column;gap:12px;">
+                    <div id="flashai-vto-routine-steps" style="display:flex;flex-direction:column;gap:10px;">
                       <!-- Populated dynamically -->
                     </div>
-                    <!-- Generate Routine Button -->
-                    <button id="flashai-vto-generate-routine" style="width:100%;margin-top:20px;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
-                      </svg>
-                      Generate My Routine
+                    <!-- Complete Routine Button -->
+                    <div id="flashai-vto-routine-actions" style="display:none;margin-top:16px;">
+                      <!-- Complete button shown here -->
+                    </div>
+                    <!-- Generate Routine Button (when no routine exists) -->
+                    <button id="flashai-vto-generate-routine" style="display:none;width:100%;margin-top:20px;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.3);">
+                      <span style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                        </svg>
+                        Generate My Routine
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -1218,7 +1232,11 @@
         }
       });
 
-      // ========== NEW: Routine AM/PM Toggle ==========
+      // ========== NEW: Routine Events ==========
+      modal.querySelector('#flashai-vto-routine-signin')?.addEventListener('click', () => {
+        this.showAuthModal();
+      });
+
       modal.querySelector('#flashai-vto-routine-am')?.addEventListener('click', () => {
         this.switchRoutineTime('am');
       });
@@ -1689,8 +1707,7 @@
     }
 
     /**
-     * Render intelligent goals directly from analysis concerns
-     * Each concern becomes an editable goal card
+     * Render goals directly from analysis concerns (read-only display)
      */
     renderSmartGoals(issues, container) {
       if (!container) return;
@@ -1703,49 +1720,42 @@
 
       // Priority concerns as goals
       if (concerns.length > 0) {
-        html += '<div style="margin-bottom:8px;"><span style="font-size:11px;font-weight:600;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;">🎯 Priority Goals (' + concerns.length + ')</span></div>';
+        html += '<div style="margin-bottom:10px;"><span style="font-size:11px;font-weight:600;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;">🎯 Focus Areas (' + concerns.length + ')</span></div>';
 
         concerns.forEach((issue, idx) => {
           const grade = issue.clinicalGrade || { grade: 0, label: 'N/A', scale: 'General', maxGrade: 4 };
-          const targetGrade = Math.max(0, grade.grade - 2); // Target is 2 grades better
-          const targetLabel = this.getGradeLabelForTarget(issue.key, targetGrade);
-          const progressPercent = grade.grade > 0 ? Math.round(((grade.maxGrade - grade.grade) / grade.maxGrade) * 100) : 100;
 
           // Severity color
           const severityColor = grade.grade >= 3 ? '#dc2626' : grade.grade >= 2 ? '#f59e0b' : '#16a34a';
           const bgColor = grade.grade >= 3 ? '#fef2f2' : grade.grade >= 2 ? '#fffbeb' : '#f0fdf4';
           const borderColor = grade.grade >= 3 ? '#fecaca' : grade.grade >= 2 ? '#fde68a' : '#bbf7d0';
 
-          html += '<div class="flashai-smart-goal" data-issue-key="' + issue.key + '" style="padding:14px;background:' + bgColor + ';border:2px solid ' + borderColor + ';border-radius:12px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;">' +
-            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">' +
+          // Get recommendation based on concern
+          const recommendation = this.getGoalRecommendation(issue.key);
+
+          html += '<div style="padding:12px;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:12px;margin-bottom:10px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">' +
               '<div style="display:flex;align-items:center;gap:8px;">' +
-                '<span style="font-size:20px;">' + (issue.icon || '🎯') + '</span>' +
+                '<span style="font-size:18px;">' + (issue.icon || '🎯') + '</span>' +
                 '<div>' +
-                  '<h5 style="font-size:13px;font-weight:700;color:#18181b;margin:0;">Improve ' + issue.name + '</h5>' +
-                  '<p style="font-size:10px;color:#71717a;margin:2px 0 0;">' + grade.scale + ' Scale • ' + issue.region + '</p>' +
+                  '<h5 style="font-size:12px;font-weight:700;color:#18181b;margin:0;">' + issue.name + '</h5>' +
+                  '<p style="font-size:9px;color:#71717a;margin:2px 0 0;">' + grade.scale + ' • ' + issue.region + '</p>' +
                 '</div>' +
               '</div>' +
-              '<span style="padding:3px 8px;background:' + severityColor + ';color:#fff;font-size:9px;font-weight:700;border-radius:10px;">' + grade.label + '</span>' +
+              '<span style="padding:3px 8px;background:' + severityColor + ';color:#fff;font-size:9px;font-weight:700;border-radius:10px;">Grade ' + grade.grade + '</span>' +
             '</div>' +
-            // Current vs Target
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
-              '<div style="text-align:center;flex:1;">' +
-                '<div style="font-size:9px;color:#71717a;text-transform:uppercase;margin-bottom:2px;">Current</div>' +
-                '<div style="font-size:16px;font-weight:700;color:' + severityColor + ';">Grade ' + grade.grade + '</div>' +
+            // Grade bar visualization
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+              '<div style="flex:1;background:#e5e7eb;border-radius:4px;height:8px;overflow:hidden;">' +
+                '<div style="width:' + ((grade.grade / grade.maxGrade) * 100) + '%;height:100%;background:' + severityColor + ';border-radius:4px;"></div>' +
               '</div>' +
-              '<div style="font-size:18px;color:#d1d5db;">→</div>' +
-              '<div style="text-align:center;flex:1;">' +
-                '<div style="font-size:9px;color:#71717a;text-transform:uppercase;margin-bottom:2px;">Target</div>' +
-                '<div style="font-size:16px;font-weight:700;color:#16a34a;">Grade ' + targetGrade + '</div>' +
-              '</div>' +
+              '<span style="font-size:10px;color:#71717a;white-space:nowrap;">' + grade.grade + '/' + grade.maxGrade + '</span>' +
             '</div>' +
-            // Progress bar
-            '<div style="background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;">' +
-              '<div style="width:' + progressPercent + '%;height:100%;background:linear-gradient(90deg,#8b5cf6,#7c3aed);border-radius:4px;transition:width 0.3s;"></div>' +
-            '</div>' +
-            '<div style="display:flex;justify-content:space-between;margin-top:4px;">' +
-              '<span style="font-size:9px;color:#71717a;">' + progressPercent + '% toward goal</span>' +
-              '<span style="font-size:9px;color:#8b5cf6;font-weight:600;">Tap to edit target ✏️</span>' +
+            // Recommendation
+            '<div style="padding:8px 10px;background:rgba(255,255,255,0.7);border-radius:8px;">' +
+              '<p style="font-size:10px;color:#52525b;margin:0;line-height:1.4;">' +
+                '<span style="font-weight:600;">Recommendation:</span> ' + recommendation +
+              '</p>' +
             '</div>' +
           '</div>';
         });
@@ -1753,7 +1763,7 @@
 
       // Healthy metrics (maintain)
       if (healthy.length > 0) {
-        html += '<div style="margin:16px 0 8px;"><span style="font-size:11px;font-weight:600;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;">✨ Maintain (' + healthy.length + ')</span></div>';
+        html += '<div style="margin:16px 0 8px;"><span style="font-size:11px;font-weight:600;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;">✅ Healthy (' + healthy.length + ')</span></div>';
 
         html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">';
         healthy.forEach(issue => {
@@ -1763,98 +1773,31 @@
               '<span style="font-size:14px;">' + (issue.icon || '✓') + '</span>' +
               '<span style="font-size:11px;font-weight:600;color:#166534;">' + issue.name + '</span>' +
             '</div>' +
-            '<div style="font-size:10px;color:#15803d;">Grade ' + grade.grade + '/' + grade.maxGrade + ' - ' + grade.label + '</div>' +
+            '<div style="font-size:10px;color:#15803d;">' + grade.label + '</div>' +
           '</div>';
         });
         html += '</div>';
       }
 
       container.innerHTML = html;
-
-      // Add click handlers for editing goals
-      container.querySelectorAll('.flashai-smart-goal').forEach(card => {
-        card.addEventListener('click', () => {
-          const issueKey = card.dataset.issueKey;
-          this.showEditGoalModal(issueKey);
-        });
-      });
     }
 
     /**
-     * Get appropriate label for a target grade
+     * Get recommendation text for a specific concern
      */
-    getGradeLabelForTarget(issueKey, targetGrade) {
-      const labels = {
-        0: 'Clear',
-        1: 'Almost Clear',
-        2: 'Mild',
-        3: 'Moderate',
-        4: 'Severe'
+    getGoalRecommendation(key) {
+      const recommendations = {
+        acne: 'Use salicylic acid cleanser, niacinamide serum. Avoid touching face.',
+        dark_circles: 'Get 7-8 hours sleep, use caffeine eye cream, stay hydrated.',
+        wrinkles: 'Apply retinol at night, use SPF 50 daily, add vitamin C serum.',
+        redness: 'Use gentle, fragrance-free products. Try centella/cica ingredients.',
+        pigmentation: 'Vitamin C in AM, exfoliate 2x/week, never skip sunscreen.',
+        hydration: 'Layer hydrating products, use hyaluronic acid, drink more water.',
+        oiliness: 'Use niacinamide, lightweight moisturizer, don\'t over-cleanse.',
+        pores: 'BHA exfoliant 2-3x/week, niacinamide serum, clay mask weekly.',
+        texture: 'AHA/BHA exfoliants, retinol at night, gentle physical exfoliation.'
       };
-      return labels[targetGrade] || 'Improved';
-    }
-
-    /**
-     * Show modal to edit goal target
-     */
-    showEditGoalModal(issueKey) {
-      const issue = this.state.detectedIssues.find(i => i.key === issueKey);
-      if (!issue) return;
-
-      const grade = issue.clinicalGrade || { grade: 0, maxGrade: 4 };
-
-      // Create modal
-      const modal = document.createElement('div');
-      modal.id = 'flashai-edit-goal-modal';
-      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100000;';
-
-      let gradeOptions = '';
-      for (let i = 0; i <= grade.maxGrade; i++) {
-        const label = this.getGradeLabelForTarget(issueKey, i);
-        const selected = i === Math.max(0, grade.grade - 2) ? 'selected' : '';
-        const disabled = i >= grade.grade ? 'disabled' : '';
-        gradeOptions += '<option value="' + i + '" ' + selected + ' ' + disabled + '>Grade ' + i + ' - ' + label + '</option>';
-      }
-
-      modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:320px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,0.2);">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
-          '<h3 style="font-size:16px;font-weight:700;color:#18181b;margin:0;">Edit Goal Target</h3>' +
-          '<button id="flashai-close-edit-goal" style="background:none;border:none;font-size:20px;cursor:pointer;color:#71717a;">×</button>' +
-        '</div>' +
-        '<div style="margin-bottom:16px;">' +
-          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
-            '<span style="font-size:24px;">' + (issue.icon || '🎯') + '</span>' +
-            '<span style="font-size:14px;font-weight:600;color:#18181b;">' + issue.name + '</span>' +
-          '</div>' +
-          '<div style="padding:12px;background:#f4f4f5;border-radius:8px;margin-bottom:12px;">' +
-            '<div style="font-size:11px;color:#71717a;margin-bottom:4px;">Current Status</div>' +
-            '<div style="font-size:14px;font-weight:600;color:#dc2626;">' + grade.scale + ' Grade ' + grade.grade + ' - ' + (issue.clinicalGrade?.label || 'N/A') + '</div>' +
-          '</div>' +
-          '<label style="font-size:12px;font-weight:600;color:#18181b;display:block;margin-bottom:6px;">Target Grade</label>' +
-          '<select id="flashai-goal-target-select" style="width:100%;padding:12px;border:2px solid #e4e4e7;border-radius:10px;font-size:14px;font-weight:500;background:#fff;">' +
-            gradeOptions +
-          '</select>' +
-          '<p style="font-size:10px;color:#71717a;margin:8px 0 0;">Lower grade = better skin health. Take weekly scans to track progress!</p>' +
-        '</div>' +
-        '<button id="flashai-save-goal-target" style="width:100%;padding:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Save Target</button>' +
-      '</div>';
-
-      document.body.appendChild(modal);
-
-      // Event handlers
-      document.getElementById('flashai-close-edit-goal').onclick = () => modal.remove();
-      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-
-      document.getElementById('flashai-save-goal-target').onclick = () => {
-        const targetGrade = document.getElementById('flashai-goal-target-select').value;
-        console.log('[Goals] Saved target for ' + issueKey + ': Grade ' + targetGrade);
-        // Store in state for tracking
-        if (!this.state.goalTargets) this.state.goalTargets = {};
-        this.state.goalTargets[issueKey] = parseInt(targetGrade);
-        modal.remove();
-        // Refresh goals display
-        this.loadGoalsData();
-      };
+      return recommendations[key] || 'Follow your personalized routine consistently.';
     }
 
     // Legacy method - kept for backwards compatibility
@@ -2014,106 +1957,108 @@
       }
     }
 
+    // Legacy functions - no longer used, goals auto-populate from analysis
     showAddGoalModal() {
-      // For now, just show the templates section more prominently
-      alert('Select a goal template below to get started!');
+      // Goals are now auto-generated from analysis
+      this.loadGoalsData();
     }
 
-    /**
-     * Auto-create goals based on user's face scan analysis
-     */
-    async autoSetGoalsFromScan() {
-      if (!this.state.authToken) {
-        alert('Please sign in to set goals');
-        return;
-      }
-
-      const btn = document.getElementById('flashai-vto-auto-goals-btn');
-      const originalText = btn?.innerHTML || 'Set Goals';
-
-      try {
-        // Show loading state
-        if (btn) {
-          btn.innerHTML = '<span style="display:inline-block;animation:flashai-spin 1s linear infinite;">⏳</span> Creating...';
-          btn.disabled = true;
-        }
-
-        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals')}/from-scan`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.state.authToken}`,
-            'X-API-Key': this.config.apiKey
-          }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          const count = data.data?.goals?.length || 0;
-
-          // Show success message
-          if (btn) {
-            btn.innerHTML = `✅ ${count} Goal${count !== 1 ? 's' : ''} Created!`;
-            btn.style.background = 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)';
-          }
-
-          // Refresh goals list
-          await this.loadGoalsData();
-
-          // Hide banner after success (optional - keep it visible for re-use)
-          setTimeout(() => {
-            const banner = document.getElementById('flashai-vto-auto-goals-banner');
-            if (banner && count > 0) {
-              banner.style.display = 'none';
-            } else if (btn) {
-              btn.innerHTML = originalText;
-              btn.disabled = false;
-            }
-          }, 2000);
-        } else {
-          throw new Error(data.message || 'Failed to create goals');
-        }
-      } catch (error) {
-        console.error('Error auto-setting goals:', error);
-
-        // Show error message
-        if (btn) {
-          btn.innerHTML = '❌ ' + (error.message || 'Failed');
-          btn.style.background = '#dc2626';
-
-          setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)';
-            btn.disabled = false;
-          }, 3000);
-        }
-      }
+    autoSetGoalsFromScan() {
+      // Goals are now auto-generated from analysis - just refresh
+      this.loadGoalsData();
     }
 
     // ==========================================================================
-    // NEW: Routine Data
+    // ROUTINE - Goal-based from Backend API
     // ==========================================================================
 
     async loadRoutineData() {
-      if (!this.state.authToken) return;
+      const loginPrompt = document.getElementById('flashai-vto-routine-login-prompt');
+      const routineContent = document.getElementById('flashai-vto-routine-content');
+      const generateBtn = document.getElementById('flashai-vto-generate-routine');
+
+      // Check if authenticated
+      if (!this.state.authToken) {
+        if (loginPrompt) loginPrompt.style.display = 'block';
+        if (routineContent) routineContent.style.display = 'none';
+        return;
+      }
+
+      // User is authenticated - show content
+      if (loginPrompt) loginPrompt.style.display = 'none';
+      if (routineContent) routineContent.style.display = 'block';
 
       try {
-        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}`, {
-          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
-        });
+        // Load stats and routines in parallel
+        const routinesUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines');
+        const [stats, routinesResponse] = await Promise.all([
+          this.loadRoutineStats(),
+          fetch(routinesUrl, {
+            headers: { 'Authorization': 'Bearer ' + this.state.authToken }
+          })
+        ]);
 
-        const data = await response.json();
-        if (data.success && data.data.routines) {
+        // Render stats header
+        this.renderRoutineStats(stats);
+
+        const data = await routinesResponse.json();
+
+        if (data.success && data.data.routines && data.data.routines.length > 0) {
           this.state.routines = data.data.routines;
+          if (generateBtn) generateBtn.style.display = 'none';
+          this.state.currentRoutineTime = 'am';
           this.renderRoutine('am');
         } else {
+          // No routines yet - show generate button
+          if (generateBtn) generateBtn.style.display = 'block';
           this.renderEmptyRoutine();
         }
       } catch (error) {
-        console.error('Error loading routines:', error);
+        console.error('[Routine] Error loading routines:', error);
+        if (generateBtn) generateBtn.style.display = 'block';
         this.renderEmptyRoutine();
       }
+    }
+
+    async loadRoutineStats() {
+      if (!this.state.authToken) return null;
+
+      try {
+        const statsUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/stats';
+        const response = await fetch(statsUrl, {
+          headers: { 'Authorization': 'Bearer ' + this.state.authToken }
+        });
+        const data = await response.json();
+        return data.success ? data.data : null;
+      } catch (error) {
+        console.error('[Routine] Error loading stats:', error);
+        return null;
+      }
+    }
+
+    renderRoutineStats(stats) {
+      const container = document.getElementById('flashai-vto-routine-stats');
+      if (!container) return;
+
+      if (!stats || (stats.currentStreak === 0 && stats.completionsThisWeek === 0)) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">' +
+        '<div style="text-align:center;padding:12px 8px;background:#fef3c7;border-radius:10px;">' +
+          '<div style="font-size:18px;font-weight:700;color:#92400e;">' + stats.currentStreak + '</div>' +
+          '<div style="font-size:9px;color:#a16207;">Day Streak</div>' +
+        '</div>' +
+        '<div style="text-align:center;padding:12px 8px;background:#e0e7ff;border-radius:10px;">' +
+          '<div style="font-size:18px;font-weight:700;color:#4338ca;">' + stats.completionsThisWeek + '</div>' +
+          '<div style="font-size:9px;color:#6366f1;">This Week</div>' +
+        '</div>' +
+        '<div style="text-align:center;padding:12px 8px;background:#f0fdf4;border-radius:10px;">' +
+          '<div style="font-size:18px;font-weight:700;color:#16a34a;">' + stats.averageCompletion + '%</div>' +
+          '<div style="font-size:9px;color:#22c55e;">Avg Complete</div>' +
+        '</div>' +
+      '</div>';
     }
 
     switchRoutineTime(time) {
@@ -2121,88 +2066,570 @@
       const pmBtn = document.getElementById('flashai-vto-routine-pm');
 
       if (time === 'am') {
-        amBtn.style.background = 'linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)';
-        amBtn.style.color = '#92400e';
-        pmBtn.style.background = 'transparent';
-        pmBtn.style.color = '#71717a';
+        if (amBtn) {
+          amBtn.style.background = 'linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)';
+          amBtn.style.color = '#92400e';
+        }
+        if (pmBtn) {
+          pmBtn.style.background = 'transparent';
+          pmBtn.style.color = '#71717a';
+        }
       } else {
-        pmBtn.style.background = 'linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%)';
-        pmBtn.style.color = '#4338ca';
-        amBtn.style.background = 'transparent';
-        amBtn.style.color = '#71717a';
+        if (pmBtn) {
+          pmBtn.style.background = 'linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%)';
+          pmBtn.style.color = '#4338ca';
+        }
+        if (amBtn) {
+          amBtn.style.background = 'transparent';
+          amBtn.style.color = '#71717a';
+        }
       }
 
+      this.state.currentRoutineTime = time;
       this.renderRoutine(time);
     }
 
-    renderRoutine(time) {
+    /**
+     * Generate intelligent routine based on detected skin concerns
+     */
+    generateSmartRoutine(time) {
+      const issues = this.state.detectedIssues || [];
+      const concerns = issues.filter(i => i.isConcern).map(i => i.key);
+
+      // Ingredient database based on concerns
+      const ingredientsByConern = {
+        acne: { primary: 'Salicylic Acid (BHA)', secondary: 'Niacinamide', avoid: 'Heavy oils' },
+        dark_circles: { primary: 'Caffeine', secondary: 'Vitamin K, Peptides', avoid: 'Harsh rubbing' },
+        wrinkles: { primary: 'Retinol', secondary: 'Peptides, Vitamin C', avoid: 'Sun without SPF' },
+        redness: { primary: 'Centella Asiatica', secondary: 'Niacinamide, Azelaic Acid', avoid: 'Fragrance, Alcohol' },
+        pigmentation: { primary: 'Vitamin C', secondary: 'Alpha Arbutin, Tranexamic Acid', avoid: 'Sun exposure' },
+        hydration: { primary: 'Hyaluronic Acid', secondary: 'Ceramides, Glycerin', avoid: 'Alcohol-based products' },
+        oiliness: { primary: 'Niacinamide', secondary: 'BHA, Zinc', avoid: 'Heavy creams' },
+        pores: { primary: 'Niacinamide', secondary: 'BHA, Retinol', avoid: 'Pore-clogging ingredients' },
+        texture: { primary: 'AHA (Glycolic/Lactic)', secondary: 'Retinol, Vitamin C', avoid: 'Over-exfoliation' }
+      };
+
+      // Get primary ingredients for this user's concerns
+      const primaryIngredients = concerns.map(c => ingredientsByConern[c]?.primary).filter(Boolean);
+      const secondaryIngredients = concerns.map(c => ingredientsByConern[c]?.secondary).filter(Boolean);
+
+      let steps = [];
+
+      if (time === 'am') {
+        // ============ MORNING ROUTINE ============
+        steps = [
+          {
+            step: 1,
+            name: 'Gentle Cleanser',
+            icon: '🧼',
+            why: 'Remove overnight oil and prep skin',
+            ingredients: concerns.includes('acne') ? 'Salicylic acid or gentle foaming cleanser' :
+                        concerns.includes('redness') ? 'Gentle, fragrance-free cleanser' :
+                        'Gentle cream or gel cleanser',
+            tip: 'Use lukewarm water, not hot',
+            bgColor: '#fef3c7',
+            borderColor: '#fde68a'
+          },
+          {
+            step: 2,
+            name: 'Toner (Optional)',
+            icon: '💧',
+            why: 'Balance pH and add hydration',
+            ingredients: concerns.includes('pores') ? 'Niacinamide toner' :
+                        concerns.includes('hydration') ? 'Hydrating essence with Hyaluronic Acid' :
+                        'Alcohol-free balancing toner',
+            tip: 'Pat gently, don\'t rub',
+            bgColor: '#e0f2fe',
+            borderColor: '#bae6fd',
+            optional: true
+          },
+          {
+            step: 3,
+            name: 'Treatment Serum',
+            icon: '✨',
+            why: this.getSerumReason(concerns, 'am'),
+            ingredients: concerns.includes('pigmentation') || concerns.includes('wrinkles') ? 'Vitamin C (10-20%)' :
+                        concerns.includes('acne') ? 'Niacinamide 10%' :
+                        concerns.includes('redness') ? 'Centella/Cica serum' :
+                        'Antioxidant serum',
+            tip: 'Apply to slightly damp skin',
+            bgColor: '#fce7f3',
+            borderColor: '#fbcfe8',
+            highlighted: true
+          }
+        ];
+
+        // Add eye cream if dark circles detected
+        if (concerns.includes('dark_circles')) {
+          steps.push({
+            step: steps.length + 1,
+            name: 'Eye Cream',
+            icon: '👁️',
+            why: 'Target dark circles and puffiness',
+            ingredients: 'Caffeine, Vitamin K, Peptides',
+            tip: 'Use ring finger, pat gently around orbital bone',
+            bgColor: '#f3e8ff',
+            borderColor: '#e9d5ff'
+          });
+        }
+
+        steps.push({
+          step: steps.length + 1,
+          name: 'Moisturizer',
+          icon: '🧴',
+          why: 'Lock in hydration and protect barrier',
+          ingredients: concerns.includes('oiliness') ? 'Lightweight, oil-free gel moisturizer' :
+                      concerns.includes('hydration') ? 'Rich cream with Ceramides' :
+                      concerns.includes('acne') ? 'Non-comedogenic moisturizer' :
+                      'Balanced moisturizer for your skin type',
+          tip: 'Wait 1-2 minutes before sunscreen',
+          bgColor: '#dcfce7',
+          borderColor: '#bbf7d0'
+        });
+
+        // Sunscreen is ALWAYS last and most important
+        steps.push({
+          step: steps.length + 1,
+          name: 'Sunscreen SPF 30+',
+          icon: '☀️',
+          why: 'ESSENTIAL: Prevents aging, pigmentation, and skin damage',
+          ingredients: concerns.includes('acne') ? 'Lightweight, non-comedogenic SPF 50' :
+                      concerns.includes('redness') ? 'Mineral sunscreen (Zinc Oxide)' :
+                      'Broad-spectrum SPF 30-50',
+          tip: 'Apply generously, reapply every 2 hours outdoors',
+          bgColor: '#fef9c3',
+          borderColor: '#fef08a',
+          critical: true
+        });
+
+      } else {
+        // ============ NIGHT ROUTINE ============
+        steps = [
+          {
+            step: 1,
+            name: 'Oil Cleanser / Makeup Remover',
+            icon: '🫧',
+            why: 'Remove sunscreen, makeup, and sebum',
+            ingredients: 'Cleansing oil or micellar water',
+            tip: 'Massage for 60 seconds to dissolve impurities',
+            bgColor: '#e0e7ff',
+            borderColor: '#c7d2fe'
+          },
+          {
+            step: 2,
+            name: 'Water-Based Cleanser',
+            icon: '🧼',
+            why: 'Deep clean pores after oil cleanse',
+            ingredients: concerns.includes('acne') ? 'Salicylic acid cleanser' :
+                        concerns.includes('redness') ? 'Gentle, soothing cleanser' :
+                        'pH-balanced cleanser',
+            tip: 'Don\'t over-cleanse, 30-60 seconds is enough',
+            bgColor: '#fef3c7',
+            borderColor: '#fde68a'
+          }
+        ];
+
+        // Add exfoliant for specific concerns (2-3x per week)
+        if (concerns.includes('texture') || concerns.includes('acne') || concerns.includes('pigmentation') || concerns.includes('pores')) {
+          steps.push({
+            step: steps.length + 1,
+            name: 'Exfoliant (2-3x/week)',
+            icon: '🔄',
+            why: concerns.includes('texture') ? 'Smooth rough texture and promote cell turnover' :
+                concerns.includes('acne') ? 'Unclog pores and prevent breakouts' :
+                concerns.includes('pigmentation') ? 'Fade dark spots faster' :
+                'Minimize pores and improve clarity',
+            ingredients: concerns.includes('acne') ? 'BHA (Salicylic Acid 2%)' :
+                        concerns.includes('pigmentation') ? 'AHA (Glycolic Acid 5-10%)' :
+                        'AHA/BHA blend or gentle enzyme exfoliant',
+            tip: 'Start 1x/week, never use with retinol on same night',
+            bgColor: '#fce7f3',
+            borderColor: '#fbcfe8',
+            frequency: '2-3x/week'
+          });
+        }
+
+        steps.push({
+          step: steps.length + 1,
+          name: 'Toner/Essence',
+          icon: '💧',
+          why: 'Prep skin for better absorption of treatments',
+          ingredients: concerns.includes('hydration') ? 'Hydrating essence with Hyaluronic Acid' :
+                      concerns.includes('redness') ? 'Calming toner with Centella' :
+                      'Hydrating, alcohol-free toner',
+          tip: 'Apply while skin is still slightly damp',
+          bgColor: '#e0f2fe',
+          borderColor: '#bae6fd'
+        });
+
+        // Main treatment serum (the hero product)
+        steps.push({
+          step: steps.length + 1,
+          name: 'Treatment Serum',
+          icon: '⭐',
+          why: this.getSerumReason(concerns, 'pm'),
+          ingredients: concerns.includes('wrinkles') || concerns.includes('texture') ? 'Retinol (start 0.25%, work up)' :
+                      concerns.includes('acne') ? 'Niacinamide 10% + Zinc' :
+                      concerns.includes('pigmentation') ? 'Alpha Arbutin + Tranexamic Acid' :
+                      concerns.includes('redness') ? 'Azelaic Acid 10%' :
+                      'Peptide serum for repair',
+          tip: concerns.includes('wrinkles') ? 'Start 2x/week, increase gradually' : 'Apply to problem areas',
+          bgColor: '#fef3c7',
+          borderColor: '#fde68a',
+          highlighted: true
+        });
+
+        // Add eye cream if dark circles
+        if (concerns.includes('dark_circles')) {
+          steps.push({
+            step: steps.length + 1,
+            name: 'Eye Cream',
+            icon: '👁️',
+            why: 'Repair and brighten overnight',
+            ingredients: 'Retinol eye cream or Peptides',
+            tip: 'Apply before moisturizer, use sparingly',
+            bgColor: '#f3e8ff',
+            borderColor: '#e9d5ff'
+          });
+        }
+
+        steps.push({
+          step: steps.length + 1,
+          name: 'Night Moisturizer',
+          icon: '🌙',
+          why: 'Support overnight skin repair',
+          ingredients: concerns.includes('hydration') ? 'Rich night cream with Ceramides & Squalane' :
+                      concerns.includes('oiliness') ? 'Lightweight gel-cream' :
+                      concerns.includes('acne') ? 'Non-comedogenic night moisturizer' :
+                      'Nourishing night cream',
+          tip: 'Can be richer than AM moisturizer',
+          bgColor: '#e0e7ff',
+          borderColor: '#c7d2fe'
+        });
+      }
+
+      return steps;
+    }
+
+    getSerumReason(concerns, time) {
+      if (time === 'am') {
+        if (concerns.includes('pigmentation')) return 'Brighten skin and protect against free radicals';
+        if (concerns.includes('wrinkles')) return 'Antioxidant protection against daily damage';
+        if (concerns.includes('acne')) return 'Control oil and minimize breakouts';
+        if (concerns.includes('redness')) return 'Calm inflammation and strengthen skin barrier';
+        return 'Protect and nourish your skin';
+      } else {
+        if (concerns.includes('wrinkles')) return 'Stimulate collagen and reduce fine lines';
+        if (concerns.includes('acne')) return 'Control bacteria and regulate sebum overnight';
+        if (concerns.includes('pigmentation')) return 'Fade dark spots while you sleep';
+        if (concerns.includes('redness')) return 'Calm and repair irritated skin overnight';
+        return 'Repair and rejuvenate while you sleep';
+      }
+    }
+
+    renderSmartRoutine(time) {
       const container = document.getElementById('flashai-vto-routine-steps');
+      const tipsContainer = document.getElementById('flashai-vto-routine-tips');
       if (!container) return;
 
-      const routine = this.state.routines?.find(r => r.routine_type === time);
+      const steps = this.generateSmartRoutine(time);
+      const issues = this.state.detectedIssues || [];
+      const concerns = issues.filter(i => i.isConcern);
+
+      let html = '';
+      steps.forEach((step, idx) => {
+        const highlightStyle = step.highlighted ? 'border-width:2px;' : '';
+        const criticalBadge = step.critical ? '<span style="margin-left:6px;padding:2px 6px;background:#dc2626;color:#fff;font-size:8px;font-weight:700;border-radius:8px;">MUST HAVE</span>' : '';
+        const optionalBadge = step.optional ? '<span style="margin-left:6px;padding:2px 6px;background:#71717a;color:#fff;font-size:8px;font-weight:600;border-radius:8px;">OPTIONAL</span>' : '';
+        const freqBadge = step.frequency ? '<span style="margin-left:6px;padding:2px 6px;background:#8b5cf6;color:#fff;font-size:8px;font-weight:600;border-radius:8px;">' + step.frequency + '</span>' : '';
+
+        html += '<div style="display:flex;gap:12px;padding:12px;background:#fff;border:1px solid ' + step.borderColor + ';border-radius:12px;' + highlightStyle + '">' +
+          '<div style="width:36px;height:36px;background:' + step.bgColor + ';border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+            '<span style="font-size:16px;">' + step.icon + '</span>' +
+          '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:4px;">' +
+              '<span style="font-size:12px;font-weight:700;color:#18181b;">' + step.name + '</span>' +
+              criticalBadge + optionalBadge + freqBadge +
+            '</div>' +
+            '<p style="font-size:10px;color:#52525b;margin:0 0 6px;line-height:1.4;">' + step.why + '</p>' +
+            '<div style="padding:6px 8px;background:#f9fafb;border-radius:6px;margin-bottom:4px;">' +
+              '<span style="font-size:9px;color:#71717a;">Look for: </span>' +
+              '<span style="font-size:9px;font-weight:600;color:#18181b;">' + step.ingredients + '</span>' +
+            '</div>' +
+            '<p style="font-size:9px;color:#8b5cf6;margin:0;font-style:italic;">💡 ' + step.tip + '</p>' +
+          '</div>' +
+        '</div>';
+      });
+
+      container.innerHTML = html;
+
+      // Render tips section
+      if (tipsContainer) {
+        const topConcerns = concerns.slice(0, 2).map(c => c.name).join(' & ');
+        tipsContainer.innerHTML = '<h5 style="font-size:11px;font-weight:700;color:#71717a;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.5px;">' + (time === 'am' ? '☀️ Morning' : '🌙 Night') + ' Tips</h5>' +
+          '<div style="display:flex;flex-direction:column;gap:4px;">' +
+            '<p style="font-size:10px;color:#52525b;margin:0;">• ' + (time === 'am' ? 'Wait 2-3 mins between layers for absorption' : 'Apply products in order of thinnest to thickest') + '</p>' +
+            '<p style="font-size:10px;color:#52525b;margin:0;">• ' + (time === 'am' ? 'Never skip sunscreen - even on cloudy days!' : 'Night is the best time for active treatments') + '</p>' +
+            (topConcerns ? '<p style="font-size:10px;color:#52525b;margin:0;">• Targeting: <strong>' + topConcerns + '</strong></p>' : '') +
+          '</div>';
+      }
+    }
+
+    // Render routine from backend data (goal-based)
+    renderRoutine(time) {
+      const container = document.getElementById('flashai-vto-routine-steps');
+      const timeHeader = document.getElementById('flashai-vto-routine-time-header');
+      const actionsContainer = document.getElementById('flashai-vto-routine-actions');
+      if (!container) return;
+
+      // Find routine for this time (using camelCase from backend)
+      const routine = this.state.routines?.find(r => r.routineType === time);
 
       if (!routine || !routine.steps || routine.steps.length === 0) {
         this.renderEmptyRoutine();
         return;
       }
 
-      container.innerHTML = routine.steps.map((step, i) => `
-        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;">
-          <div style="width:32px;height:32px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;">${i + 1}</div>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:600;color:#18181b;text-transform:capitalize;">${step.step_type.replace(/_/g, ' ')}</div>
-            ${step.instructions ? `<div style="font-size:11px;color:#71717a;margin-top:2px;">${step.instructions}</div>` : ''}
-          </div>
-          <button class="flashai-routine-check" data-step-id="${step.id}" style="width:28px;height:28px;background:#f4f4f5;border:2px solid #e4e4e7;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="3">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </button>
-        </div>
-      `).join('');
+      // Calculate total time
+      const totalSeconds = routine.steps.reduce((sum, s) => sum + (s.durationSeconds || 30), 0);
+      const totalMinutes = Math.ceil(totalSeconds / 60);
+
+      // Render time header
+      if (timeHeader) {
+        timeHeader.style.display = 'block';
+        timeHeader.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">' +
+          '<span style="font-size:12px;color:#166534;font-weight:600;">Total Time: ' + totalMinutes + ' min</span>' +
+          '<span style="font-size:11px;color:#16a34a;">' + routine.steps.length + ' steps</span>' +
+        '</div>';
+      }
+
+      // Render steps with checkboxes
+      let html = '';
+      routine.steps.forEach((step, i) => {
+        const stepName = step.stepType ? step.stepType.replace(/_/g, ' ') : 'Step';
+        const productName = step.customProductName || '';
+        const instructions = step.instructions || '';
+        const duration = step.durationSeconds || 30;
+        const isOptional = step.isOptional || false;
+        const frequency = step.frequency || 'daily';
+
+        html += '<div class="flashai-routine-step" data-step-id="' + step.id + '" data-step-order="' + step.stepOrder + '" style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;transition:all 0.2s;">' +
+          '<div style="width:36px;height:36px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0;">' + (i + 1) + '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:13px;font-weight:600;color:#18181b;text-transform:capitalize;">' + stepName + '</div>' +
+            (productName ? '<div style="font-size:11px;color:#8b5cf6;margin-top:2px;">' + productName + '</div>' : '') +
+            (instructions ? '<div style="font-size:10px;color:#71717a;margin-top:4px;line-height:1.4;">' + instructions + '</div>' : '') +
+            '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">' +
+              '<span style="font-size:10px;color:#a1a1aa;display:flex;align-items:center;gap:2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ' + duration + 's</span>' +
+              (isOptional ? '<span style="font-size:9px;padding:2px 6px;background:#f4f4f5;border-radius:4px;color:#71717a;">Optional</span>' : '') +
+              (frequency !== 'daily' ? '<span style="font-size:9px;padding:2px 6px;background:#e0e7ff;border-radius:4px;color:#4f46e5;">' + frequency + '</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<button class="flashai-routine-check" data-step-order="' + step.stepOrder + '" style="width:32px;height:32px;background:#f4f4f5;border:2px solid #e4e4e7;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+          '</button>' +
+        '</div>';
+      });
+
+      container.innerHTML = html;
+
+      // Show complete button
+      if (actionsContainer) {
+        actionsContainer.style.display = 'block';
+        actionsContainer.innerHTML = '<button id="flashai-vto-complete-routine" data-routine-id="' + routine.id + '" style="width:100%;padding:14px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 15px rgba(22,163,74,0.3);">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+          'Complete ' + (time === 'am' ? 'Morning' : 'Night') + ' Routine' +
+        '</button>';
+      }
+
+      // Attach event listeners
+      this.attachRoutineEventListeners(routine.id);
+    }
+
+    attachRoutineEventListeners(routineId) {
+      // Step checkboxes
+      document.querySelectorAll('.flashai-routine-check').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const stepBtn = e.currentTarget;
+          const isCompleted = stepBtn.dataset.completed === 'true';
+
+          if (isCompleted) {
+            stepBtn.dataset.completed = 'false';
+            stepBtn.style.background = '#f4f4f5';
+            stepBtn.style.borderColor = '#e4e4e7';
+            stepBtn.querySelector('svg').setAttribute('stroke', '#a1a1aa');
+            stepBtn.closest('.flashai-routine-step').style.opacity = '1';
+          } else {
+            stepBtn.dataset.completed = 'true';
+            stepBtn.style.background = '#16a34a';
+            stepBtn.style.borderColor = '#16a34a';
+            stepBtn.querySelector('svg').setAttribute('stroke', '#fff');
+            stepBtn.closest('.flashai-routine-step').style.opacity = '0.6';
+          }
+        });
+      });
+
+      // Complete routine button
+      const completeBtn = document.getElementById('flashai-vto-complete-routine');
+      if (completeBtn) {
+        completeBtn.addEventListener('click', () => {
+          this.logRoutineCompletion(routineId);
+        });
+      }
+    }
+
+    async logRoutineCompletion(routineId) {
+      if (!this.state.authToken) return;
+
+      // Gather completed steps
+      const completedSteps = [];
+      document.querySelectorAll('.flashai-routine-check[data-completed="true"]').forEach(btn => {
+        completedSteps.push(parseInt(btn.dataset.stepOrder));
+      });
+
+      const completeBtn = document.getElementById('flashai-vto-complete-routine');
+      if (completeBtn) {
+        completeBtn.disabled = true;
+        completeBtn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:flashai-spin 1s linear infinite;"></span> Saving...';
+      }
+
+      try {
+        const logUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/' + routineId + '/log';
+        const response = await fetch(logUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + this.state.authToken
+          },
+          body: JSON.stringify({
+            stepsCompleted: completedSteps,
+            skinFeeling: 'good'
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          this.showRoutineCompletionSuccess(data.data.log);
+        } else {
+          throw new Error(data.message || 'Failed to log completion');
+        }
+      } catch (error) {
+        console.error('[Routine] Error logging completion:', error);
+        if (completeBtn) {
+          completeBtn.disabled = false;
+          completeBtn.innerHTML = 'Complete Routine';
+        }
+      }
+    }
+
+    showRoutineCompletionSuccess(log) {
+      const container = document.getElementById('flashai-vto-routine-steps');
+      const timeHeader = document.getElementById('flashai-vto-routine-time-header');
+      const actionsContainer = document.getElementById('flashai-vto-routine-actions');
+
+      if (timeHeader) timeHeader.style.display = 'none';
+      if (actionsContainer) actionsContainer.style.display = 'none';
+
+      if (container) {
+        const stepsCount = log.stepsCompleted?.length || 0;
+        const totalSteps = log.totalSteps || 0;
+        const percent = log.completionPercent || 0;
+
+        container.innerHTML = '<div style="text-align:center;padding:40px 20px;">' +
+          '<div style="font-size:48px;margin-bottom:16px;">&#127881;</div>' +
+          '<h3 style="font-size:18px;font-weight:700;color:#16a34a;margin:0 0 8px;">Routine Complete!</h3>' +
+          '<p style="font-size:14px;color:#71717a;margin:0 0 20px;">Great job taking care of your skin</p>' +
+          '<div style="display:inline-flex;gap:20px;padding:16px 24px;background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0;">' +
+            '<div style="text-align:center;">' +
+              '<div style="font-size:24px;font-weight:700;color:#16a34a;">' + stepsCount + '</div>' +
+              '<div style="font-size:10px;color:#71717a;">Steps Done</div>' +
+            '</div>' +
+            '<div style="width:1px;background:#bbf7d0;"></div>' +
+            '<div style="text-align:center;">' +
+              '<div style="font-size:24px;font-weight:700;color:#16a34a;">' + percent + '%</div>' +
+              '<div style="font-size:10px;color:#71717a;">Complete</div>' +
+            '</div>' +
+          '</div>' +
+          '<button onclick="window.FlashAI_VTO.loadRoutineData()" style="margin-top:20px;padding:10px 24px;background:transparent;border:2px solid #16a34a;border-radius:8px;color:#16a34a;font-size:13px;font-weight:600;cursor:pointer;">View Routine Again</button>' +
+        '</div>';
+      }
     }
 
     renderEmptyRoutine() {
       const container = document.getElementById('flashai-vto-routine-steps');
-      if (!container) return;
+      const timeHeader = document.getElementById('flashai-vto-routine-time-header');
+      const actionsContainer = document.getElementById('flashai-vto-routine-actions');
 
-      container.innerHTML = `
-        <div style="text-align:center;padding:30px 20px;color:#71717a;">
-          <div style="font-size:32px;margin-bottom:12px;">✨</div>
-          <div style="font-size:14px;font-weight:500;">No routine yet</div>
-          <div style="font-size:12px;margin-top:4px;">Click "Generate My Routine" to get started</div>
-        </div>
-      `;
+      if (timeHeader) timeHeader.style.display = 'none';
+      if (actionsContainer) actionsContainer.style.display = 'none';
+
+      if (container) {
+        container.innerHTML = '<div style="text-align:center;padding:30px 20px;color:#71717a;">' +
+          '<div style="font-size:32px;margin-bottom:12px;">&#10024;</div>' +
+          '<div style="font-size:14px;font-weight:500;">No routine yet</div>' +
+          '<div style="font-size:12px;margin-top:4px;">Click "Generate My Routine" to get started</div>' +
+        '</div>';
+      }
     }
 
     async generateRoutine() {
-      if (!this.state.authToken) return;
+      if (!this.state.authToken) {
+        this.showAuthModal();
+        return;
+      }
 
       const btn = document.getElementById('flashai-vto-generate-routine');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:flashai-spin 1s linear infinite;"></div> Generating...';
+        btn.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;gap:8px;"><span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:flashai-spin 1s linear infinite;"></span> Generating...</span>';
       }
 
       try {
-        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}/generate`, {
+        // Step 1: Check if user has active goals
+        const goalsUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals') + '?status=active';
+        const goalsResponse = await fetch(goalsUrl, {
+          headers: { 'Authorization': 'Bearer ' + this.state.authToken }
+        });
+        const goalsData = await goalsResponse.json();
+
+        // Step 2: If no goals, auto-create from scan first
+        if (!goalsData.data?.goals || goalsData.data.goals.length === 0) {
+          console.log('[Routine] No active goals, creating from scan...');
+          const createGoalsUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/goals') + '/from-scan';
+          await fetch(createGoalsUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + this.state.authToken
+            }
+          });
+        }
+
+        // Step 3: Generate routine based on goals
+        const generateUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/generate';
+        const response = await fetch(generateUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.state.authToken}`
+            'Authorization': 'Bearer ' + this.state.authToken
           }
         });
 
         const data = await response.json();
         if (data.success) {
-          this.loadRoutineData();
+          // Reload routine data to show the new routine
+          await this.loadRoutineData();
+        } else {
+          throw new Error(data.message || 'Failed to generate routine');
         }
       } catch (error) {
-        console.error('Error generating routine:', error);
+        console.error('[Routine] Error generating routine:', error);
+        alert('Failed to generate routine. Please try again.');
       } finally {
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path></svg> Generate My Routine';
+          btn.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path></svg> Generate My Routine</span>';
         }
       }
     }
