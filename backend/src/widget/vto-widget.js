@@ -3033,8 +3033,15 @@
       // Set up face image
       this.initFaceImage();
 
-      // Generate detected issues with numbered pins
-      this.generateDetectedIssues(scan.analysis);
+      // CRITICAL: Detect actual face bounds before positioning any markers
+      // This prevents markers from appearing outside the face
+      this.detectFaceBounds().then(bounds => {
+        this.state.faceBounds = bounds;
+        console.log('[Face Detection] Detected bounds:', bounds);
+
+        // Generate detected issues with numbered pins AFTER face detection
+        this.generateDetectedIssues(scan.analysis);
+      });
 
       // Render treatment prioritization, timeline, and healthcare notice
       this.renderTreatmentPriority(scan.analysis);
@@ -3168,6 +3175,188 @@
       };
 
       faceImg.src = this.state.faceImageData;
+    }
+
+    /**
+     * FACE DETECTION: Detect actual face bounding box from the captured image
+     * This ensures markers are only placed within the face region, not outside it
+     * Uses skin color detection and contour analysis
+     */
+    async detectFaceBounds() {
+      return new Promise((resolve) => {
+        const faceImg = document.getElementById('flashai-vto-face-image');
+
+        if (!faceImg || !faceImg.complete || faceImg.naturalWidth === 0) {
+          console.warn('[Face Detection] Image not ready, using default bounds');
+          resolve(this.getDefaultFaceBounds());
+          return;
+        }
+
+        try {
+          // Create a canvas to analyze the image
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = faceImg.naturalWidth;
+          canvas.height = faceImg.naturalHeight;
+          ctx.drawImage(faceImg, 0, 0);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const bounds = this.analyzeFaceRegion(imageData, canvas.width, canvas.height);
+
+          console.log('[Face Detection] Analyzed bounds:', bounds);
+          resolve(bounds);
+        } catch (error) {
+          console.error('[Face Detection] Error:', error);
+          resolve(this.getDefaultFaceBounds());
+        }
+      });
+    }
+
+    /**
+     * Analyze image to find face region using skin color detection
+     * Returns bounding box as percentages of image dimensions
+     */
+    analyzeFaceRegion(imageData, width, height) {
+      const data = imageData.data;
+      const skinPixels = [];
+
+      // Scan image for skin-colored pixels
+      for (let y = 0; y < height; y += 4) { // Sample every 4th row for performance
+        for (let x = 0; x < width; x += 4) { // Sample every 4th column
+          const i = (y * width + x) * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+
+          // Check if pixel is skin-colored using multiple color space checks
+          if (this.isSkinColor(r, g, b)) {
+            skinPixels.push({ x, y });
+          }
+        }
+      }
+
+      if (skinPixels.length < 100) {
+        console.warn('[Face Detection] Not enough skin pixels detected, using default');
+        return this.getDefaultFaceBounds();
+      }
+
+      // Find bounding box of skin pixels
+      let minX = width, maxX = 0, minY = height, maxY = 0;
+      skinPixels.forEach(p => {
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y);
+        maxY = Math.max(maxY, p.y);
+      });
+
+      // Add padding and constrain to reasonable face proportions
+      const padding = 0.05; // 5% padding
+      const rawWidth = maxX - minX;
+      const rawHeight = maxY - minY;
+
+      // Apply padding
+      minX = Math.max(0, minX - rawWidth * padding);
+      maxX = Math.min(width, maxX + rawWidth * padding);
+      minY = Math.max(0, minY - rawHeight * padding);
+      maxY = Math.min(height, maxY + rawHeight * padding);
+
+      // Convert to percentages
+      const bounds = {
+        x: (minX / width) * 100,
+        y: (minY / height) * 100,
+        width: ((maxX - minX) / width) * 100,
+        height: ((maxY - minY) / height) * 100,
+        centerX: ((minX + maxX) / 2 / width) * 100,
+        centerY: ((minY + maxY) / 2 / height) * 100,
+        detected: true
+      };
+
+      // Sanity checks - face should be reasonable size
+      if (bounds.width < 20 || bounds.height < 25 || bounds.width > 95 || bounds.height > 95) {
+        console.warn('[Face Detection] Bounds seem unreasonable, using default');
+        return this.getDefaultFaceBounds();
+      }
+
+      return bounds;
+    }
+
+    /**
+     * Check if RGB color is likely skin tone
+     * Uses multiple color space checks for robustness across skin tones
+     */
+    isSkinColor(r, g, b) {
+      // Rule 1: RGB ranges (works for many skin tones)
+      const rgbRule = r > 60 && g > 40 && b > 20 &&
+                      r > g && r > b &&
+                      Math.abs(r - g) > 10 &&
+                      r - b > 15;
+
+      // Rule 2: Normalized RGB (handles lighting variations)
+      const sum = r + g + b;
+      if (sum < 100) return false; // Too dark
+
+      const rn = r / sum;
+      const gn = g / sum;
+      const bn = b / sum;
+      const normalizedRule = rn > 0.35 && rn < 0.55 &&
+                            gn > 0.25 && gn < 0.42 &&
+                            bn > 0.15 && bn < 0.35;
+
+      // Rule 3: YCbCr color space (robust for skin detection)
+      const y = 0.299 * r + 0.587 * g + 0.114 * b;
+      const cb = 128 - 0.169 * r - 0.331 * g + 0.500 * b;
+      const cr = 128 + 0.500 * r - 0.419 * g - 0.081 * b;
+      const ycbcrRule = y > 60 && cb > 77 && cb < 127 && cr > 133 && cr < 173;
+
+      // Return true if at least 2 rules match
+      const matches = [rgbRule, normalizedRule, ycbcrRule].filter(Boolean).length;
+      return matches >= 2;
+    }
+
+    /**
+     * Default face bounds when detection fails
+     * Assumes face is roughly centered in the capture oval
+     */
+    getDefaultFaceBounds() {
+      return {
+        x: 15,      // 15% from left
+        y: 10,      // 10% from top
+        width: 70,  // 70% of image width
+        height: 80, // 80% of image height
+        centerX: 50,
+        centerY: 50,
+        detected: false
+      };
+    }
+
+    /**
+     * Convert a face-relative position to image-absolute position
+     * @param {Object} facePos - Position as % of face area {x, y}
+     * @param {Object} bounds - Face bounds {x, y, width, height}
+     * @returns {Object} Position as % of image area {x, y}
+     */
+    faceToImagePosition(facePos, bounds) {
+      // facePos.x is % within face, bounds.x is face left edge % of image
+      // Convert: imageX = bounds.x + (facePos.x / 100) * bounds.width
+      return {
+        x: bounds.x + (facePos.x / 100) * bounds.width,
+        y: bounds.y + (facePos.y / 100) * bounds.height
+      };
+    }
+
+    /**
+     * Convert a face-relative region to image-absolute region
+     * @param {Object} faceRegion - Region as % of face area {x, y, w, h}
+     * @param {Object} bounds - Face bounds {x, y, width, height}
+     * @returns {Object} Region as % of image area {x, y, w, h}
+     */
+    faceToImageRegion(faceRegion, bounds) {
+      return {
+        x: bounds.x + (faceRegion.x / 100) * bounds.width,
+        y: bounds.y + (faceRegion.y / 100) * bounds.height,
+        w: (faceRegion.w / 100) * bounds.width,
+        h: (faceRegion.h / 100) * bounds.height
+      };
     }
 
     setupHighlightCanvas() {
@@ -3534,6 +3723,11 @@
       const issues = [];
       const attrs = this.getAttributeDefinitions();
 
+      // ========== GET FACE BOUNDS ==========
+      // Use detected face bounds to position markers ONLY within the face
+      const faceBounds = this.state.faceBounds || this.getDefaultFaceBounds();
+      console.log('[Issues] Using face bounds:', faceBounds);
+
       // ========== SKIN CONTEXT CALIBRATION ==========
       // Apply adjustments based on user's pre-scan questionnaire answers
       // This reduces false positives by accounting for natural features
@@ -3542,75 +3736,74 @@
 
       console.log('[Skin Analysis] Applying calibration:', calibration);
 
-      // Define ALL attributes with correct anatomical positions on face
-      // Positions are % from top-left of face image
-      // highlightRegion defines the area to highlight in red when selected
+      // Define ALL attributes with FACE-RELATIVE positions (0-100% of face area)
+      // These positions are relative to the FACE, not the entire image
+      // They will be converted to image coordinates using faceBounds
       // CALIBRATED THRESHOLDS: Increased to reduce false positives
-      // Based on user feedback: freckles detected as acne, natural coloring as redness
       const issueConfigs = [
         {
           key: 'dark_circles',
-          threshold: 25, // Increased from 15 - only show when clearly visible
-          position: { x: 35, y: 38 },
+          threshold: 25,
+          facePosition: { x: 50, y: 35 }, // FACE-RELATIVE: center-ish, upper-mid (under eyes)
           region: 'Under Eyes',
-          highlightRegion: { x: 25, y: 32, w: 50, h: 15 }
+          faceHighlight: { x: 20, y: 28, w: 60, h: 15 }
         },
         {
           key: 'wrinkles',
-          threshold: 25, // Increased from 10 - reduce false positives
-          position: { x: 50, y: 18 },
+          threshold: 25,
+          facePosition: { x: 50, y: 12 }, // FACE-RELATIVE: top center (forehead)
           region: 'Forehead & Eyes',
-          highlightRegion: { x: 20, y: 10, w: 60, h: 20 }
+          faceHighlight: { x: 15, y: 5, w: 70, h: 25 }
         },
         {
           key: 'pores',
-          threshold: 30, // Increased from 15
-          position: { x: 50, y: 45 },
+          threshold: 30,
+          facePosition: { x: 50, y: 50 }, // FACE-RELATIVE: center (nose area)
           region: 'T-Zone (Nose)',
-          highlightRegion: { x: 40, y: 35, w: 20, h: 25 }
+          faceHighlight: { x: 35, y: 40, w: 30, h: 25 }
         },
         {
           key: 'acne',
-          threshold: 35, // INCREASED from 10 - prevents freckles from being detected as acne
-          position: { x: 65, y: 55 },
+          threshold: 35,
+          facePosition: { x: 72, y: 55 }, // FACE-RELATIVE: right cheek area
           region: 'Cheeks & Chin',
-          highlightRegion: { x: 20, y: 45, w: 60, h: 30 }
+          faceHighlight: { x: 15, y: 45, w: 70, h: 35 }
         },
         {
           key: 'redness',
-          threshold: 40, // INCREASED from 20 - prevents natural skin tones from being flagged
-          position: { x: 30, y: 52 },
+          threshold: 40,
+          facePosition: { x: 28, y: 52 }, // FACE-RELATIVE: left cheek
           region: 'Cheeks',
-          highlightRegion: { x: 15, y: 40, w: 70, h: 25 }
+          faceHighlight: { x: 10, y: 40, w: 80, h: 30 }
         },
         {
           key: 'oiliness',
-          threshold: 40, // Increased from 25
-          position: { x: 50, y: 28 },
+          threshold: 40,
+          facePosition: { x: 50, y: 25 }, // FACE-RELATIVE: T-zone upper
           region: 'T-Zone',
-          highlightRegion: { x: 35, y: 15, w: 30, h: 40 }
+          faceHighlight: { x: 30, y: 10, w: 40, h: 50 }
         },
         {
           key: 'pigmentation',
-          threshold: 35, // INCREASED from 15 - prevents freckles from being detected
-          position: { x: 70, y: 48 },
+          threshold: 35,
+          facePosition: { x: 75, y: 45 }, // FACE-RELATIVE: right side
           region: 'Cheeks & Forehead',
-          highlightRegion: { x: 20, y: 30, w: 60, h: 35 }
+          faceHighlight: { x: 15, y: 25, w: 70, h: 40 }
         },
         {
           key: 'hydration',
-          threshold: 50, // Changed from 60 - only flag if clearly dehydrated
+          threshold: 50,
           isInverse: true,
-          position: { x: 50, y: 65 },
+          facePosition: { x: 50, y: 70 }, // FACE-RELATIVE: lower center
           region: 'Full Face',
-          highlightRegion: { x: 15, y: 15, w: 70, h: 70 }
+          faceHighlight: { x: 10, y: 10, w: 80, h: 80 }
         },
         {
           key: 'texture',
-          threshold: 30, // Increased from 20
-          position: { x: 38, y: 42 },
+          threshold: 30,
+          facePosition: { x: 35, y: 48 }, // FACE-RELATIVE: left-center
           region: 'Overall Skin',
-          highlightRegion: { x: 20, y: 25, w: 60, h: 50 }
+          faceHighlight: { x: 15, y: 20, w: 70, h: 60 }
         }
       ];
 
@@ -3658,6 +3851,11 @@
           severityLabel = score < 40 ? 'Minimal' : score < 75 ? 'Moderate' : 'Notable';
         }
 
+        // ========== CONVERT FACE-RELATIVE TO IMAGE-ABSOLUTE POSITIONS ==========
+        // This ensures markers appear WITHIN the detected face, not outside it
+        const imagePosition = this.faceToImagePosition(config.facePosition, faceBounds);
+        const imageHighlight = this.faceToImageRegion(config.faceHighlight, faceBounds);
+
         // ALWAYS add all attributes - show complete picture
         // Mark whether it's a concern (meets threshold) or healthy metric
         issues.push({
@@ -3670,8 +3868,8 @@
           isConcern: meetsThreshold, // Flag to identify if this is a concern or healthy
           isGoodAttribute: attr.isGood || false,
           region: config.region,
-          position: config.position,
-          highlightRegion: config.highlightRegion,
+          position: imagePosition,           // Now in IMAGE coordinates
+          highlightRegion: imageHighlight,   // Now in IMAGE coordinates
           problem: attr.getProblem(analysis, score),
           solution: attr.getSolution(analysis, score),
           ingredients: attr.getIngredients ? attr.getIngredients() : '',
