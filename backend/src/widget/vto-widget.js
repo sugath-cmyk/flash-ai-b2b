@@ -1631,13 +1631,16 @@
           accountText.textContent = this.state.user.firstName || 'Account';
         }
 
-        // Show content, hide login prompts
-        ['progress', 'goals', 'routine', 'predictions'].forEach(tab => {
+        // Show content, hide login prompts (except routine - handled separately)
+        ['progress', 'goals', 'predictions'].forEach(tab => {
           const loginPrompt = document.getElementById(`flashai-vto-${tab}-login-prompt`);
           const content = document.getElementById(`flashai-vto-${tab}-content`);
           if (loginPrompt) loginPrompt.style.display = 'none';
           if (content) content.style.display = 'block';
         });
+
+        // For routine tab, check if questionnaire is completed first
+        this.checkAndShowRoutineContent();
       } else {
         if (accountText) {
           accountText.textContent = 'Sign In';
@@ -1647,9 +1650,269 @@
         ['progress', 'goals', 'routine', 'predictions'].forEach(tab => {
           const loginPrompt = document.getElementById(`flashai-vto-${tab}-login-prompt`);
           const content = document.getElementById(`flashai-vto-${tab}-content`);
+          const questionnaire = document.getElementById(`flashai-vto-${tab}-questionnaire`);
           if (loginPrompt) loginPrompt.style.display = 'block';
           if (content) content.style.display = 'none';
+          if (questionnaire) questionnaire.style.display = 'none';
         });
+      }
+    }
+
+    /**
+     * Check if user has completed questionnaire, show appropriate UI
+     */
+    async checkAndShowRoutineContent() {
+      const loginPrompt = document.getElementById('flashai-vto-routine-login-prompt');
+      const questionnaire = document.getElementById('flashai-vto-routine-questionnaire');
+      const content = document.getElementById('flashai-vto-routine-content');
+
+      if (loginPrompt) loginPrompt.style.display = 'none';
+
+      // Check if user has a phase (questionnaire completed)
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}/phase`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data.phase && data.data.phase.phaseNumber) {
+          // User has a phase - show routine content
+          this.state.currentPhase = data.data.phase;
+          if (questionnaire) questionnaire.style.display = 'none';
+          if (content) content.style.display = 'block';
+          // Load and render routines
+          this.loadAndRenderRoutines();
+        } else {
+          // No phase - show questionnaire first
+          if (questionnaire) questionnaire.style.display = 'block';
+          if (content) content.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('[Routine] Error checking phase:', error);
+        // On error, show questionnaire to be safe
+        if (questionnaire) questionnaire.style.display = 'block';
+        if (content) content.style.display = 'none';
+      }
+    }
+
+    /**
+     * Load routines from backend and render
+     */
+    async loadAndRenderRoutines() {
+      if (!this.state.authToken) return;
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}`, {
+          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data.routines) {
+          this.state.routines = data.data.routines;
+          // Render AM routine by default
+          this.renderRoutine('am');
+          // Update phase banner
+          this.updatePhaseBanner();
+        }
+      } catch (error) {
+        console.error('[Routine] Error loading routines:', error);
+      }
+    }
+
+    /**
+     * Update the phase banner with current phase info
+     */
+    updatePhaseBanner() {
+      const phase = this.state.currentPhase;
+      if (!phase) return;
+
+      const phaseNumber = document.getElementById('flashai-phase-number');
+      const phaseName = document.getElementById('flashai-phase-name');
+      const phaseWeek = document.getElementById('flashai-phase-week');
+      const phaseProgress = document.getElementById('flashai-phase-progress');
+      const phaseDescription = document.getElementById('flashai-phase-description');
+      const phaseTipText = document.getElementById('flashai-phase-tip-text');
+
+      if (phaseNumber) phaseNumber.textContent = phase.phaseNumber || 1;
+      if (phaseName) phaseName.textContent = phase.phaseName || 'Foundation';
+      if (phaseWeek) phaseWeek.textContent = phase.weekInPhase || 1;
+
+      // Calculate progress (weeks in phase / total weeks)
+      const phaseWeeks = { 1: 2, 2: 2, 3: 2, 4: 8 };
+      const totalWeeks = phaseWeeks[phase.phaseNumber] || 2;
+      const progressPercent = Math.min(100, ((phase.weekInPhase || 1) / totalWeeks) * 100);
+      if (phaseProgress) phaseProgress.style.width = progressPercent + '%';
+
+      // Phase descriptions
+      const descriptions = {
+        1: 'Build healthy habits with core essentials',
+        2: 'Introduce your first treatment product slowly',
+        3: 'Increase treatment frequency as skin adjusts',
+        4: 'Your complete personalized routine'
+      };
+      if (phaseDescription) phaseDescription.textContent = descriptions[phase.phaseNumber] || descriptions[1];
+
+      // Phase tips
+      const tips = {
+        1: 'Apply sunscreen every morning, even on cloudy days',
+        2: 'Apply treatment serum before moisturizer',
+        3: 'Now using treatment 3x per week',
+        4: 'Listen to your skin and adjust as needed'
+      };
+      if (phaseTipText) phaseTipText.textContent = tips[phase.phaseNumber] || tips[1];
+    }
+
+    /**
+     * Initialize questionnaire event listeners
+     */
+    initQuestionnaireEvents() {
+      const modal = this.elements.modal;
+      if (!modal) return;
+
+      // Initialize questionnaire answers state
+      this.state.questionnaireAnswers = {
+        ageRange: null,
+        skincareExperience: null,
+        usedActives: [],
+        skinSensitivity: null,
+        routineConsistency: null
+      };
+
+      // Single-select buttons (age, experience, sensitivity, consistency)
+      modal.querySelectorAll('.flashai-questionnaire-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const question = e.currentTarget.dataset.question;
+          const value = e.currentTarget.dataset.value;
+
+          // Update state
+          this.state.questionnaireAnswers[question] = value;
+
+          // Update UI - highlight selected in same question group
+          modal.querySelectorAll(`.flashai-questionnaire-btn[data-question="${question}"]`).forEach(b => {
+            b.style.background = '#fff';
+            b.style.borderColor = '#e4e4e7';
+            b.style.color = '#3f3f46';
+          });
+          e.currentTarget.style.background = 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)';
+          e.currentTarget.style.borderColor = '#8b5cf6';
+          e.currentTarget.style.color = '#6d28d9';
+        });
+      });
+
+      // Multi-select toggles (used actives)
+      modal.querySelectorAll('.flashai-questionnaire-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const value = e.currentTarget.dataset.value;
+          const actives = this.state.questionnaireAnswers.usedActives || [];
+
+          if (value === 'none') {
+            // Clear all actives
+            this.state.questionnaireAnswers.usedActives = [];
+            modal.querySelectorAll('.flashai-questionnaire-toggle').forEach(b => {
+              b.style.background = '#fff';
+              b.style.borderColor = '#e4e4e7';
+            });
+            e.currentTarget.style.background = 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)';
+            e.currentTarget.style.borderColor = '#8b5cf6';
+          } else {
+            // Toggle this active
+            const idx = actives.indexOf(value);
+            if (idx > -1) {
+              actives.splice(idx, 1);
+              e.currentTarget.style.background = '#fff';
+              e.currentTarget.style.borderColor = '#e4e4e7';
+            } else {
+              actives.push(value);
+              e.currentTarget.style.background = 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)';
+              e.currentTarget.style.borderColor = '#8b5cf6';
+            }
+            // Deselect "none" if something else selected
+            if (actives.length > 0) {
+              const noneBtn = modal.querySelector('.flashai-questionnaire-toggle[data-value="none"]');
+              if (noneBtn) {
+                noneBtn.style.background = '#fff';
+                noneBtn.style.borderColor = '#e4e4e7';
+              }
+            }
+            this.state.questionnaireAnswers.usedActives = actives;
+          }
+        });
+      });
+
+      // Submit questionnaire button
+      modal.querySelector('#flashai-vto-questionnaire-submit')?.addEventListener('click', () => {
+        this.submitQuestionnaire();
+      });
+    }
+
+    /**
+     * Submit questionnaire and generate routine
+     */
+    async submitQuestionnaire() {
+      const answers = this.state.questionnaireAnswers;
+      const submitBtn = document.getElementById('flashai-vto-questionnaire-submit');
+
+      // Validate required fields
+      if (!answers.skincareExperience || !answers.skinSensitivity || !answers.routineConsistency) {
+        alert('Please answer all questions to personalize your routine.');
+        return;
+      }
+
+      // Show loading state
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:flashai-spin 1s linear infinite;margin-right:8px;"></span> Creating your routine...';
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}/questionnaire`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.state.authToken}`
+          },
+          body: JSON.stringify({
+            ageRange: answers.ageRange,
+            skincareExperience: answers.skincareExperience,
+            skinSensitivity: answers.skinSensitivity,
+            routineConsistency: answers.routineConsistency,
+            usedActives: answers.usedActives || []
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Store phase and routines
+          this.state.currentPhase = data.data.phase;
+          this.state.routines = data.data.routines;
+
+          // Hide questionnaire, show routine content
+          const questionnaire = document.getElementById('flashai-vto-routine-questionnaire');
+          const content = document.getElementById('flashai-vto-routine-content');
+
+          if (questionnaire) questionnaire.style.display = 'none';
+          if (content) content.style.display = 'block';
+
+          // Update phase banner and render routine
+          this.updatePhaseBanner();
+          this.renderRoutine('am');
+
+          console.log('[Questionnaire] Success:', data.data.message);
+        } else {
+          throw new Error(data.message || 'Failed to create routine');
+        }
+      } catch (error) {
+        console.error('[Questionnaire] Error:', error);
+        alert('Failed to create routine. Please try again.');
+      } finally {
+        // Reset button
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Start My Personalized Routine';
+        }
       }
     }
 
