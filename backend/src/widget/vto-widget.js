@@ -560,23 +560,30 @@
                 </button>
               </div>
 
-              <!-- Navigation Tabs -->
-              <div class="flashai-vto-tabs" style="display:flex;gap:0;padding:0 16px;background:#fff;border-bottom:1px solid #e4e4e7;margin:0 -20px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;">
-                <button class="flashai-vto-tab active" data-tab="analysis" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid #8b5cf6;color:#8b5cf6;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
-                  <span style="display:block;">📊</span>Analysis
-                </button>
-                <button class="flashai-vto-tab" data-tab="goals" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
-                  <span style="display:block;">🎯</span>Goals
-                </button>
-                <button class="flashai-vto-tab" data-tab="routine" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
-                  <span style="display:block;">✨</span>Routine
-                </button>
-                <button class="flashai-vto-tab" data-tab="progress" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
-                  <span style="display:block;">📈</span>Progress
-                </button>
-                <button class="flashai-vto-tab" data-tab="predictions" style="flex:1;min-width:fit-content;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:#71717a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
-                  <span style="display:block;">🔮</span>Predict
-                </button>
+              <!-- Floating Bottom Navigation -->
+              <div class="flashai-vto-floating-nav" style="position:sticky;bottom:0;left:0;right:0;z-index:100;padding:12px 8px 16px;background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.95) 20%,#fff 100%);margin:0 -20px -20px;pointer-events:none;">
+                <div style="display:flex;justify-content:center;gap:6px;background:rgba(255,255,255,0.98);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;padding:8px 12px;box-shadow:0 -4px 20px rgba(0,0,0,0.08),0 4px 20px rgba(0,0,0,0.12);border:1px solid rgba(139,92,246,0.15);pointer-events:auto;">
+                  <button class="flashai-vto-tab active" data-tab="analysis" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border:none;border-radius:14px;color:#fff;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.3s ease;min-width:56px;box-shadow:0 2px 8px rgba(139,92,246,0.4);">
+                    <span style="font-size:18px;">📊</span>
+                    <span>Analysis</span>
+                  </button>
+                  <button class="flashai-vto-tab" data-tab="goals" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;background:transparent;border:none;border-radius:14px;color:#71717a;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.3s ease;min-width:56px;">
+                    <span style="font-size:18px;">🎯</span>
+                    <span>Goals</span>
+                  </button>
+                  <button class="flashai-vto-tab" data-tab="routine" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;background:transparent;border:none;border-radius:14px;color:#71717a;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.3s ease;min-width:56px;">
+                    <span style="font-size:18px;">✨</span>
+                    <span>Routine</span>
+                  </button>
+                  <button class="flashai-vto-tab" data-tab="progress" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;background:transparent;border:none;border-radius:14px;color:#71717a;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.3s ease;min-width:56px;">
+                    <span style="font-size:18px;">📈</span>
+                    <span>Progress</span>
+                  </button>
+                  <button class="flashai-vto-tab" data-tab="predictions" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;background:transparent;border:none;border-radius:14px;color:#71717a;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.3s ease;min-width:56px;">
+                    <span style="font-size:18px;">🔮</span>
+                    <span>Predict</span>
+                  </button>
+                </div>
               </div>
 
               <!-- Tab Content: Analysis (Default) -->
@@ -1066,16 +1073,18 @@
     switchTab(tabName) {
       const modal = this.elements.modal;
 
-      // Update tab buttons
+      // Update tab buttons (floating nav style)
       modal.querySelectorAll('.flashai-vto-tab').forEach(tab => {
         if (tab.dataset.tab === tabName) {
           tab.classList.add('active');
-          tab.style.borderBottomColor = '#8b5cf6';
-          tab.style.color = '#8b5cf6';
+          tab.style.background = 'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)';
+          tab.style.color = '#fff';
+          tab.style.boxShadow = '0 2px 8px rgba(139,92,246,0.4)';
         } else {
           tab.classList.remove('active');
-          tab.style.borderBottomColor = 'transparent';
+          tab.style.background = 'transparent';
           tab.style.color = '#71717a';
+          tab.style.boxShadow = 'none';
         }
       });
 
