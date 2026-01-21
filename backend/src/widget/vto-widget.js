@@ -4543,48 +4543,36 @@
             ${issues.map(issue => {
               const colors = severityColors[issue.severity] || severityColors.moderate;
               const grade = issue.clinicalGrade || { grade: 0, label: 'N/A', scale: 'General', maxGrade: 4 };
-              const isGoodAttr = issue.isGoodAttribute;
-
-              // Visual grade indicator (filled dots)
               const maxGrade = grade.maxGrade || 4;
-              let gradeDisplay = '';
-              if (isGoodAttr) {
-                // For good attributes, higher grade = better (filled from left)
-                for (let i = 0; i <= maxGrade; i++) {
-                  const filled = i <= grade.grade;
-                  gradeDisplay += \`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;background:\${filled ? '#22c55e' : '#e5e7eb'};"></span>\`;
-                }
-              } else {
-                // For concerns, lower grade = better (filled from right, inverted)
-                for (let i = 0; i <= maxGrade; i++) {
-                  const filled = i <= grade.grade;
-                  const color = grade.grade <= 1 ? '#22c55e' : grade.grade <= 2 ? '#f59e0b' : '#ef4444';
-                  gradeDisplay += \`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;background:\${filled ? color : '#e5e7eb'};"></span>\`;
-                }
+
+              // Build grade dots HTML
+              const gradeColor = grade.grade <= 1 ? '#22c55e' : grade.grade <= 2 ? '#f59e0b' : '#ef4444';
+              let gradeDots = '';
+              for (let i = 0; i <= maxGrade; i++) {
+                const dotColor = i <= grade.grade ? gradeColor : '#e5e7eb';
+                gradeDots += '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;background:' + dotColor + ';"></span>';
               }
 
-              return \`
-                <div style="padding:12px;background:\${colors.bg};border:1px solid \${colors.border};border-radius:10px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                      <span style="font-size:16px;">\${issue.icon || '•'}</span>
-                      <span style="font-size:13px;font-weight:600;color:#18181b;">\${issue.name}</span>
-                      \${issue.isConcern ? '<span style="font-size:8px;padding:2px 6px;background:#fef2f2;color:#dc2626;border-radius:4px;font-weight:700;margin-left:4px;">FOCUS</span>' : ''}
-                    </div>
-                    <div style="text-align:right;">
-                      <div style="font-size:12px;font-weight:700;color:\${colors.num};">\${grade.label}</div>
-                      <div style="font-size:9px;color:#6b7280;">\${grade.scale} Scale</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <div style="display:flex;align-items:center;gap:4px;">
-                      \${gradeDisplay}
-                      <span style="font-size:10px;color:#6b7280;margin-left:4px;">Grade \${grade.grade}/\${maxGrade}</span>
-                    </div>
-                    <div style="font-size:10px;color:#71717a;max-width:50%;text-align:right;">\${grade.description || ''}</div>
-                  </div>
-                </div>
-              \`;
+              return '<div style="padding:12px;background:' + colors.bg + ';border:1px solid ' + colors.border + ';border-radius:10px;">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+                  '<div style="display:flex;align-items:center;gap:8px;">' +
+                    '<span style="font-size:16px;">' + (issue.icon || '•') + '</span>' +
+                    '<span style="font-size:13px;font-weight:600;color:#18181b;">' + issue.name + '</span>' +
+                    (issue.isConcern ? '<span style="font-size:8px;padding:2px 6px;background:#fef2f2;color:#dc2626;border-radius:4px;font-weight:700;margin-left:4px;">FOCUS</span>' : '') +
+                  '</div>' +
+                  '<div style="text-align:right;">' +
+                    '<div style="font-size:12px;font-weight:700;color:' + colors.num + ';">' + grade.label + '</div>' +
+                    '<div style="font-size:9px;color:#6b7280;">' + grade.scale + ' Scale</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+                  '<div style="display:flex;align-items:center;gap:4px;">' +
+                    gradeDots +
+                    '<span style="font-size:10px;color:#6b7280;margin-left:4px;">Grade ' + grade.grade + '/' + maxGrade + '</span>' +
+                  '</div>' +
+                  '<div style="font-size:10px;color:#71717a;max-width:50%;text-align:right;">' + (grade.description || '') + '</div>' +
+                '</div>' +
+              '</div>';
             }).join('')}
           </div>
 
