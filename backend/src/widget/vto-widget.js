@@ -2592,7 +2592,7 @@
       }
     }
 
-    // Render routine from backend data (goal-based)
+    // Render routine from backend data (goal-based) - filtered by current phase
     renderRoutine(time) {
       const container = document.getElementById('flashai-vto-routine-steps');
       const timeHeader = document.getElementById('flashai-vto-routine-time-header');
@@ -2607,22 +2607,60 @@
         return;
       }
 
-      // Calculate total time
-      const totalSeconds = routine.steps.reduce((sum, s) => sum + (s.durationSeconds || 30), 0);
+      // Get current phase (default to 1 if not set)
+      const currentPhase = this.state.currentPhase?.phaseNumber || 1;
+
+      // Define allowed step types per phase (based on dermatology guidelines)
+      const phaseStepTypes = {
+        1: { // Foundation - basics only
+          am: ['cleanser', 'moisturizer', 'sunscreen'],
+          pm: ['cleanser', 'moisturizer', 'makeup_remover']
+        },
+        2: { // First Active - add one active
+          am: ['cleanser', 'moisturizer', 'sunscreen'],
+          pm: ['cleanser', 'serum', 'moisturizer', 'makeup_remover']
+        },
+        3: { // Build Tolerance - same as 2 but more frequent
+          am: ['cleanser', 'moisturizer', 'sunscreen'],
+          pm: ['cleanser', 'serum', 'moisturizer', 'makeup_remover', 'treatment']
+        },
+        4: { // Full Routine - everything
+          am: ['cleanser', 'toner', 'serum', 'eye_cream', 'moisturizer', 'sunscreen'],
+          pm: ['cleanser', 'makeup_remover', 'exfoliant', 'toner', 'serum', 'treatment', 'eye_cream', 'moisturizer', 'face_oil']
+        }
+      };
+
+      const allowedSteps = phaseStepTypes[currentPhase] || phaseStepTypes[1];
+      const allowedForTime = allowedSteps[time] || allowedSteps.am;
+
+      // Filter steps based on current phase
+      const filteredSteps = routine.steps.filter(step => {
+        const stepType = step.stepType?.toLowerCase() || '';
+        return allowedForTime.includes(stepType);
+      });
+
+      if (filteredSteps.length === 0) {
+        this.renderEmptyRoutine();
+        return;
+      }
+
+      // Calculate total time for filtered steps
+      const totalSeconds = filteredSteps.reduce((sum, s) => sum + (s.durationSeconds || 30), 0);
       const totalMinutes = Math.ceil(totalSeconds / 60);
 
-      // Render time header
+      // Render time header with phase indicator
       if (timeHeader) {
         timeHeader.style.display = 'block';
+        const phaseNames = { 1: 'Foundation', 2: 'First Active', 3: 'Build Tolerance', 4: 'Full Routine' };
         timeHeader.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">' +
           '<span style="font-size:12px;color:#166534;font-weight:600;">Total Time: ' + totalMinutes + ' min</span>' +
-          '<span style="font-size:11px;color:#16a34a;">' + routine.steps.length + ' steps</span>' +
+          '<span style="font-size:11px;color:#16a34a;">' + filteredSteps.length + ' steps • Phase ' + currentPhase + '</span>' +
         '</div>';
       }
 
-      // Render steps with checkboxes
+      // Render filtered steps with checkboxes
       let html = '';
-      routine.steps.forEach((step, i) => {
+      filteredSteps.forEach((step, i) => {
         const stepName = step.stepType ? step.stepType.replace(/_/g, ' ') : 'Step';
         const productName = step.customProductName || '';
         const instructions = step.instructions || '';
@@ -2653,11 +2691,14 @@
       // Show complete button
       if (actionsContainer) {
         actionsContainer.style.display = 'block';
-        actionsContainer.innerHTML = '<button id="flashai-vto-complete-routine" data-routine-id="' + routine.id + '" style="width:100%;padding:14px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 15px rgba(22,163,74,0.3);">' +
+        actionsContainer.innerHTML = '<button id="flashai-vto-complete-routine" data-routine-id="' + routine.id + '" data-filtered-steps="' + filteredSteps.length + '" style="width:100%;padding:14px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 15px rgba(22,163,74,0.3);">' +
           '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
           'Complete ' + (time === 'am' ? 'Morning' : 'Night') + ' Routine' +
         '</button>';
       }
+
+      // Store filtered steps for completion tracking
+      this.state.currentFilteredSteps = filteredSteps;
 
       // Attach event listeners
       this.attachRoutineEventListeners(routine.id);
