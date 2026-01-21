@@ -4302,42 +4302,111 @@
       const concerns = issues.filter(i => i.isConcern);
       const healthyMetrics = issues.filter(i => !i.isConcern);
 
-      // ========== ALL METRICS OVERVIEW WITH PERCENTAGE BARS ==========
+      // ========== SAVE ANALYSIS PROMPT ==========
+      const savePromptHtml = !this.state.authToken ? `
+        <div id="flashai-vto-save-analysis-prompt" style="margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-radius:12px;border:2px solid #f59e0b;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:48px;height:48px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span style="font-size:24px;">💾</span>
+            </div>
+            <div style="flex:1;">
+              <h4 style="font-size:14px;font-weight:700;color:#92400e;margin:0 0 4px;">Save Your Analysis</h4>
+              <p style="font-size:12px;color:#a16207;margin:0;line-height:1.4;">Track your skin progress over time. Sign in to save this analysis and compare future scans.</p>
+            </div>
+          </div>
+          <button id="flashai-vto-save-analysis-btn" style="width:100%;margin-top:12px;padding:12px;background:#92400e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+            Sign In to Save & Track Progress
+          </button>
+        </div>
+      ` : `
+        <div style="margin-bottom:16px;padding:12px;background:#dcfce7;border-radius:10px;border:1px solid #86efac;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">✅</span>
+            <span style="font-size:12px;font-weight:600;color:#166534;">Analysis saved! Track your progress in the Progress tab.</span>
+          </div>
+        </div>
+      `;
+
+      // ========== ALL METRICS WITH 30/60/90 DAY PREDICTIONS ==========
       const allMetricsHtml = `
         <div style="margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;">📊 Complete Skin Analysis</h4>
-            <span style="font-size:10px;color:#71717a;">${issues.length} metrics analyzed</span>
+            <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;">📊 Skin Analysis & Predictions</h4>
+            <span style="font-size:10px;color:#71717a;">${issues.length} metrics</span>
           </div>
-          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px;">
+
+          <!-- Column Headers -->
+          <div style="display:grid;grid-template-columns:1fr 55px 55px 55px 55px;gap:4px;padding:8px 12px;background:#f4f4f5;border-radius:10px 10px 0 0;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;">
+            <div>Metric</div>
+            <div style="text-align:center;">Now</div>
+            <div style="text-align:center;">30d</div>
+            <div style="text-align:center;">60d</div>
+            <div style="text-align:center;">90d</div>
+          </div>
+
+          <!-- Metrics Rows -->
+          <div style="background:#fff;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 12px 12px;">
             ${issues.map(issue => {
               const colors = severityColors[issue.severity] || severityColors.moderate;
-              // For "good" attributes (like hydration), the score represents health level
-              // For "bad" attributes (like acne), we show inverted - higher bar = more concern
-              const displayScore = issue.score;
-              const barColor = colors.bar;
-              const statusIcon = issue.severity === 'good' ? '✓' : issue.severity === 'concern' ? '!' : '~';
-              const statusColor = colors.num;
+              const currentScore = issue.score;
+
+              // Calculate predicted improvements based on whether it's a "good" or "bad" attribute
+              // For bad attributes (acne, redness): lower is better, so predict decrease
+              // For good attributes (hydration): higher is better, so predict increase
+              const isGoodAttr = issue.isGoodAttribute;
+              const improvementRate = issue.isConcern ? 0.15 : 0.08; // 15% improvement per month for concerns, 8% for healthy
+
+              let pred30, pred60, pred90;
+              if (isGoodAttr) {
+                // Good attributes: increase score (e.g., hydration 60 → 70 → 78 → 85)
+                pred30 = Math.min(100, Math.round(currentScore + (100 - currentScore) * improvementRate));
+                pred60 = Math.min(100, Math.round(currentScore + (100 - currentScore) * improvementRate * 1.8));
+                pred90 = Math.min(100, Math.round(currentScore + (100 - currentScore) * improvementRate * 2.5));
+              } else {
+                // Bad attributes: decrease score (e.g., acne 60 → 50 → 42 → 35)
+                pred30 = Math.max(0, Math.round(currentScore * (1 - improvementRate)));
+                pred60 = Math.max(0, Math.round(currentScore * (1 - improvementRate * 1.8)));
+                pred90 = Math.max(0, Math.round(currentScore * (1 - improvementRate * 2.5)));
+              }
+
+              // Color coding for predictions
+              const getScoreColor = (score, isGood) => {
+                if (isGood) {
+                  return score >= 70 ? '#16a34a' : score >= 40 ? '#d97706' : '#dc2626';
+                } else {
+                  return score <= 30 ? '#16a34a' : score <= 60 ? '#d97706' : '#dc2626';
+                }
+              };
 
               return `
-                <div style="margin-bottom:10px;padding:8px 0;border-bottom:1px solid #f4f4f5;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <span style="font-size:14px;">${issue.icon || '•'}</span>
-                      <span style="font-size:12px;font-weight:600;color:#18181b;">${issue.name}</span>
-                      ${issue.isConcern ? '<span style="font-size:9px;padding:2px 6px;background:#fef2f2;color:#dc2626;border-radius:8px;font-weight:600;">FOCUS</span>' : ''}
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <span style="font-size:13px;font-weight:700;color:${statusColor};">${displayScore}%</span>
-                      <span style="width:18px;height:18px;border-radius:50%;background:${colors.badgeBg};color:${statusColor};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">${statusIcon}</span>
-                    </div>
+                <div style="display:grid;grid-template-columns:1fr 55px 55px 55px 55px;gap:4px;padding:10px 12px;border-bottom:1px solid #f4f4f5;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                    <span style="font-size:14px;flex-shrink:0;">${issue.icon || '•'}</span>
+                    <span style="font-size:11px;font-weight:600;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${issue.name}</span>
+                    ${issue.isConcern ? '<span style="font-size:8px;padding:1px 4px;background:#fef2f2;color:#dc2626;border-radius:4px;font-weight:700;flex-shrink:0;">!</span>' : ''}
                   </div>
-                  <div style="height:6px;background:#f4f4f5;border-radius:3px;overflow:hidden;">
-                    <div style="height:100%;width:${displayScore}%;background:${barColor};border-radius:3px;transition:width 0.5s ease;"></div>
+                  <div style="text-align:center;">
+                    <span style="font-size:13px;font-weight:700;color:${colors.num};">${currentScore}%</span>
+                  </div>
+                  <div style="text-align:center;">
+                    <span style="font-size:12px;font-weight:600;color:${getScoreColor(pred30, isGoodAttr)};">${pred30}%</span>
+                  </div>
+                  <div style="text-align:center;">
+                    <span style="font-size:12px;font-weight:600;color:${getScoreColor(pred60, isGoodAttr)};">${pred60}%</span>
+                  </div>
+                  <div style="text-align:center;">
+                    <span style="font-size:12px;font-weight:600;color:${getScoreColor(pred90, isGoodAttr)};">${pred90}%</span>
                   </div>
                 </div>
               `;
             }).join('')}
+          </div>
+
+          <!-- Prediction Note -->
+          <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+            <p style="font-size:10px;color:#166534;margin:0;line-height:1.4;">
+              <strong>📈 Predictions</strong> based on consistent skincare routine. Results may vary. Rescan monthly to track actual progress.
+            </p>
           </div>
         </div>
       `;
@@ -4447,7 +4516,15 @@
       }
 
       // Combine all sections
-      listContainer.innerHTML = calibrationNote + allMetricsHtml + concernsHtml + healthyHtml;
+      listContainer.innerHTML = calibrationNote + savePromptHtml + allMetricsHtml + concernsHtml + healthyHtml;
+
+      // Add click handler for Save Analysis button
+      const saveBtn = document.getElementById('flashai-vto-save-analysis-btn');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          this.showAuthModal();
+        });
+      }
 
       // Add click handlers for accordion headers
       listContainer.querySelectorAll('.flashai-vto-accordion-header').forEach(header => {
