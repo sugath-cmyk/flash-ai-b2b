@@ -3645,41 +3645,51 @@
 
         const meetsThreshold = config.isInverse ? score < adjustedThreshold : score >= adjustedThreshold;
 
-        if (meetsThreshold) {
-          // Determine severity - CALIBRATED to be less alarming
-          // Changed thresholds: 60 -> 75 for "Notable" (was "Significant")
-          let severity, severityLabel;
-          if (attr.isGood) {
-            severity = score > 70 ? 'good' : score > 35 ? 'moderate' : 'concern';
-            severityLabel = score > 70 ? 'Healthy' : score > 35 ? 'Could Improve' : 'Needs Attention';
-          } else {
-            // Less aggressive: only mark as "concern" if score > 75 (was 60)
-            severity = score < 40 ? 'good' : score < 75 ? 'moderate' : 'concern';
-            severityLabel = score < 40 ? 'Mild' : score < 75 ? 'Moderate' : 'Notable';
-          }
-
-          issues.push({
-            key: config.key,
-            name: attr.name,
-            icon: attr.icon,
-            score: Math.round(score),
-            severity,
-            severityLabel,
-            region: config.region,
-            position: config.position,
-            highlightRegion: config.highlightRegion, // For red overlay when selected
-            problem: attr.getProblem(analysis, score),
-            solution: attr.getSolution(analysis, score),
-            ingredients: attr.getIngredients ? attr.getIngredients() : '',
-            usage: attr.getUsage ? attr.getUsage() : '',
-            products: attr.getProducts ? attr.getProducts() : []
-          });
+        // Determine severity - CALIBRATED to be less alarming
+        // Changed thresholds: 60 -> 75 for "Notable" (was "Significant")
+        let severity, severityLabel;
+        if (attr.isGood) {
+          // For "good" attributes (like hydration), higher is better
+          severity = score > 70 ? 'good' : score > 35 ? 'moderate' : 'concern';
+          severityLabel = score > 70 ? 'Healthy' : score > 35 ? 'Could Improve' : 'Needs Attention';
+        } else {
+          // For "bad" attributes (like acne), lower is better
+          severity = score < 40 ? 'good' : score < 75 ? 'moderate' : 'concern';
+          severityLabel = score < 40 ? 'Minimal' : score < 75 ? 'Moderate' : 'Notable';
         }
+
+        // ALWAYS add all attributes - show complete picture
+        // Mark whether it's a concern (meets threshold) or healthy metric
+        issues.push({
+          key: config.key,
+          name: attr.name,
+          icon: attr.icon,
+          score: Math.round(score),
+          severity,
+          severityLabel,
+          isConcern: meetsThreshold, // Flag to identify if this is a concern or healthy
+          isGoodAttribute: attr.isGood || false,
+          region: config.region,
+          position: config.position,
+          highlightRegion: config.highlightRegion,
+          problem: attr.getProblem(analysis, score),
+          solution: attr.getSolution(analysis, score),
+          ingredients: attr.getIngredients ? attr.getIngredients() : '',
+          usage: attr.getUsage ? attr.getUsage() : '',
+          products: attr.getProducts ? attr.getProducts() : []
+        });
       });
 
-      // Sort by severity (concern first)
+      // Sort: concerns first (by severity), then healthy metrics
       const severityOrder = { concern: 0, moderate: 1, good: 2 };
-      issues.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+      issues.sort((a, b) => {
+        // First sort by concern status (concerns first)
+        if (a.isConcern !== b.isConcern) {
+          return a.isConcern ? -1 : 1;
+        }
+        // Then by severity
+        return severityOrder[a.severity] - severityOrder[b.severity];
+      });
 
       this.state.detectedIssues = issues;
       this.renderIssuesList();
@@ -3922,6 +3932,9 @@
       const currentView = this.state.currentFaceView || 'front';
       const analysis = this.state.currentAnalysis || {};
 
+      // Only show pins for concerns (not healthy metrics)
+      const concerns = issues.filter(i => i.isConcern);
+
       // Severity colors for pins
       const severityColors = {
         concern: { bg: '#ef4444', pulse: 'rgba(239, 68, 68, 0.4)' },
@@ -3929,14 +3942,15 @@
         good: { bg: '#10b981', pulse: 'rgba(16, 185, 129, 0.4)' }
       };
 
-      // First render issue pins (numbered circles)
-      let pinsHtml = issues.map((issue, index) => {
+      // Render pins only for concerns (numbered circles on face)
+      let pinsHtml = concerns.map((issue, idx) => {
+        const index = issues.indexOf(issue); // Get original index for accordion linking
         const colors = severityColors[issue.severity] || severityColors.moderate;
         return `
         <div class="flashai-vto-pin ${issue.severity}"
              data-index="${index}"
              style="position:absolute;left:${issue.position.x}%;top:${issue.position.y}%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:${colors.bg};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);z-index:10;pointer-events:auto;transition:transform 0.2s,box-shadow 0.2s;">
-          <span class="flashai-vto-pin-num" style="font-size:12px;font-weight:700;color:#fff;">${index + 1}</span>
+          <span class="flashai-vto-pin-num" style="font-size:12px;font-weight:700;color:#fff;">${idx + 1}</span>
           <span class="flashai-vto-pin-pulse" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;border-radius:50%;background:${colors.pulse};animation:flashai-pin-pulse 2s infinite;pointer-events:none;z-index:-1;"></span>
         </div>
       `;
@@ -3965,7 +3979,7 @@
         });
       });
 
-      console.log(`[Pins] Rendered ${issues.length} issue pins + ${realMarkers.length} real markers for ${currentView} view`);
+      console.log(`[Pins] Rendered ${concerns.length} concern pins for ${currentView} view (${issues.length} total metrics)`);
     }
 
     getRealMarkersForView(analysis, currentView) {
@@ -4081,72 +4095,161 @@
 
       // Severity colors - Red (Significant), Orange (Moderate), Green (Mild)
       const severityColors = {
-        concern: { bg: '#fef2f2', border: '#fecaca', num: '#dc2626', badge: '#dc2626', badgeBg: '#fee2e2', highlight: 'rgba(220, 38, 38, 0.3)' },
-        moderate: { bg: '#fffbeb', border: '#fde68a', num: '#d97706', badge: '#d97706', badgeBg: '#fef3c7', highlight: 'rgba(245, 158, 11, 0.3)' },
-        good: { bg: '#f0fdf4', border: '#bbf7d0', num: '#16a34a', badge: '#16a34a', badgeBg: '#dcfce7', highlight: 'rgba(16, 185, 129, 0.3)' }
+        concern: { bg: '#fef2f2', border: '#fecaca', num: '#dc2626', badge: '#dc2626', badgeBg: '#fee2e2', highlight: 'rgba(220, 38, 38, 0.3)', bar: '#ef4444' },
+        moderate: { bg: '#fffbeb', border: '#fde68a', num: '#d97706', badge: '#d97706', badgeBg: '#fef3c7', highlight: 'rgba(245, 158, 11, 0.3)', bar: '#f59e0b' },
+        good: { bg: '#f0fdf4', border: '#bbf7d0', num: '#16a34a', badge: '#16a34a', badgeBg: '#dcfce7', highlight: 'rgba(16, 185, 129, 0.3)', bar: '#22c55e' }
       };
 
-      // Accordion-style list items with inline expansion
-      listContainer.innerHTML = calibrationNote + issues.map((issue, index) => {
-        const colors = severityColors[issue.severity] || severityColors.moderate;
-        return `
-        <div class="flashai-vto-accordion-item" data-index="${index}" style="margin-bottom:8px;">
-          <!-- Header (clickable) -->
-          <div class="flashai-vto-accordion-header ${issue.severity}" data-index="${index}"
-               style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${colors.bg};border:2px solid ${colors.border};border-radius:12px;cursor:pointer;transition:all 0.2s;">
-            <span class="flashai-vto-issue-num" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${colors.num};color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">${index + 1}</span>
-            <div class="flashai-vto-issue-info" style="flex:1;min-width:0;">
-              <span class="flashai-vto-issue-name" style="display:block;font-size:14px;font-weight:600;color:#18181b;">${issue.name}</span>
-              <span class="flashai-vto-issue-region" style="display:block;font-size:12px;color:#71717a;margin-top:2px;">${issue.region}</span>
-            </div>
-            <div class="flashai-vto-issue-badge" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;background:${colors.badgeBg};color:${colors.badge};text-transform:uppercase;letter-spacing:0.5px;">${issue.severityLabel}</div>
-            <svg class="flashai-vto-accordion-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${colors.num}" stroke-width="2.5" style="flex-shrink:0;transition:transform 0.3s;">
-              <path d="M6 9l6 6 6-6"/>
-            </svg>
+      // Separate concerns from healthy metrics
+      const concerns = issues.filter(i => i.isConcern);
+      const healthyMetrics = issues.filter(i => !i.isConcern);
+
+      // ========== ALL METRICS OVERVIEW WITH PERCENTAGE BARS ==========
+      const allMetricsHtml = `
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;">📊 Complete Skin Analysis</h4>
+            <span style="font-size:10px;color:#71717a;">${issues.length} metrics analyzed</span>
           </div>
-          <!-- Expanded Content (hidden by default) -->
-          <div class="flashai-vto-accordion-content" data-index="${index}" style="display:none;padding:16px;background:#fff;border:2px solid ${colors.border};border-top:none;border-radius:0 0 12px 12px;margin-top:-8px;">
-            <!-- Zoomed Face Region -->
-            <div class="flashai-vto-zoomed-region" style="margin-bottom:16px;border-radius:12px;overflow:hidden;position:relative;">
-              <canvas class="flashai-vto-zoom-canvas" data-index="${index}" style="width:100%;height:auto;display:block;border-radius:12px;"></canvas>
-              <div style="position:absolute;top:8px;left:8px;background:${colors.num};color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;">${issue.region}</div>
-            </div>
-            <!-- Problem -->
-            <div style="margin-bottom:12px;padding:12px;background:#f9fafb;border-radius:8px;border-left:3px solid ${colors.num};">
-              <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🔍 Problem</div>
-              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.problem}</p>
-            </div>
-            <!-- Solution -->
-            <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, #f9fafb 100%);border-radius:8px;border-left:3px solid #10b981;">
-              <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">💡 Solution</div>
-              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.solution}</p>
-            </div>
-            <!-- Ingredients to Check -->
-            <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, #faf5ff 100%);border-radius:8px;border-left:3px solid #8b5cf6;">
-              <div style="font-size:10px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧪 Ingredients to Look For</div>
-              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.ingredients}</p>
-            </div>
-            <!-- How to Use/Apply -->
-            <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, #eff6ff 100%);border-radius:8px;border-left:3px solid #3b82f6;">
-              <div style="font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📝 How to Use/Apply</div>
-              <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.usage}</p>
-            </div>
-            <!-- Recommended Products -->
-            ${issue.products && issue.products.length > 0 ? `
-            <div style="padding:12px;background:linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, #faf5ff 100%);border-radius:8px;border-left:3px solid #8b5cf6;">
-              <div style="font-size:10px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🛒 Recommended Products</div>
-              ${issue.products.map(p => `
-                <div style="margin-bottom:10px;padding:8px;background:rgba(255,255,255,0.7);border-radius:6px;">
-                  <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px;">${p.name}</div>
-                  <div style="font-size:11px;color:#6b7280;line-height:1.4;"><strong style="color:#374151;">Top Brands:</strong> ${p.brands}</div>
+          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px;">
+            ${issues.map(issue => {
+              const colors = severityColors[issue.severity] || severityColors.moderate;
+              // For "good" attributes (like hydration), the score represents health level
+              // For "bad" attributes (like acne), we show inverted - higher bar = more concern
+              const displayScore = issue.score;
+              const barColor = colors.bar;
+              const statusIcon = issue.severity === 'good' ? '✓' : issue.severity === 'concern' ? '!' : '~';
+              const statusColor = colors.num;
+
+              return `
+                <div style="margin-bottom:10px;padding:8px 0;border-bottom:1px solid #f4f4f5;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="font-size:14px;">${issue.icon || '•'}</span>
+                      <span style="font-size:12px;font-weight:600;color:#18181b;">${issue.name}</span>
+                      ${issue.isConcern ? '<span style="font-size:9px;padding:2px 6px;background:#fef2f2;color:#dc2626;border-radius:8px;font-weight:600;">FOCUS</span>' : ''}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="font-size:13px;font-weight:700;color:${statusColor};">${displayScore}%</span>
+                      <span style="width:18px;height:18px;border-radius:50%;background:${colors.badgeBg};color:${statusColor};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">${statusIcon}</span>
+                    </div>
+                  </div>
+                  <div style="height:6px;background:#f4f4f5;border-radius:3px;overflow:hidden;">
+                    <div style="height:100%;width:${displayScore}%;background:${barColor};border-radius:3px;transition:width 0.5s ease;"></div>
+                  </div>
                 </div>
-              `).join('')}
-            </div>
-            ` : ''}
+              `;
+            }).join('')}
           </div>
         </div>
       `;
-      }).join('');
+
+      // ========== AREAS OF FOCUS (CONCERNS) - ACCORDION STYLE ==========
+      let concernsHtml = '';
+      if (concerns.length > 0) {
+        concernsHtml = `
+          <div style="margin-bottom:16px;">
+            <h4 style="font-size:13px;font-weight:700;color:#dc2626;margin:0 0 12px;display:flex;align-items:center;gap:6px;">
+              <span>🎯</span> Areas of Focus (${concerns.length})
+            </h4>
+            ${concerns.map((issue, idx) => {
+              const index = issues.indexOf(issue); // Get original index for accordion
+              const colors = severityColors[issue.severity] || severityColors.moderate;
+              return `
+              <div class="flashai-vto-accordion-item" data-index="${index}" style="margin-bottom:8px;">
+                <!-- Header (clickable) -->
+                <div class="flashai-vto-accordion-header ${issue.severity}" data-index="${index}"
+                     style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${colors.bg};border:2px solid ${colors.border};border-radius:12px;cursor:pointer;transition:all 0.2s;">
+                  <span class="flashai-vto-issue-num" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${colors.num};color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">${idx + 1}</span>
+                  <div class="flashai-vto-issue-info" style="flex:1;min-width:0;">
+                    <span class="flashai-vto-issue-name" style="display:block;font-size:14px;font-weight:600;color:#18181b;">${issue.name}</span>
+                    <span class="flashai-vto-issue-region" style="display:block;font-size:12px;color:#71717a;margin-top:2px;">${issue.region} • ${issue.score}%</span>
+                  </div>
+                  <div class="flashai-vto-issue-badge" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;background:${colors.badgeBg};color:${colors.badge};text-transform:uppercase;letter-spacing:0.5px;">${issue.severityLabel}</div>
+                  <svg class="flashai-vto-accordion-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${colors.num}" stroke-width="2.5" style="flex-shrink:0;transition:transform 0.3s;">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </div>
+                <!-- Expanded Content (hidden by default) -->
+                <div class="flashai-vto-accordion-content" data-index="${index}" style="display:none;padding:16px;background:#fff;border:2px solid ${colors.border};border-top:none;border-radius:0 0 12px 12px;margin-top:-8px;">
+                  <!-- Zoomed Face Region -->
+                  <div class="flashai-vto-zoomed-region" style="margin-bottom:16px;border-radius:12px;overflow:hidden;position:relative;">
+                    <canvas class="flashai-vto-zoom-canvas" data-index="${index}" style="width:100%;height:auto;display:block;border-radius:12px;"></canvas>
+                    <div style="position:absolute;top:8px;left:8px;background:${colors.num};color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;">${issue.region}</div>
+                  </div>
+                  <!-- Problem -->
+                  <div style="margin-bottom:12px;padding:12px;background:#f9fafb;border-radius:8px;border-left:3px solid ${colors.num};">
+                    <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🔍 Problem</div>
+                    <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.problem}</p>
+                  </div>
+                  <!-- Solution -->
+                  <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, #f9fafb 100%);border-radius:8px;border-left:3px solid #10b981;">
+                    <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">💡 Solution</div>
+                    <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.solution}</p>
+                  </div>
+                  <!-- Ingredients to Check -->
+                  <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, #faf5ff 100%);border-radius:8px;border-left:3px solid #8b5cf6;">
+                    <div style="font-size:10px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧪 Ingredients to Look For</div>
+                    <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.ingredients}</p>
+                  </div>
+                  <!-- How to Use/Apply -->
+                  <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, #eff6ff 100%);border-radius:8px;border-left:3px solid #3b82f6;">
+                    <div style="font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📝 How to Use/Apply</div>
+                    <p style="font-size:13px;line-height:1.5;color:#374151;margin:0;">${issue.usage}</p>
+                  </div>
+                  <!-- Recommended Products -->
+                  ${issue.products && issue.products.length > 0 ? `
+                  <div style="padding:12px;background:linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, #faf5ff 100%);border-radius:8px;border-left:3px solid #8b5cf6;">
+                    <div style="font-size:10px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🛒 Recommended Products</div>
+                    ${issue.products.map(p => `
+                      <div style="margin-bottom:10px;padding:8px;background:rgba(255,255,255,0.7);border-radius:6px;">
+                        <div style="font-size:12px;font-weight:600;color:#7c3aed;margin-bottom:4px;">${p.name}</div>
+                        <div style="font-size:11px;color:#6b7280;line-height:1.4;"><strong style="color:#374151;">Top Brands:</strong> ${p.brands}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+            }).join('')}
+          </div>
+        `;
+      }
+
+      // ========== HEALTHY METRICS SUMMARY ==========
+      let healthyHtml = '';
+      if (healthyMetrics.length > 0) {
+        healthyHtml = `
+          <div style="margin-bottom:16px;">
+            <h4 style="font-size:13px;font-weight:700;color:#16a34a;margin:0 0 12px;display:flex;align-items:center;gap:6px;">
+              <span>✨</span> Looking Good (${healthyMetrics.length})
+            </h4>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+              ${healthyMetrics.map(issue => {
+                const colors = severityColors[issue.severity] || severityColors.good;
+                return `
+                  <div style="padding:12px;background:${colors.bg};border:1px solid ${colors.border};border-radius:10px;">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                      <span style="font-size:14px;">${issue.icon || '•'}</span>
+                      <span style="font-size:11px;font-weight:600;color:#18181b;">${issue.name}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                      <div style="flex:1;height:4px;background:#d1fae5;border-radius:2px;margin-right:8px;">
+                        <div style="height:100%;width:${issue.score}%;background:#22c55e;border-radius:2px;"></div>
+                      </div>
+                      <span style="font-size:12px;font-weight:700;color:#16a34a;">${issue.score}%</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Combine all sections
+      listContainer.innerHTML = calibrationNote + allMetricsHtml + concernsHtml + healthyHtml;
 
       // Add click handlers for accordion headers
       listContainer.querySelectorAll('.flashai-vto-accordion-header').forEach(header => {
