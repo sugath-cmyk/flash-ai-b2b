@@ -250,6 +250,266 @@ class RoutinesController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // PHASE MANAGEMENT ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Get current phase info
+   * GET /api/widget/routines/phase
+   */
+  async getPhase(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.widgetUser) {
+        throw createError('Not authenticated', 401);
+      }
+
+      const phaseInfo = await routineGeneratorService.getPhaseInfo(req.widgetUser.id);
+
+      res.json({
+        success: true,
+        data: phaseInfo,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Advance to next phase (manual confirmation)
+   * POST /api/widget/routines/phase/advance
+   */
+  async advancePhase(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.widgetUser) {
+        throw createError('Not authenticated', 401);
+      }
+
+      const { reason } = req.body;
+      const newPhase = await routineGeneratorService.advancePhase(req.widgetUser.id, reason);
+
+      // Regenerate routines for the new phase
+      if (newPhase) {
+        await routineGeneratorService.generatePhaseRoutine(
+          req.widgetUser.id,
+          req.widgetUser.storeId,
+          newPhase.phaseNumber
+        );
+      }
+
+      res.json({
+        success: true,
+        data: { phase: newPhase },
+        message: `Advanced to ${newPhase?.phaseName || 'next phase'}`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Submit questionnaire and initialize phase
+   * POST /api/widget/routines/questionnaire
+   */
+  async submitQuestionnaire(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.widgetUser) {
+        throw createError('Not authenticated', 401);
+      }
+
+      const {
+        skincareExperience,
+        skinSensitivity,
+        routineConsistency,
+        usedActives,
+        ageRange,
+      } = req.body;
+
+      // Validate required fields
+      if (!skincareExperience || !skinSensitivity || !routineConsistency) {
+        throw createError('Missing required questionnaire fields', 400);
+      }
+
+      // Get prioritized concerns from user's goals
+      const { primary, secondary } = await routineGeneratorService.prioritizeConcerns(
+        req.widgetUser.id
+      );
+
+      // Initialize phase based on questionnaire
+      const phase = await routineGeneratorService.initializeUserPhase(
+        req.widgetUser.id,
+        {
+          skincareExperience,
+          skinSensitivity,
+          routineConsistency,
+          usedActives: usedActives || [],
+          ageRange,
+        },
+        primary || undefined,
+        secondary || undefined
+      );
+
+      // Generate phase-appropriate routines
+      const routines = await routineGeneratorService.generatePhaseRoutine(
+        req.widgetUser.id,
+        req.widgetUser.storeId,
+        phase.phaseNumber
+      );
+
+      res.status(201).json({
+        success: true,
+        data: {
+          phase,
+          routines,
+          message: `Starting at Phase ${phase.phaseNumber}: ${phase.phaseName}`,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get phase templates (public reference)
+   * GET /api/widget/routines/phase/templates
+   */
+  async getPhaseTemplates(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      // Return phase template data for UI display
+      const templates = [
+        {
+          phaseNumber: 1,
+          name: 'Foundation',
+          durationWeeks: 2,
+          description: 'Build healthy habits with core essentials',
+          amSteps: ['cleanser', 'moisturizer', 'sunscreen'],
+          pmSteps: ['cleanser', 'moisturizer'],
+          activeFrequency: 'daily',
+          tips: [
+            { text: 'Apply sunscreen every morning, even on cloudy days', icon: '☀️' },
+            { text: 'Use lukewarm water, not hot, when cleansing', icon: '💧' },
+            { text: 'Pat dry gently, don\'t rub your face', icon: '✋' },
+          ],
+        },
+        {
+          phaseNumber: 2,
+          name: 'First Active',
+          durationWeeks: 2,
+          description: 'Introduce your first treatment product slowly',
+          amSteps: ['cleanser', 'moisturizer', 'sunscreen'],
+          pmSteps: ['cleanser', 'serum', 'moisturizer'],
+          activeFrequency: '2x_week',
+          tips: [
+            { text: 'Apply treatment serum before moisturizer', icon: '✨' },
+            { text: 'Skip treatment nights if skin feels irritated', icon: '⚠️' },
+            { text: 'Slight tingling is normal, burning is not', icon: '🔥' },
+          ],
+        },
+        {
+          phaseNumber: 3,
+          name: 'Build Tolerance',
+          durationWeeks: 2,
+          description: 'Increase treatment frequency as skin adjusts',
+          amSteps: ['cleanser', 'moisturizer', 'sunscreen'],
+          pmSteps: ['cleanser', 'serum', 'moisturizer'],
+          activeFrequency: '3x_week',
+          tips: [
+            { text: 'Now using treatment 3x per week', icon: '📈' },
+            { text: 'Continue monitoring for irritation', icon: '👀' },
+            { text: 'Results take 4-8 weeks to show', icon: '⏰' },
+          ],
+        },
+        {
+          phaseNumber: 4,
+          name: 'Full Routine',
+          durationWeeks: null,
+          description: 'Your complete personalized routine',
+          amSteps: ['cleanser', 'toner', 'serum', 'eye_cream', 'moisturizer', 'sunscreen'],
+          pmSteps: ['makeup_remover', 'cleanser', 'exfoliant', 'toner', 'serum', 'treatment', 'eye_cream', 'moisturizer', 'face_oil'],
+          activeFrequency: 'every_other_day',
+          tips: [
+            { text: 'You\'ve built a strong foundation!', icon: '🎉' },
+            { text: 'Listen to your skin and adjust as needed', icon: '👂' },
+            { text: 'Reassess routine every 3-6 months', icon: '📅' },
+          ],
+        },
+      ];
+
+      res.json({
+        success: true,
+        data: { templates },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ============================================================================
+  // CALENDAR ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Get monthly calendar data
+   * GET /api/widget/routines/calendar?month=2026-01
+   */
+  async getCalendar(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.widgetUser) {
+        throw createError('Not authenticated', 401);
+      }
+
+      // Default to current month if not specified
+      const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
+
+      // Validate month format
+      if (!/^\d{4}-\d{2}$/.test(month)) {
+        throw createError('Invalid month format. Use YYYY-MM', 400);
+      }
+
+      const calendarData = await routineGeneratorService.getMonthlyCalendar(
+        req.widgetUser.id,
+        month
+      );
+
+      res.json({
+        success: true,
+        data: calendarData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Generate phase-aware routines
+   * POST /api/widget/routines/generate-phase
+   */
+  async generatePhaseRoutines(req: WidgetAuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.widgetUser) {
+        throw createError('Not authenticated', 401);
+      }
+
+      // Get user's current phase
+      const phaseInfo = await routineGeneratorService.getPhaseInfo(req.widgetUser.id);
+      const phaseNumber = phaseInfo.phase?.phaseNumber || 1;
+
+      const routines = await routineGeneratorService.generatePhaseRoutine(
+        req.widgetUser.id,
+        req.widgetUser.storeId,
+        phaseNumber
+      );
+
+      res.status(201).json({
+        success: true,
+        data: routines,
+        message: `Routines generated for Phase ${phaseNumber}: ${phaseInfo.phase?.phaseName || 'Foundation'}`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoutinesController();

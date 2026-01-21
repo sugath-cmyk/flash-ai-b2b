@@ -7,8 +7,42 @@ const router = Router();
 // All routes require authentication
 router.use(authenticateWidgetUser);
 
-// POST /api/widget/routines/generate - Generate AM/PM routines based on goals
+// ============================================================================
+// PHASE MANAGEMENT ROUTES
+// ============================================================================
+
+// GET /api/widget/routines/phase/templates - Get phase templates (for UI display)
+router.get('/phase/templates', routinesController.getPhaseTemplates.bind(routinesController));
+
+// GET /api/widget/routines/phase - Get current phase info
+router.get('/phase', routinesController.getPhase.bind(routinesController));
+
+// POST /api/widget/routines/phase/advance - Manually advance to next phase
+router.post('/phase/advance', routinesController.advancePhase.bind(routinesController));
+
+// POST /api/widget/routines/questionnaire - Submit questionnaire and initialize phase
+router.post('/questionnaire', routinesController.submitQuestionnaire.bind(routinesController));
+
+// ============================================================================
+// CALENDAR ROUTES
+// ============================================================================
+
+// GET /api/widget/routines/calendar - Get monthly calendar data
+router.get('/calendar', routinesController.getCalendar.bind(routinesController));
+
+// ============================================================================
+// ROUTINE GENERATION ROUTES
+// ============================================================================
+
+// POST /api/widget/routines/generate - Generate AM/PM routines based on goals (legacy)
 router.post('/generate', routinesController.generateRoutines.bind(routinesController));
+
+// POST /api/widget/routines/generate-phase - Generate phase-aware routines
+router.post('/generate-phase', routinesController.generatePhaseRoutines.bind(routinesController));
+
+// ============================================================================
+// ROUTINE CRUD ROUTES
+// ============================================================================
 
 // POST /api/widget/routines - Create a custom routine
 router.post('/', routinesController.createRoutine.bind(routinesController));

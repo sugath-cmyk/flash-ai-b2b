@@ -857,7 +857,7 @@
                 </div>
               </div><!-- End Tab: Goals -->
 
-              <!-- Tab Content: Routine (Goal-based from Backend) -->
+              <!-- Tab Content: Routine (Phased System with Calendar) -->
               <div id="flashai-vto-tab-routine" class="flashai-vto-tab-content" style="display:none;">
                 <div class="flashai-vto-routine-container" style="padding:0;">
                   <!-- Login Prompt -->
@@ -874,8 +874,143 @@
                       Sign In for Routine
                     </button>
                   </div>
+
+                  <!-- Skincare Experience Questionnaire -->
+                  <div id="flashai-vto-routine-questionnaire" style="display:none;">
+                    <div style="text-align:center;margin-bottom:20px;">
+                      <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Personalize Your Routine</h3>
+                      <p style="font-size:13px;color:#71717a;margin:0;">Help us create the perfect routine for you (30 seconds)</p>
+                    </div>
+
+                    <!-- Age Range -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>🎂</span> What is your age range?
+                      </h4>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <button class="flashai-questionnaire-btn" data-question="ageRange" data-value="teens" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Teens</button>
+                        <button class="flashai-questionnaire-btn" data-question="ageRange" data-value="20s" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">20s</button>
+                        <button class="flashai-questionnaire-btn" data-question="ageRange" data-value="30s" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">30s</button>
+                        <button class="flashai-questionnaire-btn" data-question="ageRange" data-value="40s" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">40s</button>
+                        <button class="flashai-questionnaire-btn" data-question="ageRange" data-value="50s" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">50s</button>
+                        <button class="flashai-questionnaire-btn" data-question="ageRange" data-value="60+" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">60+</button>
+                      </div>
+                    </div>
+
+                    <!-- Skincare Experience -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>💆</span> Current skincare routine?
+                      </h4>
+                      <div style="display:flex;flex-direction:column;gap:8px;">
+                        <button class="flashai-questionnaire-btn" data-question="skincareExperience" data-value="none" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;text-align:left;">🌱 No routine yet</button>
+                        <button class="flashai-questionnaire-btn" data-question="skincareExperience" data-value="basic" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;text-align:left;">🧴 Basic (cleanser + moisturizer)</button>
+                        <button class="flashai-questionnaire-btn" data-question="skincareExperience" data-value="intermediate" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;text-align:left;">✨ Intermediate (includes serums)</button>
+                        <button class="flashai-questionnaire-btn" data-question="skincareExperience" data-value="advanced" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;text-align:left;">🔬 Advanced (multiple actives, retinol)</button>
+                      </div>
+                    </div>
+
+                    <!-- Used Actives -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>🧪</span> Active ingredients you have used? (select all)
+                      </h4>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <button class="flashai-questionnaire-toggle" data-question="usedActives" data-value="retinol" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Retinol</button>
+                        <button class="flashai-questionnaire-toggle" data-question="usedActives" data-value="vitamin_c" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Vitamin C</button>
+                        <button class="flashai-questionnaire-toggle" data-question="usedActives" data-value="acids" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">AHAs/BHAs</button>
+                        <button class="flashai-questionnaire-toggle" data-question="usedActives" data-value="niacinamide" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Niacinamide</button>
+                        <button class="flashai-questionnaire-toggle" data-question="usedActives" data-value="none" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">None of these</button>
+                      </div>
+                    </div>
+
+                    <!-- Skin Sensitivity -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>🌸</span> How sensitive is your skin?
+                      </h4>
+                      <div style="display:flex;gap:8px;">
+                        <button class="flashai-questionnaire-btn" data-question="skinSensitivity" data-value="very_sensitive" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;">Very Sensitive</button>
+                        <button class="flashai-questionnaire-btn" data-question="skinSensitivity" data-value="moderate" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;">Moderate</button>
+                        <button class="flashai-questionnaire-btn" data-question="skinSensitivity" data-value="tolerant" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;">Tolerant</button>
+                      </div>
+                    </div>
+
+                    <!-- Routine Consistency -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>📅</span> How consistent are you with routines?
+                      </h4>
+                      <div style="display:flex;gap:8px;">
+                        <button class="flashai-questionnaire-btn" data-question="routineConsistency" data-value="struggling" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;">Struggling</button>
+                        <button class="flashai-questionnaire-btn" data-question="routineConsistency" data-value="sometimes" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;">Sometimes</button>
+                        <button class="flashai-questionnaire-btn" data-question="routineConsistency" data-value="consistent" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;">Consistent</button>
+                      </div>
+                    </div>
+
+                    <!-- Why we ask -->
+                    <div style="padding:12px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:10px;margin-bottom:16px;">
+                      <p style="font-size:11px;color:#6b21a8;margin:0;display:flex;align-items:start;gap:6px;">
+                        <span>💡</span>
+                        <span>Based on dermatology research, we will start you at the right phase to build sustainable habits without overwhelming your skin.</span>
+                      </p>
+                    </div>
+
+                    <button id="flashai-vto-questionnaire-submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.3);">
+                      Start My Personalized Routine
+                    </button>
+                  </div>
+
                   <!-- Routine Content -->
                   <div id="flashai-vto-routine-content" style="display:none;">
+                    <!-- Phase Banner -->
+                    <div id="flashai-vto-phase-banner" style="margin-bottom:16px;padding:16px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:14px;border:1px solid #ddd6fe;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div>
+                          <div style="font-size:10px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px;">Phase <span id="flashai-phase-number">1</span> of 4</div>
+                          <div style="font-size:16px;font-weight:700;color:#5b21b6;" id="flashai-phase-name">Foundation</div>
+                        </div>
+                        <div style="text-align:right;">
+                          <div style="font-size:10px;color:#71717a;">Week</div>
+                          <div style="font-size:18px;font-weight:700;color:#8b5cf6;" id="flashai-phase-week">1</div>
+                        </div>
+                      </div>
+                      <div style="background:#e9d5ff;border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px;">
+                        <div id="flashai-phase-progress" style="height:100%;background:linear-gradient(90deg,#8b5cf6 0%,#7c3aed 100%);border-radius:6px;width:25%;transition:width 0.5s;"></div>
+                      </div>
+                      <p id="flashai-phase-description" style="font-size:11px;color:#6d28d9;margin:0;">Build healthy habits with core essentials</p>
+                      <!-- Phase Tip -->
+                      <div id="flashai-phase-tip" style="margin-top:10px;padding:10px 12px;background:rgba(255,255,255,0.7);border-radius:8px;display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:16px;">☀️</span>
+                        <span style="font-size:11px;color:#5b21b6;" id="flashai-phase-tip-text">Apply sunscreen every morning, even on cloudy days</span>
+                      </div>
+                      <!-- Advance Phase Button (shown when ready) -->
+                      <button id="flashai-vto-advance-phase" style="display:none;width:100%;margin-top:12px;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">
+                        Ready for Phase 2? →
+                      </button>
+                    </div>
+
+                    <!-- Phase Milestone Timeline -->
+                    <div id="flashai-vto-phase-timeline" style="margin-bottom:16px;display:flex;justify-content:space-between;position:relative;padding:0 8px;">
+                      <div style="position:absolute;top:12px;left:24px;right:24px;height:2px;background:#e4e4e7;z-index:0;"></div>
+                      <div class="flashai-milestone completed" data-phase="1" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
+                        <div style="width:24px;height:24px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;">✓</div>
+                        <span style="font-size:9px;color:#8b5cf6;margin-top:4px;font-weight:600;">Foundation</span>
+                      </div>
+                      <div class="flashai-milestone" data-phase="2" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
+                        <div style="width:24px;height:24px;border-radius:50%;background:#e4e4e7;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:10px;font-weight:700;">2</div>
+                        <span style="font-size:9px;color:#71717a;margin-top:4px;">First Active</span>
+                      </div>
+                      <div class="flashai-milestone" data-phase="3" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
+                        <div style="width:24px;height:24px;border-radius:50%;background:#e4e4e7;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:10px;font-weight:700;">3</div>
+                        <span style="font-size:9px;color:#71717a;margin-top:4px;">Tolerance</span>
+                      </div>
+                      <div class="flashai-milestone" data-phase="4" style="display:flex;flex-direction:column;align-items:center;z-index:1;">
+                        <div style="width:24px;height:24px;border-radius:50%;background:#e4e4e7;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:10px;font-weight:700;">4</div>
+                        <span style="font-size:9px;color:#71717a;margin-top:4px;">Full</span>
+                      </div>
+                    </div>
+
                     <!-- Stats Header -->
                     <div id="flashai-vto-routine-stats" style="margin-bottom:16px;">
                       <!-- Populated dynamically -->
@@ -910,6 +1045,48 @@
                         Generate My Routine
                       </span>
                     </button>
+
+                    <!-- Monthly Calendar -->
+                    <div id="flashai-vto-routine-calendar" style="margin-top:20px;padding:16px;background:#fff;border-radius:14px;border:1px solid #e4e4e7;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <button id="flashai-cal-prev" style="width:32px;height:32px;background:#f4f4f5;border:none;border-radius:8px;cursor:pointer;font-size:14px;">◀</button>
+                        <span id="flashai-cal-month" style="font-size:14px;font-weight:600;color:#18181b;">January 2026</span>
+                        <button id="flashai-cal-next" style="width:32px;height:32px;background:#f4f4f5;border:none;border-radius:8px;cursor:pointer;font-size:14px;">▶</button>
+                      </div>
+                      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px;">
+                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">S</span>
+                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">M</span>
+                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">T</span>
+                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">W</span>
+                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">T</span>
+                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">F</span>
+                        <span style="text-align:center;font-size:10px;color:#71717a;font-weight:600;">S</span>
+                      </div>
+                      <div id="flashai-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+                        <!-- Populated dynamically -->
+                      </div>
+                      <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid #f4f4f5;">
+                        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#71717a;">
+                          <span style="width:8px;height:8px;background:#16a34a;border-radius:50%;"></span> Both
+                        </span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#71717a;">
+                          <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;"></span> One
+                        </span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#71717a;">
+                          <span style="width:8px;height:8px;background:#e4e4e7;border-radius:50%;"></span> Missed
+                        </span>
+                      </div>
+                      <div id="flashai-cal-stats" style="display:flex;justify-content:space-around;margin-top:12px;padding:12px;background:#f9fafb;border-radius:10px;">
+                        <div style="text-align:center;">
+                          <div style="font-size:18px;font-weight:700;color:#8b5cf6;" id="flashai-cal-streak">0</div>
+                          <div style="font-size:9px;color:#71717a;">Day Streak</div>
+                        </div>
+                        <div style="text-align:center;">
+                          <div style="font-size:18px;font-weight:700;color:#16a34a;" id="flashai-cal-monthly">0%</div>
+                          <div style="font-size:9px;color:#71717a;">This Month</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div><!-- End Tab: Routine -->
@@ -1265,6 +1442,9 @@
           this.loadPredictions(weeks);
         });
       });
+
+      // ========== NEW: Phased Routine Questionnaire & Calendar ==========
+      this.initQuestionnaireEvents();
     }
 
     // ==========================================================================
@@ -1976,48 +2156,76 @@
       console.log('[Routine] loadRoutineData called');
       const loginPrompt = document.getElementById('flashai-vto-routine-login-prompt');
       const routineContent = document.getElementById('flashai-vto-routine-content');
+      const questionnaire = document.getElementById('flashai-vto-routine-questionnaire');
       const generateBtn = document.getElementById('flashai-vto-generate-routine');
-      console.log('[Routine] Elements found: loginPrompt=' + !!loginPrompt + ', routineContent=' + !!routineContent + ', generateBtn=' + !!generateBtn);
+      console.log('[Routine] Elements found: loginPrompt=' + !!loginPrompt + ', routineContent=' + !!routineContent + ', questionnaire=' + !!questionnaire);
 
       // Check if authenticated
       if (!this.state.authToken) {
         console.log('[Routine] Not authenticated, showing login prompt');
         if (loginPrompt) loginPrompt.style.display = 'block';
         if (routineContent) routineContent.style.display = 'none';
+        if (questionnaire) questionnaire.style.display = 'none';
         return;
       }
 
       console.log('[Routine] User is authenticated');
-      // User is authenticated - show content
       if (loginPrompt) loginPrompt.style.display = 'none';
-      if (routineContent) routineContent.style.display = 'block';
 
       try {
-        // Load stats and routines in parallel
+        // Load phase info and routines in parallel
         const routinesUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines');
-        console.log('[Routine] Fetching routines from:', routinesUrl);
-        const [stats, routinesResponse] = await Promise.all([
+        console.log('[Routine] Fetching routines and phase data...');
+
+        const [phaseData, stats, routinesResponse] = await Promise.all([
+          this.loadPhaseData(),
           this.loadRoutineStats(),
           fetch(routinesUrl, {
             headers: { 'Authorization': 'Bearer ' + this.state.authToken }
           })
         ]);
 
+        const routinesData = await routinesResponse.json();
+        console.log('[Routine] Phase data:', phaseData);
+        console.log('[Routine] Routines API response:', routinesData);
+
+        // Check if user needs to complete questionnaire (no phase initialized)
+        const hasPhase = phaseData && phaseData.phase && phaseData.phase.phaseNumber;
+        const hasRoutines = routinesData.success && routinesData.data && routinesData.data.routines && routinesData.data.routines.length > 0;
+
+        if (!hasPhase && !hasRoutines) {
+          // Show questionnaire for new users
+          console.log('[Routine] No phase found, showing questionnaire');
+          if (questionnaire) questionnaire.style.display = 'block';
+          if (routineContent) routineContent.style.display = 'none';
+          return;
+        }
+
+        // User has phase - show routine content
+        if (questionnaire) questionnaire.style.display = 'none';
+        if (routineContent) routineContent.style.display = 'block';
+
+        // Render phase banner if we have phase data
+        if (phaseData && phaseData.phase) {
+          this.state.currentPhase = phaseData.phase;
+          this.renderPhaseBanner(phaseData);
+          this.renderMilestoneTimeline(phaseData.phase.phaseNumber);
+        }
+
         // Render stats header
         this.renderRoutineStats(stats);
 
-        const data = await routinesResponse.json();
-        console.log('[Routine] Routines API response:', data);
+        // Load and render calendar
+        this.loadCalendarData();
 
-        if (data.success && data.data && data.data.routines && data.data.routines.length > 0) {
-          console.log('[Routine] Found ' + data.data.routines.length + ' routines, rendering...');
-          this.state.routines = data.data.routines;
+        if (hasRoutines) {
+          console.log('[Routine] Found ' + routinesData.data.routines.length + ' routines, rendering...');
+          this.state.routines = routinesData.data.routines;
           if (generateBtn) generateBtn.style.display = 'none';
           this.state.currentRoutineTime = 'am';
           this.renderRoutine('am');
         } else {
           console.log('[Routine] No routines found, showing generate button');
-          // No routines yet - show generate button
           if (generateBtn) generateBtn.style.display = 'block';
           this.renderEmptyRoutine();
         }
@@ -2660,6 +2868,420 @@
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path></svg> Generate My Routine</span>';
+        }
+      }
+    }
+
+    // ==========================================================================
+    // PHASED ROUTINE SYSTEM - Questionnaire, Phase Banner, Calendar
+    // ==========================================================================
+
+    initQuestionnaireEvents() {
+      const modal = this.elements.modal;
+
+      // Single-select buttons
+      modal.querySelectorAll('.flashai-questionnaire-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const question = e.currentTarget.dataset.question;
+          const value = e.currentTarget.dataset.value;
+          this.handleQuestionnaireAnswer(question, value, false);
+        });
+      });
+
+      // Multi-select toggle buttons
+      modal.querySelectorAll('.flashai-questionnaire-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const question = e.currentTarget.dataset.question;
+          const value = e.currentTarget.dataset.value;
+          this.handleQuestionnaireAnswer(question, value, true);
+        });
+      });
+
+      // Submit button
+      const submitBtn = modal.querySelector('#flashai-vto-questionnaire-submit');
+      if (submitBtn) {
+        submitBtn.addEventListener('click', () => this.submitQuestionnaire());
+      }
+
+      // Calendar navigation
+      modal.querySelector('#flashai-cal-prev')?.addEventListener('click', () => {
+        this.navigateCalendar(-1);
+      });
+      modal.querySelector('#flashai-cal-next')?.addEventListener('click', () => {
+        this.navigateCalendar(1);
+      });
+
+      // Advance phase button
+      modal.querySelector('#flashai-vto-advance-phase')?.addEventListener('click', () => {
+        this.advancePhase();
+      });
+    }
+
+    handleQuestionnaireAnswer(question, value, isMultiSelect) {
+      if (!this.state.questionnaireAnswers) {
+        this.state.questionnaireAnswers = { usedActives: [] };
+      }
+
+      if (isMultiSelect) {
+        // Toggle for multi-select (usedActives)
+        if (value === 'none') {
+          // If "none" selected, clear others
+          this.state.questionnaireAnswers[question] = ['none'];
+          document.querySelectorAll('.flashai-questionnaire-toggle[data-question="' + question + '"]').forEach(btn => {
+            if (btn.dataset.value === 'none') {
+              btn.style.background = '#8b5cf6';
+              btn.style.color = '#fff';
+              btn.style.borderColor = '#8b5cf6';
+            } else {
+              btn.style.background = '#fff';
+              btn.style.color = '#18181b';
+              btn.style.borderColor = '#e4e4e7';
+            }
+          });
+        } else {
+          // Remove "none" if selecting other
+          this.state.questionnaireAnswers[question] = (this.state.questionnaireAnswers[question] || []).filter(v => v !== 'none');
+          const index = this.state.questionnaireAnswers[question].indexOf(value);
+          if (index > -1) {
+            this.state.questionnaireAnswers[question].splice(index, 1);
+          } else {
+            this.state.questionnaireAnswers[question].push(value);
+          }
+
+          // Update button styles
+          document.querySelectorAll('.flashai-questionnaire-toggle[data-question="' + question + '"]').forEach(btn => {
+            const isSelected = this.state.questionnaireAnswers[question].includes(btn.dataset.value);
+            btn.style.background = isSelected ? '#8b5cf6' : '#fff';
+            btn.style.color = isSelected ? '#fff' : '#18181b';
+            btn.style.borderColor = isSelected ? '#8b5cf6' : '#e4e4e7';
+          });
+        }
+      } else {
+        // Single select
+        this.state.questionnaireAnswers[question] = value;
+
+        // Update button styles
+        document.querySelectorAll('.flashai-questionnaire-btn[data-question="' + question + '"]').forEach(btn => {
+          if (btn.dataset.value === value) {
+            btn.style.background = '#8b5cf6';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#8b5cf6';
+          } else {
+            btn.style.background = '#fff';
+            btn.style.color = '#18181b';
+            btn.style.borderColor = '#e4e4e7';
+          }
+        });
+      }
+    }
+
+    async submitQuestionnaire() {
+      const answers = this.state.questionnaireAnswers || {};
+
+      // Validate required answers
+      if (!answers.skincareExperience || !answers.skinSensitivity || !answers.routineConsistency) {
+        alert('Please answer all questions to personalize your routine');
+        return;
+      }
+
+      const submitBtn = document.getElementById('flashai-vto-questionnaire-submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:flashai-spin 1s linear infinite;"></span> Creating your plan...';
+      }
+
+      try {
+        const url = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/questionnaire';
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + this.state.authToken
+          },
+          body: JSON.stringify({
+            skincareExperience: answers.skincareExperience,
+            skinSensitivity: answers.skinSensitivity,
+            routineConsistency: answers.routineConsistency,
+            usedActives: answers.usedActives || [],
+            ageRange: answers.ageRange
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Hide questionnaire, show routine content
+          const questionnaire = document.getElementById('flashai-vto-routine-questionnaire');
+          const routineContent = document.getElementById('flashai-vto-routine-content');
+          if (questionnaire) questionnaire.style.display = 'none';
+          if (routineContent) routineContent.style.display = 'block';
+
+          // Store phase and routines
+          this.state.currentPhase = data.data.phase;
+          this.state.routines = data.data.routines;
+
+          // Render phase banner and routines
+          this.renderPhaseBanner(data.data.phase);
+          this.renderMilestoneTimeline(data.data.phase.phaseNumber);
+          this.state.currentRoutineTime = 'am';
+          this.renderRoutine('am');
+
+          // Load calendar
+          this.loadCalendarData();
+        } else {
+          throw new Error(data.message || 'Failed to create personalized routine');
+        }
+      } catch (error) {
+        console.error('[Questionnaire] Error:', error);
+        alert('Failed to create routine: ' + error.message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Start My Personalized Routine';
+        }
+      }
+    }
+
+    async loadPhaseData() {
+      if (!this.state.authToken) return null;
+
+      try {
+        const url = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/phase';
+        const response = await fetch(url, {
+          headers: { 'Authorization': 'Bearer ' + this.state.authToken }
+        });
+        const data = await response.json();
+        return data.success ? data.data : null;
+      } catch (error) {
+        console.error('[Phase] Error loading phase:', error);
+        return null;
+      }
+    }
+
+    renderPhaseBanner(phaseInfo) {
+      if (!phaseInfo || !phaseInfo.phase) return;
+
+      const phase = phaseInfo.phase;
+      const phaseNumber = document.getElementById('flashai-phase-number');
+      const phaseName = document.getElementById('flashai-phase-name');
+      const phaseWeek = document.getElementById('flashai-phase-week');
+      const phaseProgress = document.getElementById('flashai-phase-progress');
+      const phaseDescription = document.getElementById('flashai-phase-description');
+      const phaseTipText = document.getElementById('flashai-phase-tip-text');
+      const advanceBtn = document.getElementById('flashai-vto-advance-phase');
+
+      if (phaseNumber) phaseNumber.textContent = phase.phaseNumber || 1;
+      if (phaseName) phaseName.textContent = phase.phaseName || 'Foundation';
+      if (phaseWeek) phaseWeek.textContent = phaseInfo.weekInPhase || 1;
+
+      // Calculate progress
+      const totalWeeks = phaseInfo.totalWeeks || 2;
+      const currentWeek = phaseInfo.weekInPhase || 1;
+      const progressPercent = Math.min(100, Math.round((currentWeek / totalWeeks) * 100));
+      if (phaseProgress) phaseProgress.style.width = progressPercent + '%';
+
+      // Phase descriptions
+      const descriptions = {
+        1: 'Build healthy habits with core essentials',
+        2: 'Introduce your first treatment product slowly',
+        3: 'Increase treatment frequency as skin adjusts',
+        4: 'Your complete personalized routine'
+      };
+      if (phaseDescription) phaseDescription.textContent = descriptions[phase.phaseNumber] || '';
+
+      // Tips
+      const tips = [
+        { text: 'Apply sunscreen every morning, even on cloudy days', icon: '☀️' },
+        { text: 'Apply treatment serum before moisturizer', icon: '✨' },
+        { text: 'Results take 4-8 weeks to show', icon: '⏰' },
+        { text: 'Listen to your skin and adjust as needed', icon: '👂' }
+      ];
+      const tip = tips[(phase.phaseNumber || 1) - 1];
+      const tipIcon = document.querySelector('#flashai-phase-tip span:first-child');
+      if (tipIcon) tipIcon.textContent = tip.icon;
+      if (phaseTipText) phaseTipText.textContent = tip.text;
+
+      // Show advance button if ready
+      if (advanceBtn) {
+        const canAdvance = phaseInfo.canAdvance && phase.phaseNumber < 4;
+        advanceBtn.style.display = canAdvance ? 'block' : 'none';
+        if (canAdvance) {
+          advanceBtn.textContent = 'Ready for Phase ' + (phase.phaseNumber + 1) + '? →';
+        }
+      }
+    }
+
+    renderMilestoneTimeline(currentPhase) {
+      const milestones = document.querySelectorAll('.flashai-milestone');
+      milestones.forEach(m => {
+        const phaseNum = parseInt(m.dataset.phase);
+        const circle = m.querySelector('div');
+        const label = m.querySelector('span');
+
+        if (phaseNum < currentPhase) {
+          // Completed
+          circle.style.background = '#8b5cf6';
+          circle.style.color = '#fff';
+          circle.innerHTML = '✓';
+          label.style.color = '#8b5cf6';
+          label.style.fontWeight = '600';
+        } else if (phaseNum === currentPhase) {
+          // Current
+          circle.style.background = 'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)';
+          circle.style.color = '#fff';
+          circle.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.3)';
+          circle.innerHTML = phaseNum;
+          label.style.color = '#8b5cf6';
+          label.style.fontWeight = '600';
+        } else {
+          // Future
+          circle.style.background = '#e4e4e7';
+          circle.style.color = '#71717a';
+          circle.style.boxShadow = 'none';
+          circle.innerHTML = phaseNum;
+          label.style.color = '#71717a';
+          label.style.fontWeight = '400';
+        }
+      });
+    }
+
+    async loadCalendarData(month) {
+      if (!this.state.authToken) return;
+
+      const monthStr = month || new Date().toISOString().slice(0, 7);
+      this.state.currentCalendarMonth = monthStr;
+
+      try {
+        const url = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/calendar?month=' + monthStr;
+        const response = await fetch(url, {
+          headers: { 'Authorization': 'Bearer ' + this.state.authToken }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          this.renderCalendar(data.data);
+        }
+      } catch (error) {
+        console.error('[Calendar] Error loading calendar:', error);
+      }
+    }
+
+    renderCalendar(calendarData) {
+      const monthLabel = document.getElementById('flashai-cal-month');
+      const grid = document.getElementById('flashai-cal-grid');
+      const streakEl = document.getElementById('flashai-cal-streak');
+      const monthlyEl = document.getElementById('flashai-cal-monthly');
+
+      if (!calendarData || !grid) return;
+
+      // Update month label
+      if (monthLabel) {
+        const date = new Date(calendarData.month + '-01');
+        monthLabel.textContent = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+
+      // Update stats
+      if (streakEl) streakEl.textContent = calendarData.stats?.currentStreak || 0;
+      if (monthlyEl) {
+        const percent = calendarData.stats?.totalDays > 0
+          ? Math.round((calendarData.stats.completedDays / calendarData.stats.totalDays) * 100)
+          : 0;
+        monthlyEl.textContent = percent + '%';
+      }
+
+      // Build calendar grid
+      const days = calendarData.days || [];
+      const firstDay = new Date(calendarData.month + '-01');
+      const startDay = firstDay.getDay(); // 0=Sun, 1=Mon, etc.
+      const daysInMonth = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0).getDate();
+
+      let html = '';
+
+      // Empty cells before first day
+      for (let i = 0; i < startDay; i++) {
+        html += '<div style="aspect-ratio:1;"></div>';
+      }
+
+      // Day cells
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = calendarData.month + '-' + String(d).padStart(2, '0');
+        const dayData = days.find(day => day.date === dateStr);
+        const isToday = new Date().toISOString().slice(0, 10) === dateStr;
+        const isFuture = new Date(dateStr) > new Date();
+
+        let bgColor = '#f9fafb';
+        let amDot = '#e4e4e7';
+        let pmDot = '#e4e4e7';
+
+        if (dayData && !isFuture) {
+          if (dayData.am?.completed && dayData.pm?.completed) {
+            bgColor = '#dcfce7';
+            amDot = '#16a34a';
+            pmDot = '#16a34a';
+          } else if (dayData.am?.completed || dayData.pm?.completed) {
+            bgColor = '#fef3c7';
+            amDot = dayData.am?.completed ? '#16a34a' : '#e4e4e7';
+            pmDot = dayData.pm?.completed ? '#16a34a' : '#e4e4e7';
+          }
+        }
+
+        const todayStyle = isToday ? 'border:2px solid #8b5cf6;' : '';
+        const futureStyle = isFuture ? 'opacity:0.4;' : '';
+
+        html += '<div style="aspect-ratio:1;background:' + bgColor + ';border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;' + todayStyle + futureStyle + '">' +
+          '<span style="font-size:11px;font-weight:' + (isToday ? '700' : '500') + ';color:' + (isToday ? '#8b5cf6' : '#18181b') + ';">' + d + '</span>' +
+          '<div style="display:flex;gap:3px;margin-top:2px;">' +
+          '<span style="width:5px;height:5px;background:' + amDot + ';border-radius:50%;"></span>' +
+          '<span style="width:5px;height:5px;background:' + pmDot + ';border-radius:50%;"></span>' +
+          '</div>' +
+          '</div>';
+      }
+
+      grid.innerHTML = html;
+    }
+
+    navigateCalendar(direction) {
+      const currentMonth = this.state.currentCalendarMonth || new Date().toISOString().slice(0, 7);
+      const date = new Date(currentMonth + '-01');
+      date.setMonth(date.getMonth() + direction);
+      const newMonth = date.toISOString().slice(0, 7);
+      this.loadCalendarData(newMonth);
+    }
+
+    async advancePhase() {
+      if (!this.state.authToken) return;
+
+      const advanceBtn = document.getElementById('flashai-vto-advance-phase');
+      if (advanceBtn) {
+        advanceBtn.disabled = true;
+        advanceBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:flashai-spin 1s linear infinite;"></span> Advancing...';
+      }
+
+      try {
+        const url = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/phase/advance';
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + this.state.authToken
+          },
+          body: JSON.stringify({ reason: 'manual' })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Reload routine data with new phase
+          await this.loadRoutineData();
+        } else {
+          throw new Error(data.message || 'Failed to advance phase');
+        }
+      } catch (error) {
+        console.error('[Phase] Error advancing:', error);
+        alert('Failed to advance phase: ' + error.message);
+      } finally {
+        if (advanceBtn) {
+          advanceBtn.disabled = false;
         }
       }
     }
