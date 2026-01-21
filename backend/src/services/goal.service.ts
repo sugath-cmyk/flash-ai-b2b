@@ -373,7 +373,7 @@ export class GoalService {
     // Get user's latest face scan analysis
     const scanResult = await pool.query(
       `SELECT fa.* FROM face_analysis fa
-       JOIN face_scans fs ON fa.scan_id = fs.id
+       JOIN face_scans fs ON fa.face_scan_id = fs.id
        JOIN widget_users wu ON (fs.visitor_id = wu.visitor_id OR fs.user_id = $1::text)
        WHERE wu.id = $1
        ORDER BY fa.created_at DESC
