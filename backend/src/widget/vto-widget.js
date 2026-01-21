@@ -990,15 +990,101 @@
                       </div>
                     </div>
 
-                    <!-- 12-Month Skincare Journey Timeline - Coming Soon -->
-                    <div class="flashai-vto-timeline" id="flashai-vto-timeline" style="margin-top:20px;padding:20px;background:linear-gradient(135deg,#f9fafb 0%,#f4f4f5 100%);border-radius:14px;border:1px dashed #d4d4d8;">
-                      <div style="text-align:center;padding:20px 0;">
-                        <div style="width:48px;height:48px;margin:0 auto 12px;background:#ede9fe;border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                          <span style="font-size:24px;">🗓️</span>
+                    <!-- 12-Month Skincare Journey Timeline -->
+                    <div class="flashai-vto-timeline" id="flashai-vto-timeline" style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#fafafa 0%,#fff 100%);border-radius:14px;border:1px solid #e4e4e7;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h4 style="font-size:14px;font-weight:700;color:#18181b;margin:0;display:flex;align-items:center;gap:8px;">
+                          <span>🗓️</span> Your 12-Month Journey
+                        </h4>
+                        <span id="flashai-vto-journey-month" style="font-size:11px;color:#8b5cf6;font-weight:600;background:#ede9fe;padding:4px 10px;border-radius:12px;">Month 1</span>
+                      </div>
+
+                      <!-- Timeline Progress Bar -->
+                      <div style="position:relative;margin-bottom:20px;">
+                        <div style="height:6px;background:#e4e4e7;border-radius:3px;overflow:hidden;">
+                          <div id="flashai-vto-journey-progress" style="height:100%;width:8%;background:linear-gradient(90deg,#8b5cf6 0%,#a78bfa 100%);border-radius:3px;transition:width 0.5s ease;"></div>
                         </div>
-                        <h4 style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 6px;">12-Month Skincare Journey</h4>
-                        <p style="font-size:12px;color:#71717a;margin:0 0 12px;">See your personalized long-term plan</p>
-                        <span style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border-radius:20px;font-size:11px;font-weight:600;">Coming Soon</span>
+                        <!-- Month Markers -->
+                        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                          <span style="font-size:9px;color:#a1a1aa;">1</span>
+                          <span style="font-size:9px;color:#a1a1aa;">3</span>
+                          <span style="font-size:9px;color:#a1a1aa;">6</span>
+                          <span style="font-size:9px;color:#a1a1aa;">9</span>
+                          <span style="font-size:9px;color:#a1a1aa;">12</span>
+                        </div>
+                      </div>
+
+                      <!-- Journey Milestones -->
+                      <div style="display:flex;flex-direction:column;gap:10px;">
+                        <!-- Month 1-2: Foundation -->
+                        <div id="flashai-journey-m1" class="flashai-journey-milestone" style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#fff;border-radius:10px;border:2px solid #8b5cf6;box-shadow:0 2px 8px rgba(139,92,246,0.15);">
+                          <div style="width:36px;height:36px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <span style="font-size:16px;">🌱</span>
+                          </div>
+                          <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                              <span style="font-size:12px;font-weight:700;color:#18181b;">Month 1-2</span>
+                              <span style="font-size:9px;color:#fff;background:#8b5cf6;padding:2px 6px;border-radius:8px;font-weight:600;">CURRENT</span>
+                            </div>
+                            <p style="font-size:11px;font-weight:600;color:#7c3aed;margin:0 0 2px;">Build Foundation</p>
+                            <p style="font-size:10px;color:#71717a;margin:0;line-height:1.4;">Master the basics: cleanse, moisturize, protect. Introduce your first active ingredient slowly.</p>
+                          </div>
+                        </div>
+
+                        <!-- Month 3-4: Tolerance -->
+                        <div id="flashai-journey-m3" class="flashai-journey-milestone" style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#f9fafb;border-radius:10px;border:1px solid #e4e4e7;opacity:0.7;">
+                          <div style="width:36px;height:36px;background:#e4e4e7;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <span style="font-size:16px;">💪</span>
+                          </div>
+                          <div style="flex:1;min-width:0;">
+                            <span style="font-size:12px;font-weight:700;color:#3f3f46;">Month 3-4</span>
+                            <p style="font-size:11px;font-weight:600;color:#71717a;margin:2px 0;">Build Tolerance</p>
+                            <p style="font-size:10px;color:#a1a1aa;margin:0;line-height:1.4;">Increase active frequency. Your skin adapts and strengthens its barrier.</p>
+                          </div>
+                        </div>
+
+                        <!-- Month 5-6: First Results -->
+                        <div id="flashai-journey-m5" class="flashai-journey-milestone" style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#f9fafb;border-radius:10px;border:1px solid #e4e4e7;opacity:0.7;">
+                          <div style="width:36px;height:36px;background:#e4e4e7;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <span style="font-size:16px;">✨</span>
+                          </div>
+                          <div style="flex:1;min-width:0;">
+                            <span style="font-size:12px;font-weight:700;color:#3f3f46;">Month 5-6</span>
+                            <p style="font-size:11px;font-weight:600;color:#71717a;margin:2px 0;">See First Results</p>
+                            <p style="font-size:10px;color:#a1a1aa;margin:0;line-height:1.4;">Visible improvements in texture, tone, and clarity. 2 full skin cycles complete.</p>
+                          </div>
+                        </div>
+
+                        <!-- Month 7-9: Transformation -->
+                        <div id="flashai-journey-m7" class="flashai-journey-milestone" style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#f9fafb;border-radius:10px;border:1px solid #e4e4e7;opacity:0.7;">
+                          <div style="width:36px;height:36px;background:#e4e4e7;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <span style="font-size:16px;">🦋</span>
+                          </div>
+                          <div style="flex:1;min-width:0;">
+                            <span style="font-size:12px;font-weight:700;color:#3f3f46;">Month 7-9</span>
+                            <p style="font-size:11px;font-weight:600;color:#71717a;margin:2px 0;">Transformation Phase</p>
+                            <p style="font-size:10px;color:#a1a1aa;margin:0;line-height:1.4;">Major improvements visible. Fine-tune your routine based on what works best.</p>
+                          </div>
+                        </div>
+
+                        <!-- Month 10-12: Maintenance -->
+                        <div id="flashai-journey-m10" class="flashai-journey-milestone" style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:#f9fafb;border-radius:10px;border:1px solid #e4e4e7;opacity:0.7;">
+                          <div style="width:36px;height:36px;background:#e4e4e7;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <span style="font-size:16px;">👑</span>
+                          </div>
+                          <div style="flex:1;min-width:0;">
+                            <span style="font-size:12px;font-weight:700;color:#3f3f46;">Month 10-12</span>
+                            <p style="font-size:11px;font-weight:600;color:#71717a;margin:2px 0;">Maintenance & Mastery</p>
+                            <p style="font-size:10px;color:#a1a1aa;margin:0;line-height:1.4;">Your optimal routine is established. Focus on consistency and seasonal adjustments.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Skin Cycle Info -->
+                      <div style="margin-top:16px;padding:12px;background:linear-gradient(135deg,#fef3c7 0%,#fff7ed 100%);border-radius:10px;border:1px solid #fed7aa;">
+                        <p style="font-size:10px;color:#92400e;margin:0;line-height:1.5;">
+                          <strong>💡 Did you know?</strong> Your skin renews every 28-45 days depending on age. Real results require 2-3 full skin cycles (8-12 weeks) of consistent use.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2403,6 +2489,7 @@
           this.state.currentPhase = phaseData.phase;
           this.renderPhaseBanner(phaseData);
           this.renderMilestoneTimeline(phaseData.phase.phaseNumber);
+          this.updateJourneyTimeline(phaseData);
         }
 
         // Render stats header
@@ -3257,6 +3344,7 @@
           // Render phase banner and routines
           this.renderPhaseBanner(data.data.phase);
           this.renderMilestoneTimeline(data.data.phase.phaseNumber);
+          this.updateJourneyTimeline({ phase: data.data.phase });
           this.state.currentRoutineTime = 'am';
           this.renderRoutine('am');
 
@@ -3375,6 +3463,86 @@
           circle.innerHTML = phaseNum;
           label.style.color = '#71717a';
           label.style.fontWeight = '400';
+        }
+      });
+    }
+
+    updateJourneyTimeline(phaseInfo) {
+      if (!phaseInfo || !phaseInfo.phase) return;
+
+      const phase = phaseInfo.phase;
+      const startedAt = phase.startedAt ? new Date(phase.startedAt) : new Date();
+      const now = new Date();
+      const monthsElapsed = Math.max(1, Math.ceil((now - startedAt) / (1000 * 60 * 60 * 24 * 30)));
+
+      // Update month label
+      const monthLabel = document.getElementById('flashai-vto-journey-month');
+      if (monthLabel) {
+        monthLabel.textContent = 'Month ' + Math.min(monthsElapsed, 12);
+      }
+
+      // Update progress bar (8.33% per month)
+      const progressBar = document.getElementById('flashai-vto-journey-progress');
+      if (progressBar) {
+        const progressPercent = Math.min(100, Math.round((monthsElapsed / 12) * 100));
+        progressBar.style.width = progressPercent + '%';
+      }
+
+      // Define milestone month ranges
+      const milestoneRanges = [
+        { id: 'flashai-journey-m1', start: 1, end: 2 },
+        { id: 'flashai-journey-m3', start: 3, end: 4 },
+        { id: 'flashai-journey-m5', start: 5, end: 6 },
+        { id: 'flashai-journey-m7', start: 7, end: 9 },
+        { id: 'flashai-journey-m10', start: 10, end: 12 }
+      ];
+
+      milestoneRanges.forEach((range, index) => {
+        const el = document.getElementById(range.id);
+        if (!el) return;
+
+        const icon = el.querySelector('div:first-child');
+        const currentBadge = el.querySelector('span[style*="background:#8b5cf6"]');
+
+        if (monthsElapsed >= range.start && monthsElapsed <= range.end) {
+          // Current milestone
+          el.style.background = '#fff';
+          el.style.border = '2px solid #8b5cf6';
+          el.style.boxShadow = '0 2px 8px rgba(139,92,246,0.15)';
+          el.style.opacity = '1';
+          if (icon) icon.style.background = 'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)';
+
+          // Add CURRENT badge if not already there
+          const labelEl = el.querySelector('span[style*="font-weight:700"]');
+          if (labelEl && !el.querySelector('.journey-current-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'journey-current-badge';
+            badge.style.cssText = 'font-size:9px;color:#fff;background:#8b5cf6;padding:2px 6px;border-radius:8px;font-weight:600;margin-left:6px;';
+            badge.textContent = 'CURRENT';
+            labelEl.parentNode.insertBefore(badge, labelEl.nextSibling);
+          }
+        } else if (monthsElapsed > range.end) {
+          // Completed milestone
+          el.style.background = '#f0fdf4';
+          el.style.border = '2px solid #22c55e';
+          el.style.boxShadow = 'none';
+          el.style.opacity = '1';
+          if (icon) icon.style.background = 'linear-gradient(135deg,#22c55e 0%,#16a34a 100%)';
+
+          // Remove CURRENT badge, add checkmark
+          const badge = el.querySelector('.journey-current-badge');
+          if (badge) badge.remove();
+        } else {
+          // Future milestone
+          el.style.background = '#f9fafb';
+          el.style.border = '1px solid #e4e4e7';
+          el.style.boxShadow = 'none';
+          el.style.opacity = '0.7';
+          if (icon) icon.style.background = '#e4e4e7';
+
+          // Remove CURRENT badge
+          const badge = el.querySelector('.journey-current-badge');
+          if (badge) badge.remove();
         }
       });
     }
