@@ -600,7 +600,10 @@
 
               <!-- Issues List (Accordion Style with Inline Expansion) -->
               <div class="flashai-vto-issues-section" style="margin-bottom:16px;">
-                <h3 class="flashai-vto-issues-title" style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 12px;">Detected Concerns</h3>
+                <h3 class="flashai-vto-issues-title" style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 8px;">Detected Concerns</h3>
+                <p style="font-size:11px;color:#71717a;margin:0 0 12px;padding:8px 12px;background:#f9fafb;border-radius:8px;border-left:3px solid #8b5cf6;">
+                  <strong>Note:</strong> AI analysis provides general guidance. Natural features like freckles may sometimes be detected. Results can vary based on lighting and image quality.
+                </p>
                 <div class="flashai-vto-issues-list" id="flashai-vto-issues-list" style="display:flex;flex-direction:column;gap:0;">
                   <!-- Dynamically generated accordion items -->
                 </div>
@@ -3364,70 +3367,72 @@
       // Define ALL attributes with correct anatomical positions on face
       // Positions are % from top-left of face image
       // highlightRegion defines the area to highlight in red when selected
+      // CALIBRATED THRESHOLDS: Increased to reduce false positives
+      // Based on user feedback: freckles detected as acne, natural coloring as redness
       const issueConfigs = [
         {
           key: 'dark_circles',
-          threshold: 15, // Low threshold to always show
-          position: { x: 35, y: 38 }, // Left under-eye area
+          threshold: 25, // Increased from 15 - only show when clearly visible
+          position: { x: 35, y: 38 },
           region: 'Under Eyes',
-          highlightRegion: { x: 25, y: 32, w: 50, h: 15 } // Both under-eye areas
+          highlightRegion: { x: 25, y: 32, w: 50, h: 15 }
         },
         {
           key: 'wrinkles',
-          threshold: 10,
-          position: { x: 50, y: 18 }, // Forehead center
+          threshold: 25, // Increased from 10 - reduce false positives
+          position: { x: 50, y: 18 },
           region: 'Forehead & Eyes',
-          highlightRegion: { x: 20, y: 10, w: 60, h: 20 } // Forehead area
+          highlightRegion: { x: 20, y: 10, w: 60, h: 20 }
         },
         {
           key: 'pores',
-          threshold: 15,
-          position: { x: 50, y: 45 }, // Nose area
+          threshold: 30, // Increased from 15
+          position: { x: 50, y: 45 },
           region: 'T-Zone (Nose)',
-          highlightRegion: { x: 40, y: 35, w: 20, h: 25 } // T-zone
+          highlightRegion: { x: 40, y: 35, w: 20, h: 25 }
         },
         {
           key: 'acne',
-          threshold: 10,
-          position: { x: 65, y: 55 }, // Right cheek
+          threshold: 35, // INCREASED from 10 - prevents freckles from being detected as acne
+          position: { x: 65, y: 55 },
           region: 'Cheeks & Chin',
-          highlightRegion: { x: 20, y: 45, w: 60, h: 30 } // Lower face
+          highlightRegion: { x: 20, y: 45, w: 60, h: 30 }
         },
         {
           key: 'redness',
-          threshold: 20,
-          position: { x: 30, y: 52 }, // Left cheek
+          threshold: 40, // INCREASED from 20 - prevents natural skin tones from being flagged
+          position: { x: 30, y: 52 },
           region: 'Cheeks',
-          highlightRegion: { x: 15, y: 40, w: 70, h: 25 } // Cheek areas
+          highlightRegion: { x: 15, y: 40, w: 70, h: 25 }
         },
         {
           key: 'oiliness',
-          threshold: 25,
-          position: { x: 50, y: 28 }, // Upper T-zone/forehead
+          threshold: 40, // Increased from 25
+          position: { x: 50, y: 28 },
           region: 'T-Zone',
-          highlightRegion: { x: 35, y: 15, w: 30, h: 40 } // T-zone vertical
+          highlightRegion: { x: 35, y: 15, w: 30, h: 40 }
         },
         {
           key: 'pigmentation',
-          threshold: 15,
-          position: { x: 70, y: 48 }, // Right cheek area
+          threshold: 35, // INCREASED from 15 - prevents freckles from being detected
+          position: { x: 70, y: 48 },
           region: 'Cheeks & Forehead',
-          highlightRegion: { x: 20, y: 30, w: 60, h: 35 } // Mid-face
+          highlightRegion: { x: 20, y: 30, w: 60, h: 35 }
         },
         {
           key: 'hydration',
-          threshold: 60, // Show if hydration is below 60%
+          threshold: 50, // Changed from 60 - only flag if clearly dehydrated
           isInverse: true,
-          position: { x: 50, y: 65 }, // Lower face/chin
+          position: { x: 50, y: 65 },
           region: 'Full Face',
-          highlightRegion: { x: 15, y: 15, w: 70, h: 70 } // Full face
+          highlightRegion: { x: 15, y: 15, w: 70, h: 70 }
         },
         {
           key: 'texture',
-          threshold: 20,
-          position: { x: 38, y: 42 }, // Left mid-face
+          threshold: 30, // Increased from 20
+          position: { x: 38, y: 42 },
           region: 'Overall Skin',
-          highlightRegion: { x: 20, y: 25, w: 60, h: 50 } // Face surface
+          highlightRegion: { x: 20, y: 25, w: 60, h: 50 }
         }
       ];
 
@@ -3439,14 +3444,16 @@
         const meetsThreshold = config.isInverse ? score < config.threshold : score >= config.threshold;
 
         if (meetsThreshold) {
-          // Determine severity
+          // Determine severity - CALIBRATED to be less alarming
+          // Changed thresholds: 60 -> 75 for "Notable" (was "Significant")
           let severity, severityLabel;
           if (attr.isGood) {
-            severity = score > 70 ? 'good' : score > 40 ? 'moderate' : 'concern';
-            severityLabel = score > 70 ? 'Good' : score > 40 ? 'Moderate' : 'Needs Care';
+            severity = score > 70 ? 'good' : score > 35 ? 'moderate' : 'concern';
+            severityLabel = score > 70 ? 'Healthy' : score > 35 ? 'Could Improve' : 'Needs Attention';
           } else {
-            severity = score < 30 ? 'good' : score < 60 ? 'moderate' : 'concern';
-            severityLabel = score < 30 ? 'Mild' : score < 60 ? 'Moderate' : 'Significant';
+            // Less aggressive: only mark as "concern" if score > 75 (was 60)
+            severity = score < 40 ? 'good' : score < 75 ? 'moderate' : 'concern';
+            severityLabel = score < 40 ? 'Mild' : score < 75 ? 'Moderate' : 'Notable';
           }
 
           issues.push({
@@ -4138,9 +4145,9 @@
           isGood: false,
           getProblem: (a, score) => {
             const count = (a.whitehead_count || 0) + (a.blackhead_count || 0) + (a.pimple_count || 0);
-            if (score < 20) return 'Your skin is clear with minimal blemishes.';
-            if (score < 50) return `${count} active blemishes detected. This is common and manageable with proper care.`;
-            return `${count} blemishes found including possible inflammation. Your skin may need targeted treatment.`;
+            if (score < 40) return 'Your skin looks generally clear. Minor spots may be temporary.';
+            if (score < 70) return `Some blemishes detected (${count > 0 ? count : 'a few'}). This is very common and manageable.`;
+            return `Multiple blemishes visible (${count > 0 ? count : 'several'}). A consistent skincare routine can help.`;
           },
           getSolution: (a, score) => {
             if (score < 20) return 'Continue your current routine. Use non-comedogenic products to prevent future breakouts.';
@@ -4183,9 +4190,9 @@
           isGood: false,
           getProblem: (a, score) => {
             const spots = a.dark_spots_count || 0;
-            if (score < 20) return 'Even skin tone with minimal dark spots detected.';
-            if (score < 50) return `${spots} dark spots detected. This may be from sun exposure or post-inflammatory marks.`;
-            return `Significant uneven pigmentation with ${spots} dark spots. Signs of sun damage or melasma may be present.`;
+            if (score < 40) return 'Your skin tone appears fairly even. Natural variations like freckles are normal.';
+            if (score < 70) return `Some uneven tone detected${spots > 0 ? ` (${spots} spots)` : ''}. This is common and often from sun exposure.`;
+            return `Uneven pigmentation visible${spots > 0 ? ` with ${spots} darker areas` : ''}. Brightening products and SPF can help over time.`;
           },
           getSolution: (a, score) => {
             if (score < 20) return 'Maintain SPF use daily to prevent future pigmentation.';
@@ -4205,9 +4212,9 @@
           getScore: (a) => a.redness_score || 0,
           isGood: false,
           getProblem: (a, score) => {
-            if (score < 20) return 'Minimal redness detected. Your skin appears calm and balanced.';
-            if (score < 50) return 'Some redness visible, particularly on cheeks. Your skin may be slightly sensitive.';
-            return 'Significant redness detected. This could indicate sensitivity, rosacea, or irritation from products.';
+            if (score < 45) return 'Your skin tone appears balanced. Some natural color variation is normal.';
+            if (score < 70) return 'Mild redness visible, which can be natural or from recent activity. May indicate slight sensitivity.';
+            return 'Noticeable redness detected. This could be temporary (heat, exercise) or indicate sensitivity. Calming products may help.';
           },
           getSolution: (a, score) => {
             if (score < 20) return 'Continue using gentle products. Avoid harsh exfoliants to maintain calm skin.';
@@ -5407,47 +5414,48 @@
       const textEl = document.getElementById('flashai-vto-healthcare-text');
       if (!container || !analysis) return;
 
-      // Conditions that warrant professional consultation
+      // CALIBRATED: Higher thresholds and softer language
+      // Only recommend professional consultation for clearly severe cases
       const concerns = [];
 
-      // Severe acne
-      if ((analysis.acne_score || 0) > 70) {
-        concerns.push('severe acne that may require prescription treatment');
+      // Very severe acne only (raised from 70 to 85)
+      if ((analysis.acne_score || 0) > 85 && (analysis.pimple_count || 0) > 15) {
+        concerns.push('persistent acne that may benefit from professional guidance');
       }
 
-      // Rosacea indicators
-      if (analysis.rosacea_indicators || (analysis.redness_score || 0) > 65) {
-        concerns.push('persistent redness that could indicate rosacea');
+      // Clear rosacea indicators only (raised from 65 to 80)
+      if (analysis.rosacea_indicators && (analysis.redness_score || 0) > 80) {
+        concerns.push('persistent redness patterns that a dermatologist could assess');
       }
 
-      // Severe pigmentation / melasma
-      if (analysis.melasma_detected || (analysis.pigmentation_score || 0) > 70) {
-        concerns.push('significant pigmentation that may need medical-grade treatments');
+      // Confirmed melasma only (raised from 70 to 85)
+      if (analysis.melasma_detected && (analysis.pigmentation_score || 0) > 85) {
+        concerns.push('pigmentation patterns that may benefit from professional treatments');
       }
 
-      // Very low skin health score
-      if ((analysis.skin_score || 50) < 30) {
-        concerns.push('multiple skin concerns that could benefit from professional assessment');
+      // Very low skin health score (raised threshold)
+      if ((analysis.skin_score || 50) < 20) {
+        concerns.push('multiple areas that could benefit from professional assessment');
       }
 
-      // Severe dehydration with dry patches
-      if (analysis.dry_patches_detected && (analysis.hydration_score || 65) < 30) {
-        concerns.push('severe dehydration that may indicate a skin barrier condition');
+      // Severe dehydration with confirmed dry patches
+      if (analysis.dry_patches_detected && (analysis.hydration_score || 65) < 20) {
+        concerns.push('signs of skin barrier concerns');
       }
 
-      // Deep wrinkles (possible sun damage)
-      if ((analysis.deep_wrinkles_count || 0) > 5 || (analysis.sun_damage_score || 0) > 60) {
-        concerns.push('signs of significant sun damage');
+      // Deep wrinkles with clear sun damage (raised thresholds)
+      if ((analysis.deep_wrinkles_count || 0) > 8 && (analysis.sun_damage_score || 0) > 75) {
+        concerns.push('signs of sun exposure that a professional could assess');
       }
 
       if (concerns.length > 0) {
         container.style.display = 'block';
         textEl.innerHTML = `
-          Based on your scan, we detected <strong>${concerns.join(', ')}</strong>.
-          While our product recommendations can help, we strongly recommend consulting a dermatologist
-          or healthcare professional for personalized medical advice and potential prescription treatments.
+          Our analysis suggests <strong>${concerns.join(', ')}</strong>.
+          While our product recommendations can be helpful, you may want to consider consulting a dermatologist
+          for personalized advice.
           <br><br>
-          <em style="font-size:11px;color:#991b1b;">This is not a medical diagnosis. Our AI analysis is for skincare guidance only.</em>
+          <em style="font-size:11px;color:#991b1b;">Note: This is an AI-powered analysis for skincare guidance only, not a medical diagnosis. Results may vary.</em>
         `;
       } else {
         container.style.display = 'none';
