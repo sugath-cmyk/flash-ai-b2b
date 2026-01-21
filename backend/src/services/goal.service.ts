@@ -46,6 +46,7 @@ interface CreateGoalData {
   targetMetric?: string;
   targetValue?: number;
   targetWeeks?: number;
+  baselineValue?: number; // NEW: Pass baseline directly when known
 }
 
 export class GoalService {
@@ -71,7 +72,7 @@ export class GoalService {
   }
 
   async createGoal(data: CreateGoalData): Promise<UserGoal> {
-    const { userId, storeId: rawStoreId, templateId, goalType, goalName, targetMetric, targetValue, targetWeeks } = data;
+    const { userId, storeId: rawStoreId, templateId, goalType, goalName, targetMetric, targetValue, targetWeeks, baselineValue: providedBaseline } = data;
 
     // Handle demo stores
     const isDemoStore = rawStoreId === 'demo-store' || rawStoreId === 'demo' || rawStoreId === 'test';
@@ -101,17 +102,46 @@ export class GoalService {
       throw createError('Goal type and target metric are required', 400);
     }
 
-    // Get baseline value from latest scan
-    const baselineResult = await pool.query(
-      `SELECT ${this.getMetricColumn(finalTargetMetric)} as value
-       FROM user_progress
-       WHERE user_id = $1
-       ORDER BY snapshot_date DESC
-       LIMIT 1`,
-      [userId]
-    );
+    // Get baseline value - use provided value if available, otherwise query
+    let baselineValue = providedBaseline !== undefined ? providedBaseline : null;
 
-    const baselineValue = baselineResult.rows[0]?.value || null;
+    if (baselineValue === null) {
+      // First try user_progress table
+      const baselineResult = await pool.query(
+        `SELECT ${this.getMetricColumn(finalTargetMetric)} as value
+         FROM user_progress
+         WHERE user_id = $1
+         ORDER BY snapshot_date DESC
+         LIMIT 1`,
+        [userId]
+      );
+
+      baselineValue = baselineResult.rows[0]?.value || null;
+
+      // If no data in user_progress, try face_analysis (linked via visitor_id)
+      if (baselineValue === null) {
+        const userResult = await pool.query(
+          `SELECT visitor_id FROM widget_users WHERE id = $1`,
+          [userId]
+        );
+
+        if (userResult.rows.length > 0) {
+          const visitorId = userResult.rows[0].visitor_id;
+          const analysisResult = await pool.query(
+            `SELECT fa.${this.getMetricColumn(finalTargetMetric)} as value
+             FROM face_analysis fa
+             JOIN face_scans fs ON fa.face_scan_id = fs.id
+             WHERE fs.visitor_id = $1 OR fs.user_id = $2
+             ORDER BY fs.created_at DESC
+             LIMIT 1`,
+            [visitorId, userId]
+          );
+          baselineValue = analysisResult.rows[0]?.value || null;
+        }
+      }
+    }
+
+    console.log(`[GoalService] Baseline value for ${finalTargetMetric}: ${baselineValue}`);
 
     // Calculate target value if not provided
     if (!finalTargetValue && baselineValue && template) {
@@ -164,7 +194,90 @@ export class GoalService {
     query += ` ORDER BY created_at DESC`;
 
     const result = await pool.query(query, params);
-    return result.rows.map(this.formatGoal);
+    const goals = result.rows.map(this.formatGoal.bind(this));
+
+    // Auto-refresh goals with null baseline values from face analysis
+    const goalsToRefresh = goals.filter(g => g.baselineValue === null || g.currentValue === null);
+    if (goalsToRefresh.length > 0) {
+      await this.refreshGoalsFromAnalysis(userId, goalsToRefresh);
+      // Re-fetch to get updated values
+      const refreshedResult = await pool.query(query, params);
+      return refreshedResult.rows.map(this.formatGoal.bind(this));
+    }
+
+    return goals;
+  }
+
+  /**
+   * Refresh goals with null baseline values from face analysis
+   */
+  private async refreshGoalsFromAnalysis(userId: string, goals: UserGoal[]): Promise<void> {
+    // Get visitor_id for the user
+    const userResult = await pool.query(
+      `SELECT visitor_id FROM widget_users WHERE id = $1`,
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) return;
+
+    const visitorId = userResult.rows[0].visitor_id;
+
+    // Get latest face analysis
+    const analysisResult = await pool.query(
+      `SELECT fa.* FROM face_analysis fa
+       JOIN face_scans fs ON fa.face_scan_id = fs.id
+       WHERE fs.visitor_id = $1 OR fs.user_id = $2
+       ORDER BY fs.created_at DESC
+       LIMIT 1`,
+      [visitorId, userId]
+    );
+
+    if (analysisResult.rows.length === 0) return;
+
+    const analysis = analysisResult.rows[0];
+
+    // Map goal types to their metric columns
+    const goalTypeToMetric: Record<string, string> = {
+      'clear_acne': 'acne_score',
+      'reduce_wrinkles': 'wrinkle_score',
+      'improve_hydration': 'hydration_score',
+      'even_tone': 'pigmentation_score',
+      'smooth_texture': 'texture_score',
+      'reduce_redness': 'redness_score',
+      'control_oil': 'oiliness_score',
+    };
+
+    // Update each goal with its baseline from analysis
+    for (const goal of goals) {
+      const metricColumn = goalTypeToMetric[goal.goalType] || goal.targetMetric;
+      const currentValue = analysis[metricColumn];
+
+      if (currentValue !== undefined && currentValue !== null) {
+        // Calculate target value if not set
+        let targetValue = goal.targetValue;
+        const lowerIsBetter = ['acne_score', 'wrinkle_score', 'redness_score', 'oiliness_score', 'pigmentation_score'];
+
+        if (targetValue === null) {
+          if (lowerIsBetter.includes(metricColumn)) {
+            // Target is 50% reduction
+            targetValue = Math.max(0, Math.round(currentValue * 0.5));
+          } else {
+            // Target is 50% increase toward 100
+            targetValue = Math.min(100, Math.round(currentValue + (100 - currentValue) * 0.5));
+          }
+        }
+
+        // Update the goal
+        await pool.query(
+          `UPDATE user_goals
+           SET baseline_value = $1, current_value = $1, target_value = $2, updated_at = NOW()
+           WHERE id = $3`,
+          [currentValue, targetValue, goal.id]
+        );
+
+        console.log(`[GoalService] Refreshed goal ${goal.id} (${goal.goalType}): baseline=${currentValue}, target=${targetValue}`);
+      }
+    }
   }
 
   async getGoalById(goalId: string, userId: string): Promise<UserGoal | null> {
@@ -452,20 +565,37 @@ export class GoalService {
     const createdGoals: UserGoal[] = [];
     const templates = await this.getTemplates();
 
+    // Map goal types to their analysis metric values
+    const goalToMetricValue: Record<string, number | null> = {
+      'clear_acne': analysis.acne_score,
+      'reduce_wrinkles': analysis.wrinkle_score,
+      'improve_hydration': analysis.hydration_score,
+      'even_tone': analysis.pigmentation_score,
+      'smooth_texture': analysis.texture_score,
+      'reduce_redness': analysis.redness_score,
+      'control_oil': analysis.oiliness_score,
+    };
+
     for (const priority of priorities.slice(0, 3)) {
       if (existingTypes.has(priority.type)) continue;
 
       const template = templates.find(t => t.goalType === priority.type);
       if (!template) continue;
 
+      // Get the baseline value directly from analysis
+      const baselineValue = goalToMetricValue[priority.type] || null;
+
       try {
         const goal = await this.createGoal({
           userId,
           storeId,
           templateId: template.id,
+          baselineValue: baselineValue !== null ? baselineValue : undefined,
         });
         createdGoals.push(goal);
         existingTypes.add(priority.type);
+
+        console.log(`[GoalService] Created goal ${priority.type} with baseline: ${baselineValue}`);
       } catch (error) {
         console.error(`Error creating goal ${priority.type}:`, error);
       }
