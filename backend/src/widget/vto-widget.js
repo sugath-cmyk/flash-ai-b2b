@@ -4589,6 +4589,17 @@
             clearInterval(this.faceScanPollInterval);
             this.state.faceScan = scan;
 
+            // Check image quality - if too low, ask user to retake
+            const qualityScore = scan.quality_score || 0;
+            const analysisConfidence = scan.analysis?.analysis_confidence || 1;
+            const isLowQuality = qualityScore < 0.3 || analysisConfidence < 0.3;
+
+            if (isLowQuality) {
+              console.log('[Face Scan] Low quality detected:', { qualityScore, analysisConfidence });
+              this.showLowQualityRetake(scan);
+              return;
+            }
+
             // Complete all steps
             this.updateFaceScanStep(4, 'complete');
 
@@ -4608,12 +4619,127 @@
       }, 2000);
     }
 
+    showLowQualityRetake(scan) {
+      // Show a user-friendly screen asking them to retake photos
+      const qualityScore = Math.round((scan.quality_score || 0) * 100);
+
+      // Create retake UI
+      const retakeHtml = `
+        <div style="text-align:center;padding:40px 20px;">
+          <div style="width:80px;height:80px;margin:0 auto 20px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h3 style="font-size:20px;font-weight:700;color:#18181b;margin:0 0 12px;">Image Quality Too Low</h3>
+          <p style="font-size:14px;color:#71717a;margin:0 0 24px;line-height:1.6;">
+            We couldn't get accurate results from your photos.<br/>
+            Please retake with better lighting for a precise analysis.
+          </p>
+
+          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:16px;margin-bottom:24px;text-align:left;">
+            <h4 style="font-size:13px;font-weight:700;color:#92400e;margin:0 0 10px;display:flex;align-items:center;gap:8px;">
+              <span>💡</span> Tips for better photos:
+            </h4>
+            <ul style="font-size:12px;color:#78716c;margin:0;padding-left:20px;line-height:1.8;">
+              <li>Face a window or use natural daylight</li>
+              <li>Avoid shadows on your face</li>
+              <li>Keep your phone steady (no blur)</li>
+              <li>Remove glasses if possible</li>
+              <li>Pull hair away from your face</li>
+            </ul>
+          </div>
+
+          <button id="flashai-vto-retake-photos" style="width:100%;padding:16px 24px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(139,92,246,0.3);transition:all 0.2s;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            Retake Photos
+          </button>
+
+          <button id="flashai-vto-continue-anyway" style="width:100%;margin-top:12px;padding:12px 24px;background:transparent;color:#71717a;border:1px solid #e4e4e7;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+            Continue with current results
+          </button>
+
+          <p style="font-size:11px;color:#a1a1aa;margin-top:16px;">
+            Quality Score: ${qualityScore}% (minimum 30% needed for accurate results)
+          </p>
+        </div>
+      `;
+
+      // Get the processing step container and replace with retake UI
+      const processingStep = document.getElementById('flashai-vto-step-face-processing');
+      if (processingStep) {
+        processingStep.innerHTML = retakeHtml;
+
+        // Add event listeners
+        const retakeBtn = document.getElementById('flashai-vto-retake-photos');
+        const continueBtn = document.getElementById('flashai-vto-continue-anyway');
+
+        if (retakeBtn) {
+          retakeBtn.addEventListener('click', () => {
+            // Reset state and go back to face scan
+            this.state.photos = [];
+            this.state.faceScan = null;
+            this.showStep('facescan');
+          });
+        }
+
+        if (continueBtn) {
+          continueBtn.addEventListener('click', () => {
+            // User chose to continue anyway - show results with disclaimer
+            this.state.lowQualityWarning = true;
+            this.updateFaceScanStep(4, 'complete');
+            this.displayFaceResults(scan);
+          });
+        }
+      }
+    }
+
     displayFaceResults(scan) {
       // Store analysis
       this.state.currentAnalysis = scan.analysis;
       this.state.selectedIssue = null;
       this.state.detectedIssues = [];
       this.state.currentFaceView = 'front'; // Default to front view
+
+      // Show low quality warning banner if user continued anyway
+      if (this.state.lowQualityWarning) {
+        const resultsContainer = document.getElementById('flashai-vto-step-face-results');
+        if (resultsContainer) {
+          // Remove existing warning if any
+          const existingWarning = document.getElementById('flashai-vto-quality-warning');
+          if (existingWarning) existingWarning.remove();
+
+          // Add warning banner
+          const warningBanner = document.createElement('div');
+          warningBanner.id = 'flashai-vto-quality-warning';
+          warningBanner.style.cssText = 'background:linear-gradient(135deg,#fef3c7 0%,#fffbeb 100%);border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin:0 16px 12px;display:flex;align-items:flex-start;gap:10px;';
+          warningBanner.innerHTML = \`
+            <span style="font-size:18px;flex-shrink:0;">⚠️</span>
+            <div>
+              <p style="font-size:12px;font-weight:600;color:#92400e;margin:0 0 4px;">Results may be less accurate</p>
+              <p style="font-size:11px;color:#a16207;margin:0;line-height:1.4;">Image quality was low. For more precise results, <a href="#" id="flashai-vto-rescan-link" style="color:#7c3aed;text-decoration:underline;">retake your photos</a> in better lighting.</p>
+            </div>
+          \`;
+          resultsContainer.insertBefore(warningBanner, resultsContainer.firstChild);
+
+          // Add rescan link handler
+          const rescanLink = document.getElementById('flashai-vto-rescan-link');
+          if (rescanLink) {
+            rescanLink.addEventListener('click', (e) => {
+              e.preventDefault();
+              this.state.photos = [];
+              this.state.faceScan = null;
+              this.state.lowQualityWarning = false;
+              this.showStep('facescan');
+            });
+          }
+        }
+      }
 
       // Update skin score
       const scoreElement = document.getElementById('flashai-vto-skin-score');

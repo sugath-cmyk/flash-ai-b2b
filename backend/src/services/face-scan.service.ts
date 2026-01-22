@@ -74,7 +74,8 @@ export async function getFaceScan(scanId: string) {
        fa.fine_lines_count,
        fa.deep_wrinkles_count,
        fa.pore_size_average,
-       fa.sensitivity_level
+       fa.sensitivity_level,
+       fa.analysis_confidence
      FROM face_scans fs
      LEFT JOIN face_analysis fa ON fs.id = fa.face_scan_id
      WHERE fs.id = $1`,
@@ -123,7 +124,8 @@ export async function getFaceScan(scanId: string) {
       fine_lines_count: row.fine_lines_count,
       deep_wrinkles_count: row.deep_wrinkles_count,
       pore_size_average: row.pore_size_average,
-      sensitivity_level: row.sensitivity_level
+      sensitivity_level: row.sensitivity_level,
+      analysis_confidence: row.analysis_confidence
     } : null
   };
 }
