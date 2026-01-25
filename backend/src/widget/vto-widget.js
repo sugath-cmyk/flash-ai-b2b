@@ -4718,13 +4718,13 @@
           const warningBanner = document.createElement('div');
           warningBanner.id = 'flashai-vto-quality-warning';
           warningBanner.style.cssText = 'background:linear-gradient(135deg,#fef3c7 0%,#fffbeb 100%);border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin:0 16px 12px;display:flex;align-items:flex-start;gap:10px;';
-          warningBanner.innerHTML = \`
+          warningBanner.innerHTML = `
             <span style="font-size:18px;flex-shrink:0;">⚠️</span>
             <div>
               <p style="font-size:12px;font-weight:600;color:#92400e;margin:0 0 4px;">Results may be less accurate</p>
               <p style="font-size:11px;color:#a16207;margin:0;line-height:1.4;">Image quality was low. For more precise results, <a href="#" id="flashai-vto-rescan-link" style="color:#7c3aed;text-decoration:underline;">retake your photos</a> in better lighting.</p>
             </div>
-          \`;
+          `;
           resultsContainer.insertBefore(warningBanner, resultsContainer.firstChild);
 
           // Add rescan link handler
