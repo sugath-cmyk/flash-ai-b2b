@@ -105,7 +105,8 @@ const GOAL_PRODUCT_RECOMMENDATIONS: Record<string, Record<string, string[]>> = {
 // Based on AAD, Skin Cancer Foundation, and clinical research
 // ============================================================================
 
-// Phase templates - graduated introduction of products
+// Phase templates - ALL phases now include full steps, scan analysis determines what's shown
+// Removed restrictive Phase 1 - routine is now fully scan-driven
 const PHASE_TEMPLATES: Record<number, {
   name: string;
   durationWeeks: number | null;
@@ -115,36 +116,38 @@ const PHASE_TEMPLATES: Record<number, {
   activeFrequency: string;
 }> = {
   1: {
-    name: 'Foundation',
-    durationWeeks: 2,
-    description: 'Build healthy habits with core essentials',
-    amSteps: ['cleanser', 'moisturizer', 'sunscreen'],
-    pmSteps: ['cleanser', 'moisturizer'],
+    name: 'Personalized',
+    durationWeeks: null, // Ongoing - scan-driven from day 1
+    description: 'Your personalized routine based on skin analysis',
+    // Full steps available - scan analysis determines which are included
+    amSteps: ['cleanser', 'toner', 'serum', 'eye_cream', 'moisturizer', 'sunscreen'],
+    pmSteps: ['makeup_remover', 'cleanser', 'exfoliant', 'toner', 'serum', 'treatment', 'eye_cream', 'moisturizer', 'face_oil'],
     activeFrequency: 'daily'
   },
+  // Keep phases 2-4 for users who prefer gradual approach (optional)
   2: {
-    name: 'First Active',
+    name: 'Building',
     durationWeeks: 2,
-    description: 'Introduce your first treatment product slowly',
-    amSteps: ['cleanser', 'moisturizer', 'sunscreen'],
-    pmSteps: ['cleanser', 'serum', 'moisturizer'],
-    activeFrequency: '2x_week'
-  },
-  3: {
-    name: 'Build Tolerance',
-    durationWeeks: 2,
-    description: 'Increase treatment frequency as skin adjusts',
-    amSteps: ['cleanser', 'moisturizer', 'sunscreen'],
-    pmSteps: ['cleanser', 'serum', 'moisturizer'],
+    description: 'Building your routine with actives',
+    amSteps: ['cleanser', 'toner', 'serum', 'eye_cream', 'moisturizer', 'sunscreen'],
+    pmSteps: ['cleanser', 'toner', 'serum', 'eye_cream', 'moisturizer'],
     activeFrequency: '3x_week'
   },
+  3: {
+    name: 'Advanced',
+    durationWeeks: 2,
+    description: 'Advanced routine with treatments',
+    amSteps: ['cleanser', 'toner', 'serum', 'eye_cream', 'moisturizer', 'sunscreen'],
+    pmSteps: ['makeup_remover', 'cleanser', 'exfoliant', 'toner', 'serum', 'treatment', 'eye_cream', 'moisturizer'],
+    activeFrequency: 'every_other_day'
+  },
   4: {
-    name: 'Full Routine',
-    durationWeeks: null, // Ongoing
+    name: 'Complete',
+    durationWeeks: null,
     description: 'Your complete personalized routine',
     amSteps: ['cleanser', 'toner', 'serum', 'eye_cream', 'moisturizer', 'sunscreen'],
     pmSteps: ['makeup_remover', 'cleanser', 'exfoliant', 'toner', 'serum', 'treatment', 'eye_cream', 'moisturizer', 'face_oil'],
-    activeFrequency: 'every_other_day'
+    activeFrequency: 'daily'
   }
 };
 
