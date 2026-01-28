@@ -119,4 +119,116 @@ router.post('/migrate/skincare-platform', async (req, res) => {
   }
 });
 
+// Get platform stats (public - for dashboard)
+router.get('/stats', async (req, res) => {
+  try {
+    const { pool } = require('../config/database');
+
+    // Get total widget users
+    const usersResult = await pool.query(`
+      SELECT COUNT(*) as total_users,
+             COUNT(DISTINCT store_id) as total_stores
+      FROM widget_users
+    `);
+
+    // Get total face scans
+    const scansResult = await pool.query(`
+      SELECT COUNT(*) as total_scans,
+             COUNT(DISTINCT user_id) as users_with_scans
+      FROM face_scans
+    `);
+
+    // Get feedback stats
+    const feedbackResult = await pool.query(`
+      SELECT COUNT(*) as total_feedback,
+             COUNT(DISTINCT user_id) as users_gave_feedback,
+             COUNT(DISTINCT attribute) as attributes_with_feedback
+      FROM scan_feedback
+    `);
+
+    // Get recent activity (last 7 days)
+    const recentResult = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM widget_users WHERE created_at > NOW() - INTERVAL '7 days') as new_users_7d,
+        (SELECT COUNT(*) FROM face_scans WHERE created_at > NOW() - INTERVAL '7 days') as scans_7d,
+        (SELECT COUNT(*) FROM scan_feedback WHERE created_at > NOW() - INTERVAL '7 days') as feedback_7d
+    `);
+
+    // Get accuracy by attribute (if feedback exists)
+    const accuracyResult = await pool.query(`
+      SELECT attribute,
+             COUNT(*) as total,
+             SUM(CASE WHEN feedback_type = 'correction' THEN 1 ELSE 0 END) as corrections,
+             SUM(CASE WHEN feedback_type = 'confirmation' THEN 1 ELSE 0 END) as confirmations
+      FROM scan_feedback
+      GROUP BY attribute
+    `);
+
+    res.json({
+      success: true,
+      data: {
+        overview: {
+          totalUsers: parseInt(usersResult.rows[0]?.total_users || 0),
+          totalStores: parseInt(usersResult.rows[0]?.total_stores || 0),
+          totalScans: parseInt(scansResult.rows[0]?.total_scans || 0),
+          usersWithScans: parseInt(scansResult.rows[0]?.users_with_scans || 0),
+        },
+        feedback: {
+          totalFeedback: parseInt(feedbackResult.rows[0]?.total_feedback || 0),
+          usersGaveFeedback: parseInt(feedbackResult.rows[0]?.users_gave_feedback || 0),
+          attributesWithFeedback: parseInt(feedbackResult.rows[0]?.attributes_with_feedback || 0),
+        },
+        recent7Days: {
+          newUsers: parseInt(recentResult.rows[0]?.new_users_7d || 0),
+          scans: parseInt(recentResult.rows[0]?.scans_7d || 0),
+          feedback: parseInt(recentResult.rows[0]?.feedback_7d || 0),
+        },
+        accuracyByAttribute: accuracyResult.rows.map(row => ({
+          attribute: row.attribute,
+          total: parseInt(row.total),
+          corrections: parseInt(row.corrections),
+          confirmations: parseInt(row.confirmations),
+          correctionRate: row.total > 0 ? (row.corrections / row.total * 100).toFixed(1) + '%' : '0%'
+        })),
+        learnings: generateLearnings(accuracyResult.rows)
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Stats error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get stats',
+      message: error.message
+    });
+  }
+});
+
+// Helper to generate learnings from data
+function generateLearnings(accuracyData: any[]) {
+  const learnings: string[] = [];
+
+  for (const row of accuracyData) {
+    const total = parseInt(row.total);
+    const corrections = parseInt(row.corrections);
+    const confirmations = parseInt(row.confirmations);
+
+    if (total < 5) continue; // Need minimum data
+
+    const correctionRate = corrections / total;
+
+    if (correctionRate > 0.5) {
+      learnings.push(`${row.attribute}: High correction rate (${(correctionRate*100).toFixed(0)}%) - AI may be over/under detecting`);
+    } else if (correctionRate < 0.2 && total >= 10) {
+      learnings.push(`${row.attribute}: Good accuracy (${((1-correctionRate)*100).toFixed(0)}% confirmed)`);
+    }
+  }
+
+  if (learnings.length === 0) {
+    learnings.push('Collecting more feedback to generate learnings...');
+  }
+
+  return learnings;
+}
+
 export default router;
