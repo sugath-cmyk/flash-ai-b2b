@@ -2150,8 +2150,9 @@ class FaceScanService:
 
             # Overall score (0-100, higher = worse dark circles)
             avg_severity = (left_severity + right_severity) / 2
-            # Apply boost to catch subtle dark circles - increased multiplier
-            dark_circles_score = min(100, int(avg_severity * 100 * 1.5))  # Was 1.3, now 1.5
+            # Direct mapping without aggressive boost - let raw detection speak
+            # Per POH Scale: Grade 1 (10-25), Grade 2 (25-45), Grade 3 (45-65), Grade 4 (65+)
+            dark_circles_score = min(100, int(avg_severity * 100))  # No multiplier - true ML value
 
             print(f"[Dark Circles Debug] Final score: {dark_circles_score}, Left: {left_severity:.2f}, Right: {right_severity:.2f}")
 
@@ -2243,7 +2244,8 @@ class FaceScanService:
             right_severity = min(1.0, right_severity)
 
             avg_severity = (left_severity + right_severity) / 2
-            dark_circles_score = min(100, int(avg_severity * 100 * 1.5))
+            # Direct mapping - no aggressive multiplier
+            dark_circles_score = min(100, int(avg_severity * 100))
 
             # Bounding boxes normalized
             left_bbox = [left_eye_x_start / w, eye_y_start / h, left_eye_x_end / w, eye_y_end / h]

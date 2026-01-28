@@ -7412,7 +7412,9 @@
         pores: {
           name: 'Pores',
           icon: '🔍',
-          getScore: (a) => Math.min(100, (a.enlarged_pores_count || 0) * 8 + 15),
+          // Adjusted formula: 27 pores = Grade 3, not Grade 4
+          // 0 pores=10, 15 pores=40, 30 pores=70, 45+ pores=100
+          getScore: (a) => Math.min(100, (a.enlarged_pores_count || 0) * 2 + 10),
           isGood: false,
           getProblem: (a, score) => {
             const count = a.enlarged_pores_count || 0;
