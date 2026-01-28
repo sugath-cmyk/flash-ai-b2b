@@ -1234,8 +1234,8 @@
 
           <!-- Auth Modal -->
           <div id="flashai-vto-auth-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10001;align-items:center;justify-content:center;">
-            <div style="background:#fff;border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
-              <button id="flashai-vto-auth-close" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;color:#71717a;cursor:pointer;">&times;</button>
+            <div style="position:relative;background:#fff;border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+              <button id="flashai-vto-auth-close" style="position:absolute;top:12px;right:12px;width:32px;height:32px;background:#f4f4f5;border:none;border-radius:50%;font-size:20px;color:#71717a;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
 
               <!-- Auth Tabs -->
               <div style="display:flex;gap:0;margin-bottom:24px;background:#f4f4f5;border-radius:25px;padding:4px;">
