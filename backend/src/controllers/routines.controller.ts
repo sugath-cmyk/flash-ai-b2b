@@ -324,6 +324,12 @@ class RoutinesController {
         routineConsistency,
         usedActives,
         ageRange,
+        // New expanded questionnaire fields
+        skinType,
+        primaryConcerns,
+        productAllergies,
+        budgetRange,
+        lifestyle,
       } = req.body;
 
       // Validate required fields
@@ -331,7 +337,33 @@ class RoutinesController {
         throw createError('Missing required questionnaire fields', 400);
       }
 
-      // Get prioritized concerns from user's goals
+      // Store expanded questionnaire data in user preferences
+      if (skinType || primaryConcerns || productAllergies || budgetRange || lifestyle) {
+        await routineGeneratorService.saveUserPreferences(req.widgetUser.id, {
+          skinType,
+          primaryConcerns,
+          productAllergies,
+          budgetRange,
+          lifestyle,
+          ageRange,
+        });
+      }
+
+      // AUTO-CREATE GOALS FROM FACE SCAN (if scan exists)
+      // This ensures routine is personalized based on actual skin analysis
+      try {
+        const goalService = require('../services/goal.service').default;
+        const autoGoals = await goalService.createGoalsFromScan(
+          req.widgetUser.id,
+          req.widgetUser.storeId
+        );
+        console.log(`[Routines] Auto-created ${autoGoals.length} goals from face scan for user ${req.widgetUser.id}`);
+      } catch (scanError: any) {
+        // No face scan found - that's OK, continue without auto-goals
+        console.log(`[Routines] No face scan for auto-goals: ${scanError.message}`);
+      }
+
+      // Get prioritized concerns from user's goals (now includes auto-created ones)
       const { primary, secondary } = await routineGeneratorService.prioritizeConcerns(
         req.widgetUser.id
       );

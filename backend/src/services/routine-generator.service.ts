@@ -1561,6 +1561,140 @@ export class RoutineGeneratorService {
       completedAt: row.completed_at
     };
   }
+
+  /**
+   * Save expanded user preferences from questionnaire
+   */
+  async saveUserPreferences(userId: string, preferences: {
+    skinType?: string;
+    primaryConcerns?: string[];
+    productAllergies?: string[];
+    budgetRange?: string;
+    lifestyle?: {
+      sunExposure?: string;
+      stressLevel?: string;
+      sleepQuality?: string;
+      waterIntake?: string;
+    };
+    ageRange?: string;
+  }): Promise<void> {
+    // Check if preferences table exists, if not store in metadata
+    try {
+      // Try to upsert into user_preferences table
+      await pool.query(
+        `INSERT INTO user_preferences (user_id, skin_type, primary_concerns, product_allergies, budget_range, lifestyle_factors, age_range, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+         ON CONFLICT (user_id) DO UPDATE SET
+           skin_type = COALESCE(EXCLUDED.skin_type, user_preferences.skin_type),
+           primary_concerns = COALESCE(EXCLUDED.primary_concerns, user_preferences.primary_concerns),
+           product_allergies = COALESCE(EXCLUDED.product_allergies, user_preferences.product_allergies),
+           budget_range = COALESCE(EXCLUDED.budget_range, user_preferences.budget_range),
+           lifestyle_factors = COALESCE(EXCLUDED.lifestyle_factors, user_preferences.lifestyle_factors),
+           age_range = COALESCE(EXCLUDED.age_range, user_preferences.age_range),
+           updated_at = NOW()`,
+        [
+          userId,
+          preferences.skinType || null,
+          preferences.primaryConcerns ? JSON.stringify(preferences.primaryConcerns) : null,
+          preferences.productAllergies ? JSON.stringify(preferences.productAllergies) : null,
+          preferences.budgetRange || null,
+          preferences.lifestyle ? JSON.stringify(preferences.lifestyle) : null,
+          preferences.ageRange || null,
+        ]
+      );
+      console.log(`[RoutineGenerator] Saved preferences for user ${userId}`);
+    } catch (error: any) {
+      // Table might not exist - store in widget_users metadata instead
+      console.log(`[RoutineGenerator] user_preferences table not available, storing in metadata`);
+      await pool.query(
+        `UPDATE widget_users SET metadata = COALESCE(metadata, '{}'::jsonb) || $1::jsonb WHERE id = $2`,
+        [JSON.stringify({ preferences }), userId]
+      );
+    }
+  }
+
+  /**
+   * Get user's face scan analysis for routine personalization
+   */
+  async getUserScanForRoutine(userId: string): Promise<{
+    skinType?: string;
+    concerns: { type: string; severity: number }[];
+    hydrationLevel: number;
+    oilLevel: number;
+  } | null> {
+    try {
+      // Get visitor_id for the user
+      const userResult = await pool.query(
+        `SELECT visitor_id FROM widget_users WHERE id = $1`,
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) return null;
+
+      const visitorId = userResult.rows[0].visitor_id;
+
+      // Get latest face scan analysis
+      const scanResult = await pool.query(
+        `SELECT fa.* FROM face_analysis fa
+         JOIN face_scans fs ON fa.face_scan_id = fs.id
+         WHERE fs.visitor_id = $1 OR fs.user_id = $2
+         ORDER BY fs.created_at DESC
+         LIMIT 1`,
+        [visitorId, userId]
+      );
+
+      if (scanResult.rows.length === 0) return null;
+
+      const analysis = scanResult.rows[0];
+
+      // Build concerns list from scan scores
+      const concerns: { type: string; severity: number }[] = [];
+
+      if ((analysis.acne_score || 0) > 25) {
+        concerns.push({ type: 'acne', severity: analysis.acne_score });
+      }
+      if ((analysis.wrinkle_score || 0) > 25) {
+        concerns.push({ type: 'wrinkles', severity: analysis.wrinkle_score });
+      }
+      if ((analysis.pigmentation_score || 0) > 25) {
+        concerns.push({ type: 'pigmentation', severity: analysis.pigmentation_score });
+      }
+      if ((analysis.redness_score || 0) > 25) {
+        concerns.push({ type: 'redness', severity: analysis.redness_score });
+      }
+      if ((analysis.texture_score || 100) < 70) {
+        concerns.push({ type: 'texture', severity: 100 - (analysis.texture_score || 0) });
+      }
+
+      // Determine skin type from oiliness and hydration
+      const oilLevel = analysis.oiliness_score || 50;
+      const hydrationLevel = analysis.hydration_score || 50;
+
+      let skinType = 'normal';
+      if (oilLevel > 60 && hydrationLevel < 50) {
+        skinType = 'oily';
+      } else if (oilLevel < 40 && hydrationLevel < 50) {
+        skinType = 'dry';
+      } else if (oilLevel > 50 && hydrationLevel >= 50) {
+        skinType = 'combination';
+      } else if (analysis.redness_score > 40) {
+        skinType = 'sensitive';
+      }
+
+      // Sort concerns by severity
+      concerns.sort((a, b) => b.severity - a.severity);
+
+      return {
+        skinType,
+        concerns,
+        hydrationLevel,
+        oilLevel,
+      };
+    } catch (error) {
+      console.error('[RoutineGenerator] Error getting scan for routine:', error);
+      return null;
+    }
+  }
 }
 
 export default new RoutineGeneratorService();

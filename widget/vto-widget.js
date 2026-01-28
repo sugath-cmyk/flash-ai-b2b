@@ -954,11 +954,68 @@
                       </div>
                     </div>
 
+                    <!-- Skin Type (NEW) -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>💧</span> How would you describe your skin type?
+                      </h4>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <button class="flashai-questionnaire-btn" data-question="skinType" data-value="dry" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;">🏜️ Dry</button>
+                        <button class="flashai-questionnaire-btn" data-question="skinType" data-value="oily" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;">✨ Oily</button>
+                        <button class="flashai-questionnaire-btn" data-question="skinType" data-value="combination" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;">🔄 Combination</button>
+                        <button class="flashai-questionnaire-btn" data-question="skinType" data-value="normal" style="padding:10px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;">✅ Normal</button>
+                      </div>
+                    </div>
+
+                    <!-- Primary Concerns (NEW) -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 4px;display:flex;align-items:center;gap:6px;">
+                        <span>🎯</span> Main skin concerns? (select up to 3)
+                      </h4>
+                      <p id="flashai-scan-concerns-hint" style="font-size:11px;color:#8b5cf6;margin:0 0 10px;display:none;">💡 Pre-selected based on your skin scan</p>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="acne" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">🎯 Acne</button>
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="wrinkles" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">📉 Wrinkles</button>
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="pigmentation" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">☀️ Dark Spots</button>
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="dryness" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">🏜️ Dryness</button>
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="redness" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">🔴 Redness</button>
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="pores" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">⚪ Large Pores</button>
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="dark_circles" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">👁️ Dark Circles</button>
+                        <button class="flashai-questionnaire-toggle" data-question="primaryConcerns" data-value="texture" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">🧱 Texture</button>
+                      </div>
+                    </div>
+
+                    <!-- Product Allergies (NEW) -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>⚠️</span> Any ingredients to avoid?
+                      </h4>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <button class="flashai-questionnaire-toggle" data-question="productAllergies" data-value="fragrance" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Fragrance</button>
+                        <button class="flashai-questionnaire-toggle" data-question="productAllergies" data-value="alcohol" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Alcohol</button>
+                        <button class="flashai-questionnaire-toggle" data-question="productAllergies" data-value="parabens" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Parabens</button>
+                        <button class="flashai-questionnaire-toggle" data-question="productAllergies" data-value="sulfates" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Sulfates</button>
+                        <button class="flashai-questionnaire-toggle" data-question="productAllergies" data-value="none" style="padding:8px 14px;background:#fff;border:2px solid #e4e4e7;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">No allergies</button>
+                      </div>
+                    </div>
+
+                    <!-- Budget Range (NEW) -->
+                    <div style="margin-bottom:16px;padding:14px;background:#f9fafb;border-radius:12px;border:1px solid #e4e4e7;">
+                      <h4 style="font-size:13px;font-weight:600;color:#18181b;margin:0 0 10px;display:flex;align-items:center;gap:6px;">
+                        <span>💰</span> Budget preference per product?
+                      </h4>
+                      <div style="display:flex;gap:8px;">
+                        <button class="flashai-questionnaire-btn" data-question="budgetRange" data-value="budget" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;text-align:center;">Budget<br><span style="font-size:10px;color:#71717a;">Under ₹500</span></button>
+                        <button class="flashai-questionnaire-btn" data-question="budgetRange" data-value="mid" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;text-align:center;">Mid-Range<br><span style="font-size:10px;color:#71717a;">₹500-1500</span></button>
+                        <button class="flashai-questionnaire-btn" data-question="budgetRange" data-value="premium" style="flex:1;padding:10px;background:#fff;border:2px solid #e4e4e7;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;text-align:center;">Premium<br><span style="font-size:10px;color:#71717a;">₹1500+</span></button>
+                      </div>
+                    </div>
+
                     <!-- Why we ask -->
                     <div style="padding:12px;background:linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%);border-radius:10px;margin-bottom:16px;">
                       <p style="font-size:11px;color:#6b21a8;margin:0;display:flex;align-items:start;gap:6px;">
                         <span>💡</span>
-                        <span>Based on dermatology research, we will start you at the right phase to build sustainable habits without overwhelming your skin.</span>
+                        <span>Your routine will be personalized based on your skin scan + these preferences to maximize results.</span>
                       </p>
                     </div>
 
@@ -2628,6 +2685,9 @@
           console.log('[Routine] No phase found, showing questionnaire');
           if (questionnaire) questionnaire.style.display = 'block';
           if (routineContent) routineContent.style.display = 'none';
+
+          // PRE-POPULATE concerns from face scan results
+          this.prefillQuestionnaireFromScan();
           return;
         }
 
@@ -3447,6 +3507,92 @@
       }
     }
 
+    /**
+     * Pre-fill questionnaire concerns based on face scan results
+     */
+    prefillQuestionnaireFromScan() {
+      const issues = this.state.detectedIssues || [];
+      if (issues.length === 0) {
+        console.log('[Questionnaire] No face scan issues to prefill');
+        return;
+      }
+
+      console.log('[Questionnaire] Pre-filling from scan issues:', issues.map(i => i.key));
+
+      // Show hint that concerns are pre-selected
+      const hint = document.getElementById('flashai-scan-concerns-hint');
+      if (hint) hint.style.display = 'block';
+
+      // Map detected issues to questionnaire concern values
+      const concernMapping = {
+        acne: 'acne',
+        dark_circles: 'dark_circles',
+        wrinkles: 'wrinkles',
+        pigmentation: 'pigmentation',
+        redness: 'redness',
+        texture: 'texture',
+        hydration: 'dryness',
+        oiliness: 'pores'  // oily skin often means large pores
+      };
+
+      // Initialize questionnaire answers if not exists
+      if (!this.state.questionnaireAnswers) {
+        this.state.questionnaireAnswers = {};
+      }
+      if (!this.state.questionnaireAnswers.primaryConcerns) {
+        this.state.questionnaireAnswers.primaryConcerns = [];
+      }
+
+      // Get top 3 concerns from scan (those marked as concerns)
+      const topConcerns = issues
+        .filter(i => i.isConcern)
+        .slice(0, 3)
+        .map(i => concernMapping[i.key])
+        .filter(Boolean);
+
+      // Pre-select the concern buttons
+      topConcerns.forEach(concern => {
+        const btn = document.querySelector(`[data-question="primaryConcerns"][data-value="${concern}"]`);
+        if (btn) {
+          btn.style.background = '#ede9fe';
+          btn.style.color = '#7c3aed';
+          btn.style.borderColor = '#8b5cf6';
+
+          // Add to answers if not already there
+          if (!this.state.questionnaireAnswers.primaryConcerns.includes(concern)) {
+            this.state.questionnaireAnswers.primaryConcerns.push(concern);
+          }
+        }
+      });
+
+      // Also determine skin type from scan
+      const oilinessIssue = issues.find(i => i.key === 'oiliness');
+      const hydrationIssue = issues.find(i => i.key === 'hydration');
+      const rednessIssue = issues.find(i => i.key === 'redness');
+
+      let detectedSkinType = 'normal';
+      if (oilinessIssue && oilinessIssue.value > 60) {
+        detectedSkinType = 'oily';
+      } else if (hydrationIssue && hydrationIssue.value < 50) {
+        detectedSkinType = 'dry';
+      } else if (oilinessIssue && oilinessIssue.value > 40 && hydrationIssue && hydrationIssue.value < 60) {
+        detectedSkinType = 'combination';
+      } else if (rednessIssue && rednessIssue.isConcern) {
+        detectedSkinType = 'sensitive';
+      }
+
+      // Pre-select skin type button
+      const skinTypeBtn = document.querySelector(`[data-question="skinType"][data-value="${detectedSkinType}"]`);
+      if (skinTypeBtn) {
+        skinTypeBtn.style.background = '#ede9fe';
+        skinTypeBtn.style.color = '#7c3aed';
+        skinTypeBtn.style.borderColor = '#8b5cf6';
+        this.state.questionnaireAnswers.skinType = detectedSkinType;
+      }
+
+      console.log('[Questionnaire] Pre-filled: concerns=' + topConcerns.join(',') + ', skinType=' + detectedSkinType);
+    }
+
     async submitQuestionnaire() {
       const answers = this.state.questionnaireAnswers || {};
 
@@ -3476,11 +3622,17 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            // Original fields
             skincareExperience: answers.skincareExperience,
             skinSensitivity: answers.skinSensitivity,
             routineConsistency: answers.routineConsistency,
             usedActives: answers.usedActives || [],
-            ageRange: answers.ageRange
+            ageRange: answers.ageRange,
+            // NEW expanded questionnaire fields
+            skinType: answers.skinType,
+            primaryConcerns: answers.primaryConcerns || [],
+            productAllergies: answers.productAllergies || [],
+            budgetRange: answers.budgetRange
           })
         });
 
