@@ -6969,11 +6969,13 @@
           colorScheme = 'orange';
           break;
         case 'texture':
-          score = 100 - (analysis.texture_score || 70);
+          // No hardcoded default - use actual ML value or 0
+          score = analysis.texture_score != null ? (100 - analysis.texture_score) : 0;
           colorScheme = 'orange';
           break;
         case 'hydration':
-          score = 100 - (analysis.hydration_score || 65);
+          // No hardcoded default - use actual ML value or 0
+          score = analysis.hydration_score != null ? (100 - analysis.hydration_score) : 0;
           colorScheme = 'blue';
           break;
         default:
@@ -7131,7 +7133,8 @@
           const leftEye = darkCirclesRegions.left_eye;
           const rightEye = darkCirclesRegions.right_eye;
 
-          ctx.fillStyle = `rgba(75, 0, 130, ${Math.min(0.4, (analysis.dark_circles_score || 30) / 100)})`;
+          // No hardcoded default - use actual ML value or 0
+          ctx.fillStyle = `rgba(75, 0, 130, ${Math.min(0.4, (analysis.dark_circles_score || 0) / 100)})`;
           ctx.strokeStyle = color.stroke;
           ctx.lineWidth = 2;
 
@@ -7157,7 +7160,8 @@
         case 'redness':
           // Draw redness regions from ML
           const rednessRegions = analysis.redness_regions || [];
-          ctx.fillStyle = `rgba(220, 38, 38, ${Math.min(0.35, (analysis.redness_score || 30) / 150)})`;
+          // No hardcoded default - use actual ML value or 0
+          ctx.fillStyle = `rgba(220, 38, 38, ${Math.min(0.35, (analysis.redness_score || 0) / 150)})`;
 
           rednessRegions.forEach(region => {
             if (region.bbox) {
@@ -8378,7 +8382,7 @@
         {
           key: 'hydration',
           name: 'Repair Skin Barrier',
-          score: 100 - (analysis.hydration_score || 65),
+          score: analysis.hydration_score != null ? (100 - analysis.hydration_score) : 0,
           threshold: 35,
           icon: '💧',
           why: 'A healthy barrier is essential for other treatments to work',
@@ -8408,7 +8412,7 @@
         {
           key: 'texture',
           name: 'Refine Texture',
-          score: 100 - (analysis.texture_score || 70),
+          score: analysis.texture_score != null ? (100 - analysis.texture_score) : 0,
           threshold: 30,
           icon: '💎',
           why: 'Exfoliation for smoother skin after other concerns are managed',
@@ -8457,10 +8461,10 @@
       const container = document.getElementById('flashai-vto-timeline-content');
       if (!container || !analysis) return;
 
-      // Determine primary concerns for personalized timeline
+      // Determine primary concerns for personalized timeline - no hardcoded defaults
       const hasAcne = (analysis.acne_score || 0) > 25;
       const hasRedness = (analysis.redness_score || 0) > 30;
-      const hasDehydration = (analysis.hydration_score || 65) < 50;
+      const hasDehydration = analysis.hydration_score != null ? analysis.hydration_score < 50 : false;
       const hasPigmentation = (analysis.pigmentation_score || 0) > 25;
       const hasWrinkles = (analysis.wrinkle_score || 0) > 20;
 
@@ -8577,13 +8581,13 @@
         concerns.push('pigmentation patterns that may benefit from professional treatments');
       }
 
-      // Very low skin health score (raised threshold)
-      if ((analysis.skin_score || 50) < 20) {
+      // Very low skin health score (raised threshold) - no hardcoded default
+      if (analysis.skin_score != null && analysis.skin_score < 20) {
         concerns.push('multiple areas that could benefit from professional assessment');
       }
 
-      // Severe dehydration with confirmed dry patches
-      if (analysis.dry_patches_detected && (analysis.hydration_score || 65) < 20) {
+      // Severe dehydration with confirmed dry patches - no hardcoded default
+      if (analysis.dry_patches_detected && analysis.hydration_score != null && analysis.hydration_score < 20) {
         concerns.push('signs of skin barrier concerns');
       }
 
