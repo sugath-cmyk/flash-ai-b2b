@@ -119,116 +119,312 @@ router.post('/migrate/skincare-platform', async (req, res) => {
   }
 });
 
-// Get platform stats (public - for dashboard)
-router.get('/stats', async (req, res) => {
+// =============================================================================
+// UNIFIED ADMIN DASHBOARD - All stats in one endpoint
+// =============================================================================
+router.get('/dashboard', async (req, res) => {
   try {
     const { pool } = require('../config/database');
+    const startTime = Date.now();
 
-    // Get total widget users
-    const usersResult = await pool.query(`
-      SELECT COUNT(*) as total_users,
-             COUNT(DISTINCT store_id) as total_stores
-      FROM widget_users
-    `);
+    // Run all queries in parallel for performance
+    const [
+      usersResult,
+      scansResult,
+      feedbackResult,
+      recentResult,
+      accuracyResult,
+      routinesResult,
+      goalsResult,
+      topConcernsResult,
+      scanQualityResult
+    ] = await Promise.all([
+      // 1. Widget Users
+      pool.query(`
+        SELECT COUNT(*) as total_users,
+               COUNT(DISTINCT store_id) as total_stores,
+               COUNT(CASE WHEN is_verified = true THEN 1 END) as verified_users
+        FROM widget_users
+      `),
 
-    // Get total face scans
-    const scansResult = await pool.query(`
-      SELECT COUNT(*) as total_scans,
-             COUNT(DISTINCT user_id) as users_with_scans
-      FROM face_scans
-    `);
+      // 2. Face Scans
+      pool.query(`
+        SELECT COUNT(*) as total_scans,
+               COUNT(DISTINCT user_id) as users_with_scans,
+               AVG(quality_score) as avg_quality
+        FROM face_scans
+      `),
 
-    // Get feedback stats
-    const feedbackResult = await pool.query(`
-      SELECT COUNT(*) as total_feedback,
-             COUNT(DISTINCT user_id) as users_gave_feedback,
-             COUNT(DISTINCT attribute) as attributes_with_feedback
-      FROM scan_feedback
-    `);
+      // 3. ML Feedback
+      pool.query(`
+        SELECT COUNT(*) as total_feedback,
+               COUNT(DISTINCT user_id) as users_gave_feedback,
+               COUNT(DISTINCT attribute) as attributes_covered,
+               SUM(CASE WHEN feedback_type = 'correction' THEN 1 ELSE 0 END) as corrections,
+               SUM(CASE WHEN feedback_type = 'confirmation' THEN 1 ELSE 0 END) as confirmations
+        FROM scan_feedback
+      `).catch(() => ({ rows: [{ total_feedback: 0, users_gave_feedback: 0, attributes_covered: 0, corrections: 0, confirmations: 0 }] })),
 
-    // Get recent activity (last 7 days)
-    const recentResult = await pool.query(`
-      SELECT
-        (SELECT COUNT(*) FROM widget_users WHERE created_at > NOW() - INTERVAL '7 days') as new_users_7d,
-        (SELECT COUNT(*) FROM face_scans WHERE created_at > NOW() - INTERVAL '7 days') as scans_7d,
-        (SELECT COUNT(*) FROM scan_feedback WHERE created_at > NOW() - INTERVAL '7 days') as feedback_7d
-    `);
+      // 4. Recent Activity (7 days)
+      pool.query(`
+        SELECT
+          (SELECT COUNT(*) FROM widget_users WHERE created_at > NOW() - INTERVAL '7 days') as new_users_7d,
+          (SELECT COUNT(*) FROM face_scans WHERE created_at > NOW() - INTERVAL '7 days') as scans_7d,
+          (SELECT COUNT(*) FROM widget_users WHERE created_at > NOW() - INTERVAL '1 day') as new_users_24h,
+          (SELECT COUNT(*) FROM face_scans WHERE created_at > NOW() - INTERVAL '1 day') as scans_24h
+      `),
 
-    // Get accuracy by attribute (if feedback exists)
-    const accuracyResult = await pool.query(`
-      SELECT attribute,
-             COUNT(*) as total,
-             SUM(CASE WHEN feedback_type = 'correction' THEN 1 ELSE 0 END) as corrections,
-             SUM(CASE WHEN feedback_type = 'confirmation' THEN 1 ELSE 0 END) as confirmations
-      FROM scan_feedback
-      GROUP BY attribute
-    `);
+      // 5. Accuracy by Attribute
+      pool.query(`
+        SELECT attribute,
+               COUNT(*) as total,
+               SUM(CASE WHEN feedback_type = 'correction' THEN 1 ELSE 0 END) as corrections,
+               SUM(CASE WHEN feedback_type = 'confirmation' THEN 1 ELSE 0 END) as confirmations,
+               AVG(CASE WHEN feedback_type = 'correction'
+                   THEN ABS(original_grade - COALESCE(user_corrected_grade, 0))
+                   ELSE 0 END) as avg_error
+        FROM scan_feedback
+        GROUP BY attribute
+        ORDER BY total DESC
+      `).catch(() => ({ rows: [] })),
+
+      // 6. Routines Stats
+      pool.query(`
+        SELECT COUNT(*) as total_routines,
+               COUNT(DISTINCT user_id) as users_with_routines,
+               AVG(CASE WHEN is_active THEN 1 ELSE 0 END) * 100 as active_rate
+        FROM user_routines
+      `).catch(() => ({ rows: [{ total_routines: 0, users_with_routines: 0, active_rate: 0 }] })),
+
+      // 7. Goals Stats
+      pool.query(`
+        SELECT COUNT(*) as total_goals,
+               COUNT(DISTINCT user_id) as users_with_goals,
+               SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_goals
+        FROM user_goals
+      `).catch(() => ({ rows: [{ total_goals: 0, users_with_goals: 0, completed_goals: 0 }] })),
+
+      // 8. Top Skin Concerns (from scans)
+      pool.query(`
+        SELECT
+          SUM(CASE WHEN (analysis->>'acne_score')::int > 30 THEN 1 ELSE 0 END) as acne_concerns,
+          SUM(CASE WHEN (analysis->>'dark_circles_score')::int > 30 THEN 1 ELSE 0 END) as dark_circles_concerns,
+          SUM(CASE WHEN (analysis->>'pigmentation_score')::int > 30 THEN 1 ELSE 0 END) as pigmentation_concerns,
+          SUM(CASE WHEN (analysis->>'wrinkle_score')::int > 30 THEN 1 ELSE 0 END) as wrinkle_concerns,
+          SUM(CASE WHEN (analysis->>'redness_score')::int > 30 THEN 1 ELSE 0 END) as redness_concerns
+        FROM face_scans
+        WHERE analysis IS NOT NULL
+      `).catch(() => ({ rows: [{}] })),
+
+      // 9. Scan Quality Distribution
+      pool.query(`
+        SELECT
+          SUM(CASE WHEN quality_score >= 0.8 THEN 1 ELSE 0 END) as high_quality,
+          SUM(CASE WHEN quality_score >= 0.5 AND quality_score < 0.8 THEN 1 ELSE 0 END) as medium_quality,
+          SUM(CASE WHEN quality_score < 0.5 THEN 1 ELSE 0 END) as low_quality
+        FROM face_scans
+      `).catch(() => ({ rows: [{ high_quality: 0, medium_quality: 0, low_quality: 0 }] }))
+    ]);
+
+    // Process accuracy data and generate learnings
+    const accuracyByAttribute = accuracyResult.rows.map((row: any) => ({
+      attribute: row.attribute,
+      total: parseInt(row.total || 0),
+      corrections: parseInt(row.corrections || 0),
+      confirmations: parseInt(row.confirmations || 0),
+      accuracy: row.total > 0 ? ((row.confirmations / row.total) * 100).toFixed(1) : '0',
+      avgError: parseFloat(row.avg_error || 0).toFixed(2)
+    }));
+
+    // Generate learnings and recommendations
+    const learnings = generateLearnings(accuracyResult.rows);
+    const recommendations = generateRecommendations(accuracyResult.rows, scansResult.rows[0], feedbackResult.rows[0]);
+
+    // Build top concerns array
+    const topConcerns = [];
+    const concerns = topConcernsResult.rows[0] || {};
+    if (concerns.acne_concerns > 0) topConcerns.push({ name: 'Acne', count: parseInt(concerns.acne_concerns) });
+    if (concerns.dark_circles_concerns > 0) topConcerns.push({ name: 'Dark Circles', count: parseInt(concerns.dark_circles_concerns) });
+    if (concerns.pigmentation_concerns > 0) topConcerns.push({ name: 'Pigmentation', count: parseInt(concerns.pigmentation_concerns) });
+    if (concerns.wrinkle_concerns > 0) topConcerns.push({ name: 'Wrinkles', count: parseInt(concerns.wrinkle_concerns) });
+    if (concerns.redness_concerns > 0) topConcerns.push({ name: 'Redness', count: parseInt(concerns.redness_concerns) });
+    topConcerns.sort((a, b) => b.count - a.count);
+
+    const queryTime = Date.now() - startTime;
 
     res.json({
       success: true,
-      data: {
-        overview: {
+      dashboard: {
+        // === SECTION 1: Platform Overview ===
+        platform: {
           totalUsers: parseInt(usersResult.rows[0]?.total_users || 0),
+          verifiedUsers: parseInt(usersResult.rows[0]?.verified_users || 0),
           totalStores: parseInt(usersResult.rows[0]?.total_stores || 0),
           totalScans: parseInt(scansResult.rows[0]?.total_scans || 0),
           usersWithScans: parseInt(scansResult.rows[0]?.users_with_scans || 0),
+          avgScanQuality: parseFloat(scansResult.rows[0]?.avg_quality || 0).toFixed(2)
         },
-        feedback: {
+
+        // === SECTION 2: Recent Activity ===
+        activity: {
+          last24Hours: {
+            newUsers: parseInt(recentResult.rows[0]?.new_users_24h || 0),
+            scans: parseInt(recentResult.rows[0]?.scans_24h || 0)
+          },
+          last7Days: {
+            newUsers: parseInt(recentResult.rows[0]?.new_users_7d || 0),
+            scans: parseInt(recentResult.rows[0]?.scans_7d || 0)
+          }
+        },
+
+        // === SECTION 3: ML Training & Accuracy ===
+        mlTraining: {
           totalFeedback: parseInt(feedbackResult.rows[0]?.total_feedback || 0),
           usersGaveFeedback: parseInt(feedbackResult.rows[0]?.users_gave_feedback || 0),
-          attributesWithFeedback: parseInt(feedbackResult.rows[0]?.attributes_with_feedback || 0),
+          corrections: parseInt(feedbackResult.rows[0]?.corrections || 0),
+          confirmations: parseInt(feedbackResult.rows[0]?.confirmations || 0),
+          overallAccuracy: feedbackResult.rows[0]?.total_feedback > 0
+            ? ((feedbackResult.rows[0].confirmations / feedbackResult.rows[0].total_feedback) * 100).toFixed(1) + '%'
+            : 'No data yet',
+          accuracyByAttribute
         },
-        recent7Days: {
-          newUsers: parseInt(recentResult.rows[0]?.new_users_7d || 0),
-          scans: parseInt(recentResult.rows[0]?.scans_7d || 0),
-          feedback: parseInt(recentResult.rows[0]?.feedback_7d || 0),
+
+        // === SECTION 4: Engagement ===
+        engagement: {
+          routines: {
+            total: parseInt(routinesResult.rows[0]?.total_routines || 0),
+            usersWithRoutines: parseInt(routinesResult.rows[0]?.users_with_routines || 0),
+            activeRate: parseFloat(routinesResult.rows[0]?.active_rate || 0).toFixed(1) + '%'
+          },
+          goals: {
+            total: parseInt(goalsResult.rows[0]?.total_goals || 0),
+            usersWithGoals: parseInt(goalsResult.rows[0]?.users_with_goals || 0),
+            completed: parseInt(goalsResult.rows[0]?.completed_goals || 0)
+          }
         },
-        accuracyByAttribute: accuracyResult.rows.map(row => ({
-          attribute: row.attribute,
-          total: parseInt(row.total),
-          corrections: parseInt(row.corrections),
-          confirmations: parseInt(row.confirmations),
-          correctionRate: row.total > 0 ? (row.corrections / row.total * 100).toFixed(1) + '%' : '0%'
-        })),
-        learnings: generateLearnings(accuracyResult.rows)
+
+        // === SECTION 5: Skin Insights ===
+        skinInsights: {
+          topConcerns: topConcerns.slice(0, 5),
+          scanQuality: {
+            high: parseInt(scanQualityResult.rows[0]?.high_quality || 0),
+            medium: parseInt(scanQualityResult.rows[0]?.medium_quality || 0),
+            low: parseInt(scanQualityResult.rows[0]?.low_quality || 0)
+          }
+        },
+
+        // === SECTION 6: Learnings & Recommendations ===
+        insights: {
+          learnings,
+          recommendations,
+          dataHealth: getDataHealthStatus(
+            parseInt(usersResult.rows[0]?.total_users || 0),
+            parseInt(scansResult.rows[0]?.total_scans || 0),
+            parseInt(feedbackResult.rows[0]?.total_feedback || 0)
+          )
+        },
+
+        // === SECTION 7: System Health ===
+        system: {
+          memoryUsage: process.memoryUsage(),
+          uptime: process.uptime(),
+          nodeVersion: process.version,
+          queryTimeMs: queryTime
+        }
       },
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-    console.error('Stats error:', error);
+    console.error('Dashboard error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get stats',
+      error: 'Failed to load dashboard',
       message: error.message
     });
   }
 });
 
-// Helper to generate learnings from data
+// Keep simple stats endpoint for backwards compatibility
+router.get('/stats', async (req, res) => {
+  // Redirect to dashboard
+  res.redirect('/api/maintenance/dashboard');
+});
+
+// Helper: Generate learnings from feedback data
 function generateLearnings(accuracyData: any[]) {
   const learnings: string[] = [];
 
   for (const row of accuracyData) {
-    const total = parseInt(row.total);
-    const corrections = parseInt(row.corrections);
-    const confirmations = parseInt(row.confirmations);
-
-    if (total < 5) continue; // Need minimum data
+    const total = parseInt(row.total || 0);
+    const corrections = parseInt(row.corrections || 0);
+    if (total < 3) continue;
 
     const correctionRate = corrections / total;
+    const avgError = parseFloat(row.avg_error || 0);
 
-    if (correctionRate > 0.5) {
-      learnings.push(`${row.attribute}: High correction rate (${(correctionRate*100).toFixed(0)}%) - AI may be over/under detecting`);
-    } else if (correctionRate < 0.2 && total >= 10) {
-      learnings.push(`${row.attribute}: Good accuracy (${((1-correctionRate)*100).toFixed(0)}% confirmed)`);
+    if (correctionRate > 0.6) {
+      learnings.push(`⚠️ ${row.attribute}: ${(correctionRate*100).toFixed(0)}% correction rate - needs calibration`);
+    } else if (correctionRate > 0.4) {
+      learnings.push(`📊 ${row.attribute}: ${(correctionRate*100).toFixed(0)}% corrections - moderate accuracy`);
+    } else if (correctionRate < 0.2 && total >= 5) {
+      learnings.push(`✅ ${row.attribute}: ${((1-correctionRate)*100).toFixed(0)}% accuracy - performing well`);
+    }
+
+    if (avgError > 1.5) {
+      learnings.push(`🎯 ${row.attribute}: Avg error ${avgError.toFixed(1)} grades - thresholds need adjustment`);
     }
   }
 
   if (learnings.length === 0) {
-    learnings.push('Collecting more feedback to generate learnings...');
+    learnings.push('📈 Collecting feedback to generate ML learnings...');
   }
 
   return learnings;
+}
+
+// Helper: Generate actionable recommendations
+function generateRecommendations(accuracyData: any[], scanData: any, feedbackData: any) {
+  const recommendations: string[] = [];
+  const totalScans = parseInt(scanData?.total_scans || 0);
+  const totalFeedback = parseInt(feedbackData?.total_feedback || 0);
+
+  // Data collection recommendations
+  if (totalScans === 0) {
+    recommendations.push('🚀 No scans yet - promote the widget to start collecting data');
+  } else if (totalFeedback === 0) {
+    recommendations.push('💬 Users are scanning but not giving feedback - make feedback buttons more prominent');
+  } else if (totalFeedback < totalScans * 0.1) {
+    recommendations.push('📊 Low feedback rate (<10%) - consider adding feedback prompts after scan');
+  }
+
+  // Accuracy-based recommendations
+  for (const row of accuracyData) {
+    const total = parseInt(row.total || 0);
+    const corrections = parseInt(row.corrections || 0);
+    if (total < 5) continue;
+
+    const correctionRate = corrections / total;
+
+    if (correctionRate > 0.5) {
+      recommendations.push(`🔧 ${row.attribute}: Review detection thresholds (${(correctionRate*100).toFixed(0)}% users say it's wrong)`);
+    }
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push('✨ System is performing well - continue collecting data');
+  }
+
+  return recommendations;
+}
+
+// Helper: Assess data health
+function getDataHealthStatus(users: number, scans: number, feedback: number) {
+  if (users === 0) return { status: 'empty', message: 'No users yet', color: 'gray' };
+  if (scans === 0) return { status: 'starting', message: 'Users registered, awaiting scans', color: 'yellow' };
+  if (feedback === 0) return { status: 'collecting', message: 'Scans happening, need feedback', color: 'orange' };
+  if (feedback < 10) return { status: 'early', message: 'Early feedback stage', color: 'blue' };
+  if (feedback < 50) return { status: 'growing', message: 'Building training dataset', color: 'green' };
+  return { status: 'mature', message: 'Ready for model improvements', color: 'emerald' };
 }
 
 export default router;
