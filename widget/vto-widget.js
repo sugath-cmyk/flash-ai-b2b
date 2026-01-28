@@ -127,9 +127,14 @@
       this.elements.inlineButton = button;
     }
 
-    // Alias for openModal (for backward compatibility)
+    // Open directly to face scan (for "Find My Shade" button)
     open() {
-      this.openModal();
+      if (!this.elements.modal) {
+        this.createModal();
+      }
+      this.elements.modal.style.display = 'flex';
+      document.body.style.overflow = '';
+      this.showStep('facescan');
     }
 
     openModal() {
@@ -209,86 +214,8 @@
             </div>
           </div>
 
-          <!-- Step: Sign In (before face scan) -->
-          <div id="flashai-vto-step-signin" class="flashai-vto-step" style="display: none;">
-            <div class="flashai-vto-header">
-              <h2>Sign In for Best Experience</h2>
-              <p>Track your skin journey & see past scans</p>
-            </div>
-
-            <div class="flashai-vto-signin-content">
-              <!-- User header (shown when logged in) -->
-              <div class="flashai-vto-user-header" id="flashai-vto-user-header" style="display: none;">
-                <div class="flashai-vto-user-avatar">👤</div>
-                <div class="flashai-vto-user-info">
-                  <span class="flashai-vto-user-name" id="flashai-vto-user-name">Welcome!</span>
-                  <span class="flashai-vto-user-email" id="flashai-vto-user-email"></span>
-                </div>
-              </div>
-
-              <!-- Scan History (shown when logged in) -->
-              <div class="flashai-vto-scan-history" id="flashai-vto-scan-history" style="display: none;">
-                <h3>Your Previous Scans</h3>
-                <div class="flashai-vto-history-list" id="flashai-vto-history-list">
-                  <div class="flashai-vto-loading">Loading scan history...</div>
-                </div>
-                <button id="flashai-vto-new-scan-btn" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor}; margin-top: 16px;">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                  </svg>
-                  Take New Scan
-                </button>
-              </div>
-
-              <!-- Sign In Options (shown when not logged in) -->
-              <div class="flashai-vto-signin-options" id="flashai-vto-signin-options">
-                <div class="flashai-vto-signin-benefits">
-                  <div class="flashai-vto-benefit-item">
-                    <span class="flashai-vto-benefit-check">✓</span>
-                    <span>Track skin improvements over time</span>
-                  </div>
-                  <div class="flashai-vto-benefit-item">
-                    <span class="flashai-vto-benefit-check">✓</span>
-                    <span>Access your previous scan results</span>
-                  </div>
-                  <div class="flashai-vto-benefit-item">
-                    <span class="flashai-vto-benefit-check">✓</span>
-                    <span>Get personalized routine recommendations</span>
-                  </div>
-                </div>
-
-                <div class="flashai-vto-signin-actions">
-                  <button id="flashai-vto-signin-email-btn" class="flashai-vto-auth-btn flashai-vto-auth-email">
-                    <span class="flashai-vto-auth-icon">✉️</span>
-                    Sign In with Email
-                  </button>
-                  <button id="flashai-vto-signin-google-btn" class="flashai-vto-auth-btn flashai-vto-auth-google">
-                    <svg class="flashai-vto-google-icon" viewBox="0 0 24 24" width="20" height="20">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Sign In with Google
-                  </button>
-                </div>
-
-                <div class="flashai-vto-signin-divider">
-                  <span>or</span>
-                </div>
-
-                <button id="flashai-vto-guest-scan-btn" class="flashai-vto-btn-secondary">
-                  Continue as Guest
-                </button>
-                <p class="flashai-vto-guest-note">Guest scans won't be saved to your history</p>
-              </div>
-            </div>
-          </div>
-
           <!-- Step 1: Body Scanning -->
-          <div id="flashai-vto-step-scanning" class="flashai-vto-step" style="display: none;">
+          <div id="flashai-vto-step-scanning" class="flashai-vto-step">
             <div class="flashai-vto-header">
               <h2>Take a Body Scan</h2>
               <p>We'll need 3-5 photos from different angles to create your 3D model</p>
@@ -421,7 +348,7 @@
           </div>
 
           <!-- Face Scan Step 1: Capture -->
-          <div id="flashai-vto-step-facescan" class="flashai-vto-step" style="display: none;">
+          <div id="flashai-vto-step-facescan" class="flashai-vto-step">
             <div class="flashai-vto-header">
               <h2>Face Scan</h2>
               <p id="flashai-vto-face-angle-instruction">Take 3 photos: Front, Left Profile, Right Profile</p>
@@ -461,7 +388,7 @@
           </div>
 
           <!-- Face Scan Step 2: Processing -->
-          <div id="flashai-vto-step-face-processing" class="flashai-vto-step" style="display: none;">
+          <div id="flashai-vto-step-face-processing" class="flashai-vto-step">
             <div class="flashai-vto-header">
               <h2>Analyzing Your Skin</h2>
               <p>This usually takes 10-15 seconds...</p>
@@ -493,7 +420,7 @@
           </div>
 
           <!-- Face Scan Step 3: Results -->
-          <div id="flashai-vto-step-face-results" class="flashai-vto-step" style="display: none;">
+          <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
               <!-- Tab Navigation -->
               <div class="flashai-vto-tabs">
@@ -811,173 +738,8 @@
       document.body.appendChild(modal);
       this.elements.modal = modal;
 
-      // Add user header to modal (shows logged-in user info)
-      const content = modal.querySelector('.flashai-vto-content');
-      const userBar = document.createElement('div');
-      userBar.id = 'flashai-vto-modal-user-bar';
-      userBar.className = 'flashai-vto-modal-user-bar';
-      userBar.style.display = 'none';
-      userBar.innerHTML = `
-        <div class="flashai-vto-modal-user-info">
-          <span class="flashai-vto-modal-user-avatar">👤</span>
-          <span class="flashai-vto-modal-user-name"></span>
-        </div>
-        <button class="flashai-vto-logout-btn" title="Sign Out">Sign Out</button>
-      `;
-      content.insertBefore(userBar, content.querySelector('.flashai-vto-close'));
-
       // Attach event listeners
       this.attachModalEvents();
-
-      // Check if user is already logged in
-      this.checkExistingLogin();
-    }
-
-    checkExistingLogin() {
-      const savedUser = localStorage.getItem('flashai_user');
-      const savedToken = localStorage.getItem('flashai_token');
-
-      if (savedUser && savedToken) {
-        try {
-          this.state.user = JSON.parse(savedUser);
-          this.updateUserDisplay();
-        } catch (e) {
-          console.error('Error parsing saved user:', e);
-          localStorage.removeItem('flashai_user');
-          localStorage.removeItem('flashai_token');
-        }
-      }
-    }
-
-    updateUserDisplay() {
-      const user = this.state.user;
-      if (!user) return;
-
-      // Update modal user bar
-      const userBar = document.getElementById('flashai-vto-modal-user-bar');
-      if (userBar) {
-        userBar.style.display = 'flex';
-        const nameEl = userBar.querySelector('.flashai-vto-modal-user-name');
-        if (nameEl) {
-          nameEl.textContent = user.display_name || user.email?.split('@')[0] || 'User';
-        }
-      }
-
-      // Update sign-in step user header
-      const userHeader = document.getElementById('flashai-vto-user-header');
-      const signinOptions = document.getElementById('flashai-vto-signin-options');
-      const scanHistory = document.getElementById('flashai-vto-scan-history');
-
-      if (userHeader) {
-        userHeader.style.display = 'flex';
-        const nameEl = document.getElementById('flashai-vto-user-name');
-        const emailEl = document.getElementById('flashai-vto-user-email');
-        if (nameEl) nameEl.textContent = `Welcome, ${user.display_name || user.email?.split('@')[0] || 'User'}!`;
-        if (emailEl) emailEl.textContent = user.email || '';
-      }
-
-      if (signinOptions) signinOptions.style.display = 'none';
-      if (scanHistory) {
-        scanHistory.style.display = 'block';
-        this.loadScanHistory();
-      }
-    }
-
-    async loadScanHistory() {
-      const historyList = document.getElementById('flashai-vto-history-list');
-      if (!historyList) return;
-
-      try {
-        const token = localStorage.getItem('flashai_token');
-        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
-
-        const response = await fetch(`${faceScanBaseUrl}/history`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'X-API-Key': this.config.apiKey
-          }
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.scans && data.scans.length > 0) {
-          historyList.innerHTML = data.scans.slice(0, 5).map(scan => `
-            <div class="flashai-vto-history-item" data-scan-id="${scan.id}">
-              <div class="flashai-vto-history-date">${new Date(scan.created_at).toLocaleDateString()}</div>
-              <div class="flashai-vto-history-score">
-                <span class="flashai-vto-history-score-value">${scan.skin_score || '--'}</span>
-                <span class="flashai-vto-history-score-label">Skin Score</span>
-              </div>
-              <button class="flashai-vto-history-view-btn">View</button>
-            </div>
-          `).join('');
-
-          // Add click handlers
-          historyList.querySelectorAll('.flashai-vto-history-item').forEach(item => {
-            item.querySelector('.flashai-vto-history-view-btn').addEventListener('click', () => {
-              this.viewHistoricalScan(item.dataset.scanId);
-            });
-          });
-        } else {
-          historyList.innerHTML = `
-            <div class="flashai-vto-no-history">
-              <p>No previous scans found</p>
-              <p class="flashai-vto-no-history-hint">Take your first scan to start tracking your skin journey!</p>
-            </div>
-          `;
-        }
-      } catch (error) {
-        console.error('Load scan history error:', error);
-        historyList.innerHTML = '<p class="flashai-vto-error">Failed to load scan history</p>';
-      }
-    }
-
-    async viewHistoricalScan(scanId) {
-      try {
-        const token = localStorage.getItem('flashai_token');
-        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
-
-        const response = await fetch(`${faceScanBaseUrl}/${scanId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'X-API-Key': this.config.apiKey
-          }
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          this.state.faceScanId = scanId;
-          this.displayFaceResults(data.data);
-        }
-      } catch (error) {
-        console.error('View historical scan error:', error);
-        alert('Failed to load scan details');
-      }
-    }
-
-    handleLogout() {
-      localStorage.removeItem('flashai_user');
-      localStorage.removeItem('flashai_token');
-      this.state.user = null;
-
-      // Hide user bar
-      const userBar = document.getElementById('flashai-vto-modal-user-bar');
-      if (userBar) userBar.style.display = 'none';
-
-      // Reset sign-in step
-      const userHeader = document.getElementById('flashai-vto-user-header');
-      const signinOptions = document.getElementById('flashai-vto-signin-options');
-      const scanHistory = document.getElementById('flashai-vto-scan-history');
-
-      if (userHeader) userHeader.style.display = 'none';
-      if (signinOptions) signinOptions.style.display = 'block';
-      if (scanHistory) scanHistory.style.display = 'none';
-
-      // Show routine promo instead of logged-in view
-      this.showLoggedOutRoutine();
-
-      this.trackEvent('user_logged_out');
     }
 
     attachModalEvents() {
@@ -1029,46 +791,8 @@
       });
 
       modal.querySelector('#flashai-vto-select-facescan').addEventListener('click', () => {
-        // Go directly to face scan (login prompt comes after results)
         this.showStep('facescan');
       });
-
-      // Sign-in step buttons
-      const signinEmailBtn = modal.querySelector('#flashai-vto-signin-email-btn');
-      if (signinEmailBtn) {
-        signinEmailBtn.addEventListener('click', () => {
-          this.showSignInModal('email');
-        });
-      }
-
-      const signinGoogleBtn = modal.querySelector('#flashai-vto-signin-google-btn');
-      if (signinGoogleBtn) {
-        signinGoogleBtn.addEventListener('click', () => {
-          this.handleGoogleAuth();
-        });
-      }
-
-      const guestScanBtn = modal.querySelector('#flashai-vto-guest-scan-btn');
-      if (guestScanBtn) {
-        guestScanBtn.addEventListener('click', () => {
-          this.showStep('facescan');
-        });
-      }
-
-      const newScanBtn = modal.querySelector('#flashai-vto-new-scan-btn');
-      if (newScanBtn) {
-        newScanBtn.addEventListener('click', () => {
-          this.showStep('facescan');
-        });
-      }
-
-      // Logout button
-      const logoutBtn = modal.querySelector('.flashai-vto-logout-btn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-          this.handleLogout();
-        });
-      }
 
       // Face scan buttons
       modal.querySelector('#flashai-vto-face-capture').addEventListener('click', () => {
@@ -1364,216 +1088,28 @@
           ${pmRoutine ? this.renderRoutineCard(pmRoutine, 'Evening', '🌙') : ''}
         </div>
       `;
-
-      // Attach event listeners for routine interactions
-      this.attachRoutineEventListeners(content);
     }
 
     renderRoutineCard(routine, title, icon) {
-      const routineId = routine.id || `routine-${title.toLowerCase()}`;
       return `
-        <div class="flashai-vto-routine-card" data-routine-id="${routineId}">
+        <div class="flashai-vto-routine-card">
           <div class="flashai-vto-routine-card-header">
             <span class="flashai-vto-routine-card-icon">${icon}</span>
             <h4>${title} Routine</h4>
-            <span class="flashai-vto-routine-time-estimate">${this.calculateRoutineTime(routine.steps)} min</span>
           </div>
-
-          <!-- Start Button (shown initially) -->
-          <div class="flashai-vto-routine-start-section" data-routine="${routineId}">
-            <p class="flashai-vto-routine-ready-text">Ready to start your ${title.toLowerCase()} routine?</p>
-            <button class="flashai-vto-routine-start-btn" style="background-color: ${this.config.primaryColor}" data-routine="${routineId}">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-              Start Routine
-            </button>
-          </div>
-
-          <!-- Steps (hidden initially, shown after Start) -->
-          <div class="flashai-vto-routine-steps" data-routine="${routineId}" style="display: none;">
+          <div class="flashai-vto-routine-steps">
             ${routine.steps.map((step, i) => `
-              <div class="flashai-vto-routine-step" data-step-index="${i}">
-                <div class="flashai-vto-step-checkbox">
-                  <input type="checkbox" id="step-${routineId}-${i}">
-                  <label for="step-${routineId}-${i}"></label>
-                </div>
+              <div class="flashai-vto-routine-step">
                 <span class="flashai-vto-step-number">${i + 1}</span>
                 <div class="flashai-vto-step-content">
-                  <strong>${this.formatStepType(step.step_type)}</strong>
-                  ${step.custom_product_name ? `<span class="flashai-vto-step-product">${step.custom_product_name}</span>` : ''}
-                  ${step.recommendation_reason ? `<span class="flashai-vto-step-reason">${step.recommendation_reason}</span>` : ''}
-                  <span class="flashai-vto-step-duration">${step.duration_seconds || 30}s</span>
-                </div>
-                <div class="flashai-vto-step-timer" data-duration="${step.duration_seconds || 30}">
-                  <span class="flashai-vto-timer-display">0:${String(step.duration_seconds || 30).padStart(2, '0')}</span>
-                  <button class="flashai-vto-timer-btn" title="Start timer">▶</button>
+                  <strong>${step.step_type}</strong>
+                  ${step.product_name ? `<span class="flashai-vto-step-product">${step.product_name}</span>` : ''}
                 </div>
               </div>
             `).join('')}
-
-            <div class="flashai-vto-routine-complete-section">
-              <button class="flashai-vto-routine-complete-btn" style="background-color: ${this.config.primaryColor}" data-routine="${routineId}">
-                ✓ Mark Routine Complete
-              </button>
-            </div>
           </div>
         </div>
       `;
-    }
-
-    calculateRoutineTime(steps) {
-      if (!steps) return 0;
-      const totalSeconds = steps.reduce((sum, step) => sum + (step.duration_seconds || 30), 0);
-      return Math.ceil(totalSeconds / 60);
-    }
-
-    formatStepType(stepType) {
-      const labels = {
-        cleanser: 'Cleanser',
-        toner: 'Toner',
-        serum: 'Serum',
-        moisturizer: 'Moisturizer',
-        sunscreen: 'Sunscreen',
-        eye_cream: 'Eye Cream',
-        exfoliant: 'Exfoliant',
-        treatment: 'Treatment',
-        face_oil: 'Face Oil',
-        makeup_remover: 'Makeup Remover'
-      };
-      return labels[stepType] || stepType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    }
-
-    attachRoutineEventListeners(content) {
-      // Start buttons
-      content.querySelectorAll('.flashai-vto-routine-start-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const routineId = e.target.closest('[data-routine]').dataset.routine;
-          this.startRoutine(routineId);
-        });
-      });
-
-      // Timer buttons
-      content.querySelectorAll('.flashai-vto-timer-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const stepEl = e.target.closest('.flashai-vto-routine-step');
-          this.toggleStepTimer(stepEl);
-        });
-      });
-
-      // Complete buttons
-      content.querySelectorAll('.flashai-vto-routine-complete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const routineId = e.target.dataset.routine;
-          this.completeRoutine(routineId);
-        });
-      });
-
-      // Checkbox change
-      content.querySelectorAll('.flashai-vto-step-checkbox input').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-          const stepEl = e.target.closest('.flashai-vto-routine-step');
-          stepEl.classList.toggle('completed', e.target.checked);
-        });
-      });
-    }
-
-    startRoutine(routineId) {
-      const card = document.querySelector(`.flashai-vto-routine-card[data-routine-id="${routineId}"]`);
-      if (!card) return;
-
-      // Hide start section, show steps
-      const startSection = card.querySelector('.flashai-vto-routine-start-section');
-      const stepsSection = card.querySelector('.flashai-vto-routine-steps');
-
-      if (startSection) startSection.style.display = 'none';
-      if (stepsSection) stepsSection.style.display = 'block';
-
-      this.trackEvent('routine_started', { routineId });
-    }
-
-    toggleStepTimer(stepEl) {
-      const timerEl = stepEl.querySelector('.flashai-vto-step-timer');
-      const displayEl = timerEl.querySelector('.flashai-vto-timer-display');
-      const btnEl = timerEl.querySelector('.flashai-vto-timer-btn');
-      const duration = parseInt(timerEl.dataset.duration) || 30;
-
-      if (timerEl.dataset.running === 'true') {
-        // Stop timer
-        clearInterval(parseInt(timerEl.dataset.intervalId));
-        timerEl.dataset.running = 'false';
-        btnEl.textContent = '▶';
-        return;
-      }
-
-      // Start timer
-      let remaining = duration;
-      timerEl.dataset.running = 'true';
-      btnEl.textContent = '⏸';
-
-      const intervalId = setInterval(() => {
-        remaining--;
-        const mins = Math.floor(remaining / 60);
-        const secs = remaining % 60;
-        displayEl.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
-
-        if (remaining <= 0) {
-          clearInterval(intervalId);
-          timerEl.dataset.running = 'false';
-          btnEl.textContent = '✓';
-
-          // Auto-check the step
-          const checkbox = stepEl.querySelector('input[type="checkbox"]');
-          if (checkbox) {
-            checkbox.checked = true;
-            stepEl.classList.add('completed');
-          }
-
-          // Play a subtle sound or vibrate if available
-          if (navigator.vibrate) navigator.vibrate(200);
-        }
-      }, 1000);
-
-      timerEl.dataset.intervalId = intervalId;
-    }
-
-    async completeRoutine(routineId) {
-      const card = document.querySelector(`.flashai-vto-routine-card[data-routine-id="${routineId}"]`);
-      if (!card) return;
-
-      const completedSteps = Array.from(card.querySelectorAll('.flashai-vto-step-checkbox input:checked'))
-        .map(cb => parseInt(cb.id.split('-').pop()));
-
-      const btn = card.querySelector('.flashai-vto-routine-complete-btn');
-      btn.textContent = 'Saving...';
-      btn.disabled = true;
-
-      try {
-        const token = localStorage.getItem('flashai_token');
-        if (token) {
-          await fetch(this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines/log'), {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              'X-API-Key': this.config.apiKey
-            },
-            body: JSON.stringify({
-              routineId,
-              stepsCompleted: completedSteps
-            })
-          });
-        }
-
-        btn.textContent = '✓ Completed!';
-        btn.style.backgroundColor = '#10b981';
-
-        this.trackEvent('routine_completed', { routineId, stepsCompleted: completedSteps.length });
-      } catch (error) {
-        console.error('Complete routine error:', error);
-        btn.textContent = '✓ Mark Complete';
-        btn.disabled = false;
-      }
     }
 
     showLoggedOutRoutine() {
@@ -1596,7 +1132,6 @@
 
       const stepMap = {
         selection: 'flashai-vto-step-selection',
-        signin: 'flashai-vto-step-signin',
         scanning: 'flashai-vto-step-scanning',
         processing: 'flashai-vto-step-processing',
         tryon: 'flashai-vto-step-tryon',
@@ -1618,110 +1153,6 @@
         this.initializeTryOn();
       } else if (step === 'facescan') {
         this.startFaceCamera();
-      } else if (step === 'signin') {
-        // Check if already logged in and update display
-        if (this.state.user) {
-          this.updateUserDisplay();
-        }
-      }
-    }
-
-    showSignInModal(type) {
-      // Create sign-in modal
-      const authOverlay = document.createElement('div');
-      authOverlay.className = 'flashai-vto-auth-overlay';
-      authOverlay.innerHTML = `
-        <div class="flashai-vto-auth-modal">
-          <button class="flashai-vto-auth-close">&times;</button>
-          <div class="flashai-vto-auth-header">
-            <h3>Sign In</h3>
-            <p>Access your skin journey</p>
-          </div>
-          <form id="flashai-vto-signin-form" class="flashai-vto-auth-form">
-            <div class="flashai-vto-form-group">
-              <label>Email</label>
-              <input type="email" id="flashai-vto-signin-email-input" placeholder="your@email.com" required>
-            </div>
-            <div class="flashai-vto-form-group">
-              <label>Name (for new accounts)</label>
-              <input type="text" id="flashai-vto-signin-name-input" placeholder="Your name">
-            </div>
-            <button type="submit" class="flashai-vto-auth-submit" style="background-color: ${this.config.primaryColor}">
-              Continue
-            </button>
-          </form>
-          <p class="flashai-vto-auth-terms">
-            We'll create an account if you don't have one
-          </p>
-        </div>
-      `;
-
-      this.elements.modal.appendChild(authOverlay);
-
-      // Close button
-      authOverlay.querySelector('.flashai-vto-auth-close').addEventListener('click', () => {
-        authOverlay.remove();
-      });
-
-      // Overlay click
-      authOverlay.addEventListener('click', (e) => {
-        if (e.target === authOverlay) authOverlay.remove();
-      });
-
-      // Form submit
-      authOverlay.querySelector('#flashai-vto-signin-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('flashai-vto-signin-email-input').value;
-        const name = document.getElementById('flashai-vto-signin-name-input').value;
-        await this.handleSignIn(email, name, authOverlay);
-      });
-    }
-
-    async handleSignIn(email, name, authOverlay) {
-      const submitBtn = authOverlay.querySelector('.flashai-vto-auth-submit');
-      const originalText = submitBtn.textContent;
-      submitBtn.textContent = 'Signing in...';
-      submitBtn.disabled = true;
-
-      try {
-        const response = await fetch(this.config.apiBaseUrl.replace('/api/vto', '/api/widget/users'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': this.config.apiKey
-          },
-          body: JSON.stringify({
-            email,
-            name,
-            store_id: this.config.storeId,
-            visitor_id: this.state.visitorId
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          // Store user info
-          this.state.user = data.user;
-          localStorage.setItem('flashai_user', JSON.stringify(data.user));
-          localStorage.setItem('flashai_token', data.token);
-
-          // Remove auth overlay
-          authOverlay.remove();
-
-          // Update displays
-          this.updateUserDisplay();
-
-          // Track sign-in
-          this.trackEvent('user_signed_in', { method: 'email' });
-        } else {
-          throw new Error(data.error || 'Sign in failed');
-        }
-      } catch (error) {
-        console.error('Sign in error:', error);
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-        alert('Sign in failed. Please try again.');
       }
     }
 
@@ -2288,41 +1719,7 @@
       if (savedUser) {
         this.state.user = JSON.parse(savedUser);
         this.showLoggedInRoutine();
-      } else {
-        // Show save results prompt for non-logged-in users
-        this.showSaveResultsPrompt();
       }
-    }
-
-    showSaveResultsPrompt() {
-      // Add a banner at the bottom of results prompting to save
-      const resultsContent = document.querySelector('[data-tab-content="results"]');
-      if (!resultsContent) return;
-
-      // Check if prompt already exists
-      if (document.getElementById('flashai-vto-save-prompt')) return;
-
-      const promptHtml = `
-        <div id="flashai-vto-save-prompt" class="flashai-vto-save-prompt">
-          <div class="flashai-vto-save-prompt-content">
-            <span class="flashai-vto-save-icon">💾</span>
-            <div class="flashai-vto-save-text">
-              <strong>Save your results?</strong>
-              <p>Create a free account to track your skin journey</p>
-            </div>
-            <button id="flashai-vto-save-results-btn" class="flashai-vto-save-btn" style="background-color: ${this.config.primaryColor}">
-              Save Results
-            </button>
-          </div>
-        </div>
-      `;
-
-      resultsContent.insertAdjacentHTML('afterbegin', promptHtml);
-
-      // Add click handler
-      document.getElementById('flashai-vto-save-results-btn')?.addEventListener('click', () => {
-        this.showSignInModal('email');
-      });
     }
 
     async loadProductRecommendations(scanId) {
