@@ -127,9 +127,17 @@
       this.elements.inlineButton = button;
     }
 
-    // Alias for openModal (for backward compatibility)
-    open() {
-      this.openModal();
+    // Open widget - can specify which step to show directly
+    open(step = 'selection') {
+      if (!this.elements.modal) {
+        this.createModal();
+      }
+
+      this.elements.modal.style.display = 'flex';
+      document.body.style.overflow = '';
+
+      // Show the specified step (default: selection, can pass 'facescan' to go direct)
+      this.showStep(step);
     }
 
     openModal() {
