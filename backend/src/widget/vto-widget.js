@@ -3351,7 +3351,7 @@
           // Load calendar
           this.loadCalendarData();
         } else {
-          throw new Error(data.message || 'Failed to create personalized routine');
+          throw new Error(data.error?.message || data.message || 'Failed to create personalized routine');
         }
       } catch (error) {
         console.error('[Questionnaire] Error:', error);
