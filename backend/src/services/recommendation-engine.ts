@@ -1157,23 +1157,7 @@ export const INGREDIENTS_DATABASE: Record<string, IngredientData> = {
     conflicts: [],
     ageRange: { min: 14, max: 90 }
   },
-  'bakuchiol': {
-    name: 'Bakuchiol',
-    aliases: ['babchi', 'psoralea corylifolia'],
-    category: 'anti-aging',
-    benefits: ['retinol alternative', 'anti-aging', 'firming', 'gentle'],
-    concerns: ['aging', 'fine_lines', 'wrinkles', 'uneven_tone'],
-    skinTypes: ['all'],
-    concentration: { min: 0.5, max: 2, optimal: 1 },
-    ph: { min: 5, max: 7 },
-    timeOfUse: 'evening',
-    photosensitive: false,
-    pregnancySafe: true,
-    sensitivityRisk: 'low',
-    synergies: ['vitamin_c', 'hyaluronic_acid', 'niacinamide'],
-    conflicts: [],
-    ageRange: { min: 25, max: 90 }
-  },
+  // Note: bakuchiol already defined above in Western ingredients section
   'coconut_oil': {
     name: 'Coconut Oil',
     aliases: ['nariyal tel', 'cocos nucifera'],
