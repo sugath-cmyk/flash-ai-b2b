@@ -1914,6 +1914,421 @@
   color: var(--flashai-gray-500);
 }
 
+/* ==========================================================================
+   Modal User Bar - Shows logged-in user info at top
+   ========================================================================== */
+
+.flashai-vto-modal-user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--flashai-primary) 0%, var(--flashai-secondary) 100%);
+  color: white;
+  margin-bottom: 0;
+}
+
+.flashai-vto-modal-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flashai-vto-modal-user-avatar {
+  font-size: 20px;
+}
+
+.flashai-vto-modal-user-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.flashai-vto-logout-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.flashai-vto-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   Sign-In Step Styles
+   ========================================================================== */
+
+.flashai-vto-signin-content {
+  padding: 0 4px;
+}
+
+.flashai-vto-user-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--flashai-primary) 0%, var(--flashai-secondary) 100%);
+  border-radius: 16px;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.flashai-vto-user-avatar {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.flashai-vto-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flashai-vto-user-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.flashai-vto-user-email {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* Scan History */
+.flashai-vto-scan-history {
+  margin-bottom: 20px;
+}
+
+.flashai-vto-scan-history h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--flashai-gray-800);
+}
+
+.flashai-vto-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flashai-vto-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--flashai-gray-50);
+  border: 1px solid var(--flashai-gray-200);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.flashai-vto-history-item:hover {
+  border-color: var(--flashai-primary);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.flashai-vto-history-date {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--flashai-gray-700);
+}
+
+.flashai-vto-history-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.flashai-vto-history-score-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--flashai-primary);
+}
+
+.flashai-vto-history-score-label {
+  font-size: 10px;
+  color: var(--flashai-gray-500);
+  text-transform: uppercase;
+}
+
+.flashai-vto-history-view-btn {
+  padding: 8px 16px;
+  background: var(--flashai-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.flashai-vto-history-view-btn:hover {
+  opacity: 0.9;
+}
+
+.flashai-vto-no-history {
+  text-align: center;
+  padding: 30px;
+  background: var(--flashai-gray-50);
+  border-radius: 12px;
+}
+
+.flashai-vto-no-history p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--flashai-gray-600);
+}
+
+.flashai-vto-no-history-hint {
+  font-size: 12px !important;
+  color: var(--flashai-gray-400) !important;
+}
+
+/* Sign-In Options */
+.flashai-vto-signin-options {
+  text-align: center;
+}
+
+.flashai-vto-signin-benefits {
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff0f5 100%);
+  border: 1px solid var(--flashai-gray-200);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.flashai-vto-benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  text-align: left;
+  font-size: 14px;
+  color: var(--flashai-gray-700);
+}
+
+.flashai-vto-benefit-check {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, var(--flashai-success) 0%, #34d399 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.flashai-vto-signin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.flashai-vto-signin-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0;
+}
+
+.flashai-vto-signin-divider::before,
+.flashai-vto-signin-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--flashai-gray-200);
+}
+
+.flashai-vto-signin-divider span {
+  font-size: 12px;
+  color: var(--flashai-gray-400);
+  text-transform: uppercase;
+}
+
+.flashai-vto-guest-note {
+  font-size: 11px;
+  color: var(--flashai-gray-400);
+  margin-top: 8px;
+}
+
+/* ==========================================================================
+   Enhanced Routine Card Styles
+   ========================================================================== */
+
+.flashai-vto-routine-time-estimate {
+  font-size: 12px;
+  color: var(--flashai-gray-500);
+  background: var(--flashai-gray-100);
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+.flashai-vto-routine-start-section {
+  padding: 24px 16px;
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff0f5 100%);
+}
+
+.flashai-vto-routine-ready-text {
+  font-size: 14px;
+  color: var(--flashai-gray-600);
+  margin: 0 0 16px;
+}
+
+.flashai-vto-routine-start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.flashai-vto-routine-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.flashai-vto-routine-start-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Enhanced Routine Step with Timer */
+.flashai-vto-routine-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--flashai-gray-100);
+  transition: all 0.2s;
+}
+
+.flashai-vto-routine-step.completed {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+}
+
+.flashai-vto-routine-step.completed .flashai-vto-step-number {
+  background: var(--flashai-success);
+  color: white;
+}
+
+.flashai-vto-step-checkbox {
+  position: relative;
+}
+
+.flashai-vto-step-checkbox input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--flashai-primary);
+}
+
+.flashai-vto-step-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flashai-vto-step-reason {
+  font-size: 11px;
+  color: var(--flashai-primary);
+  font-style: italic;
+}
+
+.flashai-vto-step-duration {
+  font-size: 11px;
+  color: var(--flashai-gray-400);
+}
+
+.flashai-vto-step-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flashai-vto-timer-display {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--flashai-gray-700);
+  min-width: 40px;
+  text-align: center;
+}
+
+.flashai-vto-timer-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--flashai-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flashai-vto-timer-btn:hover {
+  transform: scale(1.1);
+}
+
+.flashai-vto-routine-complete-section {
+  padding: 16px;
+  text-align: center;
+}
+
+.flashai-vto-routine-complete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.flashai-vto-routine-complete-btn:hover {
+  opacity: 0.9;
+}
+
+.flashai-vto-routine-complete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Mobile Responsive */
 @media (max-width: 480px) {
   .flashai-vto-tabs {
@@ -1942,5 +2357,31 @@
 
   .flashai-vto-auth-modal {
     padding: 24px 16px;
+  }
+
+  .flashai-vto-modal-user-bar {
+    padding: 10px 12px;
+  }
+
+  .flashai-vto-modal-user-name {
+    font-size: 13px;
+  }
+
+  .flashai-vto-user-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .flashai-vto-routine-step {
+    flex-wrap: wrap;
+  }
+
+  .flashai-vto-step-timer {
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--flashai-gray-100);
   }
 }

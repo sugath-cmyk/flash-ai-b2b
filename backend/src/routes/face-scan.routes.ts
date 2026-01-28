@@ -166,4 +166,62 @@ router.post('/recommendations', faceScanController.getRecommendations);
 // Track face scan events (analytics)
 router.post('/track', faceScanController.trackEvent);
 
+// Get user's scan history (requires auth token)
+router.get('/history', async (req, res) => {
+  try {
+    const { pool } = require('../config/database');
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const token = authHeader.substring(7);
+
+    // Get user from token
+    const userResult = await pool.query(
+      `SELECT wu.id, wu.visitor_id FROM widget_users wu
+       JOIN widget_auth_tokens wat ON wu.id = wat.user_id
+       WHERE wat.token_hash = $1 AND wat.expires_at > NOW() AND wat.revoked_at IS NULL`,
+      [token]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Get user's scan history
+    const scansResult = await pool.query(
+      `SELECT fs.id, fs.created_at, fs.status, fa.skin_score, fa.skin_tone,
+              fa.acne_score, fa.wrinkle_score, fa.pigmentation_score
+       FROM face_scans fs
+       LEFT JOIN face_analysis fa ON fs.id = fa.face_scan_id
+       WHERE (fs.visitor_id = $1 OR fs.user_id = $2)
+         AND fs.status = 'completed'
+       ORDER BY fs.created_at DESC
+       LIMIT 10`,
+      [user.visitor_id, user.id]
+    );
+
+    res.json({
+      success: true,
+      scans: scansResult.rows.map((scan: any) => ({
+        id: scan.id,
+        created_at: scan.created_at,
+        status: scan.status,
+        skin_score: scan.skin_score,
+        skin_tone: scan.skin_tone,
+        acne_score: scan.acne_score,
+        wrinkle_score: scan.wrinkle_score,
+        pigmentation_score: scan.pigmentation_score
+      }))
+    });
+  } catch (error: any) {
+    console.error('Get scan history error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
