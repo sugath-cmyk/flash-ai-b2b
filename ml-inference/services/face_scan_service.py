@@ -1971,8 +1971,11 @@ class FaceScanService:
 
     def _detect_dark_circles(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
         """
-        Detect dark circles under the eyes by comparing under-eye darkness
-        to cheek brightness as a reference.
+        Detect dark circles under the eyes using multiple methods:
+        1. LAB color space L-channel (luminance) analysis
+        2. Comparison to cheek/face brightness
+        3. Histogram-based darkness detection
+        4. Color analysis (bluish/purple tones indicate dark circles)
 
         Returns:
             Dictionary with dark_circles_score, severity for each eye, and region coords
@@ -1981,11 +1984,16 @@ class FaceScanService:
             h, w = img.shape[:2]
             lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
             l_channel = lab[:, :, 0]
+            a_channel = lab[:, :, 1]  # Red-green axis (for bluish tones)
+            b_channel = lab[:, :, 2]  # Yellow-blue axis
 
             # NOTE: Landmarks are stored under "data" key, not "landmarks"
             landmarks = face_data.get("data", [])
+
+            # If no landmarks, use fallback method based on face region estimation
             if not landmarks:
-                return self._default_dark_circles()
+                print("[Dark Circles] No landmarks available, using fallback detection")
+                return self._detect_dark_circles_fallback(img, mask, l_channel, h, w)
 
             def get_region_mask_and_bbox(region_indices):
                 """Create mask and get bounding box for a region"""
@@ -2013,18 +2021,25 @@ class FaceScanService:
             # Analyze left under-eye
             left_mask, left_bbox = get_region_mask_and_bbox(self.LEFT_UNDER_EYE)
             left_darkness = 0.0
+            left_blue_tone = 0.0
             if left_mask is not None:
-                left_pixels = l_channel[left_mask > 0]
-                if len(left_pixels) > 0:
-                    left_darkness = 255 - np.mean(left_pixels)  # Invert: higher = darker
+                left_l_pixels = l_channel[left_mask > 0]
+                left_b_pixels = b_channel[left_mask > 0]
+                if len(left_l_pixels) > 0:
+                    left_darkness = 255 - np.mean(left_l_pixels)  # Invert: higher = darker
+                    # Check for blue/purple tones (lower b_channel = more blue)
+                    left_blue_tone = max(0, 128 - np.mean(left_b_pixels)) / 40
 
             # Analyze right under-eye
             right_mask, right_bbox = get_region_mask_and_bbox(self.RIGHT_UNDER_EYE)
             right_darkness = 0.0
+            right_blue_tone = 0.0
             if right_mask is not None:
-                right_pixels = l_channel[right_mask > 0]
-                if len(right_pixels) > 0:
-                    right_darkness = 255 - np.mean(right_pixels)
+                right_l_pixels = l_channel[right_mask > 0]
+                right_b_pixels = b_channel[right_mask > 0]
+                if len(right_l_pixels) > 0:
+                    right_darkness = 255 - np.mean(right_l_pixels)
+                    right_blue_tone = max(0, 128 - np.mean(right_b_pixels)) / 40
 
             # Get cheek brightness as reference
             left_cheek_mask, _ = get_region_mask_and_bbox(self.LEFT_CHEEK)
@@ -2036,19 +2051,88 @@ class FaceScanService:
                 if len(cheek_pixels) > 0:
                     cheek_brightness = 255 - np.mean(cheek_pixels)
 
-            # Calculate dark circle severity - MORE SENSITIVE detection
-            # Method 1: Relative comparison to cheeks (but with lower divisor)
-            left_relative = max(0, (left_darkness - cheek_brightness) / 30)  # Changed from 50 to 30
-            right_relative = max(0, (right_darkness - cheek_brightness) / 30)
+            # Get forehead brightness (often lighter, good reference)
+            forehead_mask, _ = get_region_mask_and_bbox(self.FOREHEAD)
+            forehead_brightness = cheek_brightness
+            if forehead_mask is not None:
+                forehead_pixels = l_channel[forehead_mask > 0]
+                if len(forehead_pixels) > 0:
+                    forehead_brightness = 255 - np.mean(forehead_pixels)
 
-            # Method 2: Absolute darkness threshold (eyes are typically lighter areas)
-            # If under-eye L channel (inverted) is above 140, there's noticeable darkness
-            left_absolute = max(0, (left_darkness - 120) / 80) if left_darkness > 120 else 0
-            right_absolute = max(0, (right_darkness - 120) / 80) if right_darkness > 120 else 0
+            # Face average for reference
+            face_pixels = l_channel[mask > 0]
+            face_avg_darkness = 255 - np.mean(face_pixels) if len(face_pixels) > 0 else 128
 
-            # Combine both methods - take the MAXIMUM to catch dark circles either way
-            left_severity = max(left_relative, left_absolute * 0.8)
-            right_severity = max(right_relative, right_absolute * 0.8)
+            # Calculate dark circle severity - EXTREMELY SENSITIVE detection
+            print(f"[Dark Circles Debug] Left darkness: {left_darkness:.1f}, Right: {right_darkness:.1f}, Cheek: {cheek_brightness:.1f}, Face: {face_avg_darkness:.1f}")
+            print(f"[Dark Circles Debug] Left blue: {left_blue_tone:.2f}, Right blue: {right_blue_tone:.2f}")
+
+            # === Method 1: Relative comparison to cheeks (VERY sensitive) ===
+            # Any darkness difference from cheeks is significant
+            left_vs_cheek = max(0, (left_darkness - cheek_brightness) / 15)  # Was /20, now /15
+            right_vs_cheek = max(0, (right_darkness - cheek_brightness) / 15)
+
+            # === Method 2: Relative to forehead ===
+            left_vs_forehead = max(0, (left_darkness - forehead_brightness) / 18)
+            right_vs_forehead = max(0, (right_darkness - forehead_brightness) / 18)
+
+            # === Method 3: Absolute darkness threshold - VERY LOW ===
+            # Under-eye with darkness > 85 (inverted L) shows circles
+            left_absolute = max(0, (left_darkness - 85) / 50) if left_darkness > 85 else 0
+            right_absolute = max(0, (right_darkness - 85) / 50) if right_darkness > 85 else 0
+
+            # === Method 4: Compare to face average ===
+            left_vs_face = max(0, (left_darkness - face_avg_darkness) / 20)
+            right_vs_face = max(0, (right_darkness - face_avg_darkness) / 20)
+
+            # === Method 5: Blue/purple tone detection ===
+            # Dark circles often have bluish undertones
+            left_color_score = left_blue_tone * 0.8
+            right_color_score = right_blue_tone * 0.8
+
+            # === Method 6: Percentile-based detection ===
+            # Check if under-eye is in the darkest percentile of face
+            if len(face_pixels) > 100:
+                dark_threshold = np.percentile(255 - face_pixels, 75)  # 75th percentile of darkness
+                left_percentile = 0.3 if left_darkness > dark_threshold else 0
+                right_percentile = 0.3 if right_darkness > dark_threshold else 0
+            else:
+                left_percentile = 0
+                right_percentile = 0
+
+            print(f"[Dark Circles Debug] Methods - vs_cheek: {left_vs_cheek:.2f}/{right_vs_cheek:.2f}, vs_forehead: {left_vs_forehead:.2f}/{right_vs_forehead:.2f}")
+            print(f"[Dark Circles Debug] Absolute: {left_absolute:.2f}/{right_absolute:.2f}, vs_face: {left_vs_face:.2f}/{right_vs_face:.2f}, color: {left_color_score:.2f}/{right_color_score:.2f}")
+
+            # Combine ALL methods - take the MAXIMUM to catch dark circles from any angle
+            left_severity = max(
+                left_vs_cheek,
+                left_vs_forehead,
+                left_absolute,
+                left_vs_face,
+                left_color_score,
+                left_percentile
+            )
+            right_severity = max(
+                right_vs_cheek,
+                right_vs_forehead,
+                right_absolute,
+                right_vs_face,
+                right_color_score,
+                right_percentile
+            )
+
+            # Apply VERY LOW minimum detection threshold
+            # If under-eye region has ANY noticeable darkness, flag it
+            if left_darkness > 90:  # Was 110, now 90
+                left_severity = max(left_severity, 0.20)  # At least mild
+            if right_darkness > 90:
+                right_severity = max(right_severity, 0.20)
+
+            # If BOTH eyes have some darkness, boost confidence
+            if left_darkness > 80 and right_darkness > 80:
+                boost = 0.15
+                left_severity = max(left_severity, boost)
+                right_severity = max(right_severity, boost)
 
             # Clamp to 0-1 range
             left_severity = min(1.0, left_severity)
@@ -2056,8 +2140,10 @@ class FaceScanService:
 
             # Overall score (0-100, higher = worse dark circles)
             avg_severity = (left_severity + right_severity) / 2
-            # Apply slight boost to catch subtle dark circles
-            dark_circles_score = min(100, int(avg_severity * 100 * 1.2))
+            # Apply boost to catch subtle dark circles - increased multiplier
+            dark_circles_score = min(100, int(avg_severity * 100 * 1.5))  # Was 1.3, now 1.5
+
+            print(f"[Dark Circles Debug] Final score: {dark_circles_score}, Left: {left_severity:.2f}, Right: {right_severity:.2f}")
 
             return {
                 "dark_circles_score": dark_circles_score,
@@ -2071,6 +2157,103 @@ class FaceScanService:
 
         except Exception as e:
             print(f"Dark circles detection error: {e}")
+            return self._default_dark_circles()
+
+    def _detect_dark_circles_fallback(self, img: np.ndarray, mask: np.ndarray, l_channel: np.ndarray, h: int, w: int) -> Dict:
+        """
+        Fallback dark circles detection when face landmarks are not available.
+        Uses face region estimation based on the mask to locate under-eye areas.
+        """
+        try:
+            # Find face bounding box from mask
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                return self._default_dark_circles()
+
+            # Get largest contour (face)
+            face_contour = max(contours, key=cv2.contourArea)
+            x, y, fw, fh = cv2.boundingRect(face_contour)
+
+            # Estimate under-eye regions based on typical face proportions
+            # Under-eye area is typically 25-35% down from top of face, 15-40% from center
+            eye_y_start = y + int(fh * 0.28)
+            eye_y_end = y + int(fh * 0.38)
+
+            left_eye_x_start = x + int(fw * 0.15)
+            left_eye_x_end = x + int(fw * 0.40)
+
+            right_eye_x_start = x + int(fw * 0.60)
+            right_eye_x_end = x + int(fw * 0.85)
+
+            # Cheek reference area (below eyes)
+            cheek_y_start = y + int(fh * 0.40)
+            cheek_y_end = y + int(fh * 0.55)
+
+            # Create masks for estimated regions
+            left_eye_mask = np.zeros((h, w), dtype=np.uint8)
+            right_eye_mask = np.zeros((h, w), dtype=np.uint8)
+            cheek_mask = np.zeros((h, w), dtype=np.uint8)
+
+            cv2.rectangle(left_eye_mask, (left_eye_x_start, eye_y_start), (left_eye_x_end, eye_y_end), 255, -1)
+            cv2.rectangle(right_eye_mask, (right_eye_x_start, eye_y_start), (right_eye_x_end, eye_y_end), 255, -1)
+            cv2.rectangle(cheek_mask, (x + int(fw * 0.2), cheek_y_start), (x + int(fw * 0.8), cheek_y_end), 255, -1)
+
+            # Apply face mask to ensure we're within the face
+            left_eye_mask = cv2.bitwise_and(left_eye_mask, mask)
+            right_eye_mask = cv2.bitwise_and(right_eye_mask, mask)
+            cheek_mask = cv2.bitwise_and(cheek_mask, mask)
+
+            # Calculate darkness values
+            left_pixels = l_channel[left_eye_mask > 0]
+            right_pixels = l_channel[right_eye_mask > 0]
+            cheek_pixels = l_channel[cheek_mask > 0]
+
+            left_darkness = 255 - np.mean(left_pixels) if len(left_pixels) > 0 else 0
+            right_darkness = 255 - np.mean(right_pixels) if len(right_pixels) > 0 else 0
+            cheek_brightness = 255 - np.mean(cheek_pixels) if len(cheek_pixels) > 0 else 128
+
+            print(f"[Dark Circles Fallback] Left: {left_darkness:.1f}, Right: {right_darkness:.1f}, Cheek: {cheek_brightness:.1f}")
+
+            # Calculate severity using same logic as main method
+            left_vs_cheek = max(0, (left_darkness - cheek_brightness) / 15)
+            right_vs_cheek = max(0, (right_darkness - cheek_brightness) / 15)
+
+            left_absolute = max(0, (left_darkness - 85) / 50) if left_darkness > 85 else 0
+            right_absolute = max(0, (right_darkness - 85) / 50) if right_darkness > 85 else 0
+
+            left_severity = max(left_vs_cheek, left_absolute)
+            right_severity = max(right_vs_cheek, right_absolute)
+
+            if left_darkness > 90:
+                left_severity = max(left_severity, 0.20)
+            if right_darkness > 90:
+                right_severity = max(right_severity, 0.20)
+
+            left_severity = min(1.0, left_severity)
+            right_severity = min(1.0, right_severity)
+
+            avg_severity = (left_severity + right_severity) / 2
+            dark_circles_score = min(100, int(avg_severity * 100 * 1.5))
+
+            # Bounding boxes normalized
+            left_bbox = [left_eye_x_start / w, eye_y_start / h, left_eye_x_end / w, eye_y_end / h]
+            right_bbox = [right_eye_x_start / w, eye_y_start / h, right_eye_x_end / w, eye_y_end / h]
+
+            print(f"[Dark Circles Fallback] Final score: {dark_circles_score}")
+
+            return {
+                "dark_circles_score": dark_circles_score,
+                "dark_circles_left_severity": round(left_severity, 2),
+                "dark_circles_right_severity": round(right_severity, 2),
+                "dark_circles_regions": {
+                    "left_eye": {"bbox": left_bbox, "severity": round(left_severity, 2)},
+                    "right_eye": {"bbox": right_bbox, "severity": round(right_severity, 2)},
+                },
+                "_detection_method": "fallback"
+            }
+
+        except Exception as e:
+            print(f"[Dark Circles Fallback] Error: {e}")
             return self._default_dark_circles()
 
     def _estimate_skin_age(self, analysis: Dict) -> Dict:
