@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash AI - Admin Dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #141414;
+      --bg-card: #1a1a1a;
+      --bg-hover: #252525;
+      --border-color: #2a2a2a;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1a1;
+      --text-muted: #666;
+      --accent-blue: #3b82f6;
+      --accent-green: #22c55e;
+      --accent-yellow: #eab308;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+      --accent-cyan: #06b6d4;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header h1 span {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-2px);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat-change {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-change.positive { color: var(--accent-green); }
+    .stat-change.negative { color: var(--accent-red); }
+    .stat-change.neutral { color: var(--text-muted); }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    /* Funnel Section */
+    .funnel {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .funnel-step {
+      flex: 1;
+      text-align: center;
+      padding: 24px 16px;
+      position: relative;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .funnel-step:first-child {
+      border-radius: 12px 0 0 12px;
+    }
+
+    .funnel-step:last-child {
+      border-radius: 0 12px 12px 0;
+    }
+
+    .funnel-step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: var(--text-muted);
+      z-index: 1;
+    }
+
+    .funnel-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .funnel-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .funnel-rate {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .funnel-rate.good { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+    .funnel-rate.warning { background: rgba(234, 179, 8, 0.2); color: var(--accent-yellow); }
+    .funnel-rate.bad { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+
+    /* Progress Bars */
+    .progress-item {
+      margin-bottom: 16px;
+    }
+
+    .progress-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .progress-label {
+      color: var(--text-primary);
+    }
+
+    .progress-value {
+      color: var(--text-secondary);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--bg-hover);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-fill.blue { background: var(--accent-blue); }
+    .progress-fill.green { background: var(--accent-green); }
+    .progress-fill.yellow { background: var(--accent-yellow); }
+    .progress-fill.red { background: var(--accent-red); }
+    .progress-fill.purple { background: var(--accent-purple); }
+
+    /* Table */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table th {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .table td {
+      font-size: 14px;
+    }
+
+    .table tr:hover td {
+      background: var(--bg-hover);
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-green { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+    .badge-yellow { background: rgba(234, 179, 8, 0.2); color: var(--accent-yellow); }
+    .badge-red { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+    .badge-blue { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+
+    /* Calibration Section */
+    .calibration-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .calibration-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .calibration-dot.ok { background: var(--accent-green); }
+    .calibration-dot.warning { background: var(--accent-yellow); }
+    .calibration-dot.error { background: var(--accent-red); }
+
+    /* Loading State */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .funnel { flex-direction: column; }
+      .funnel-step:first-child { border-radius: 12px 12px 0 0; }
+      .funnel-step:last-child { border-radius: 0 0 12px 12px; }
+      .funnel-step:not(:last-child)::after { display: none; }
+    }
+
+    .insights-list {
+      list-style: none;
+    }
+
+    .insights-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .insights-list li:last-child {
+      border-bottom: none;
+    }
+
+    .insight-icon {
+      font-size: 18px;
+    }
+
+    .last-updated {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="header">
+      <h1>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 6v6l4 2"></path>
+        </svg>
+        <span>Flash AI</span> Dashboard
+      </h1>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="loadDashboard()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+          </svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary" onclick="resetCalibration()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+          </svg>
+          Reset Benchmarks
+        </button>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="loading">
+        <div class="spinner"></div>
+        Loading dashboard...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    async function loadDashboard() {
+      try {
+        const response = await fetch(`${API_BASE}/api/maintenance/dashboard`);
+        const data = await response.json();
+
+        if (data.success) {
+          renderDashboard(data.dashboard);
+        } else {
+          document.getElementById('content').innerHTML = `<div class="card"><p>Error loading dashboard: ${data.error}</p></div>`;
+        }
+      } catch (error) {
+        document.getElementById('content').innerHTML = `<div class="card"><p>Error: ${error.message}</p></div>`;
+      }
+    }
+
+    async function resetCalibration() {
+      if (!confirm('Reset all benchmarks? This will recalibrate thresholds based on current scan data.')) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/maintenance/calibration/reset`, { method: 'POST' });
+        const data = await response.json();
+        alert(data.success ? 'Benchmarks reset successfully!' : `Error: ${data.error}`);
+        loadDashboard();
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
+    }
+
+    function renderDashboard(d) {
+      const platform = d.platform || {};
+      const activity = d.activity || {};
+      const mlTraining = d.mlTraining || {};
+      const engagement = d.engagement || {};
+      const skinInsights = d.skinInsights || {};
+      const insights = d.insights || {};
+      const calibration = d.calibration || {};
+      const system = d.system || {};
+
+      // Calculate funnel rates
+      const scanRate = platform.totalUsers > 0 ? ((platform.usersWithScans / platform.totalUsers) * 100).toFixed(1) : 0;
+      const routineRate = platform.totalUsers > 0 ? ((engagement.routines?.usersWithRoutines / platform.totalUsers) * 100).toFixed(1) : 0;
+
+      document.getElementById('content').innerHTML = `
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">${platform.totalUsers || 0}</div>
+            <div class="stat-change positive">+${activity.last7Days?.newUsers || 0} this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Scans</div>
+            <div class="stat-value">${platform.totalScans || 0}</div>
+            <div class="stat-change positive">+${activity.last7Days?.scans || 0} this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg Scan Quality</div>
+            <div class="stat-value">${(platform.avgScanQuality * 100).toFixed(0)}%</div>
+            <div class="stat-change neutral">Target: 80%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Routines</div>
+            <div class="stat-value">${engagement.routines?.total || 0}</div>
+            <div class="stat-change neutral">${engagement.routines?.activeRate || '0%'} active</div>
+          </div>
+        </div>
+
+        <!-- User Funnel -->
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">User Funnel</h2>
+          </div>
+          <div class="card">
+            <div class="funnel">
+              <div class="funnel-step">
+                <div class="funnel-value">${platform.totalUsers || 0}</div>
+                <div class="funnel-label">Registered</div>
+                <span class="funnel-rate good">100%</span>
+              </div>
+              <div class="funnel-step">
+                <div class="funnel-value">${platform.usersWithScans || 0}</div>
+                <div class="funnel-label">Completed Scan</div>
+                <span class="funnel-rate ${scanRate >= 50 ? 'good' : scanRate >= 25 ? 'warning' : 'bad'}">${scanRate}%</span>
+              </div>
+              <div class="funnel-step">
+                <div class="funnel-value">${engagement.routines?.usersWithRoutines || 0}</div>
+                <div class="funnel-label">Created Routine</div>
+                <span class="funnel-rate ${routineRate >= 30 ? 'good' : routineRate >= 15 ? 'warning' : 'bad'}">${routineRate}%</span>
+              </div>
+              <div class="funnel-step">
+                <div class="funnel-value">${engagement.goals?.completed || 0}</div>
+                <div class="funnel-label">Completed Goal</div>
+                <span class="funnel-rate ${engagement.goals?.completed > 0 ? 'good' : 'warning'}">
+                  ${engagement.goals?.total > 0 ? ((engagement.goals.completed / engagement.goals.total) * 100).toFixed(0) : 0}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Skin Concerns Distribution -->
+          <div class="section">
+            <div class="section-header">
+              <h2 class="section-title">Top Skin Concerns</h2>
+            </div>
+            <div class="card">
+              ${(skinInsights.topConcerns || []).length > 0 ?
+                (skinInsights.topConcerns || []).map((concern, i) => {
+                  const maxCount = skinInsights.topConcerns[0]?.count || 1;
+                  const pct = ((concern.count / maxCount) * 100).toFixed(0);
+                  const colors = ['blue', 'purple', 'green', 'yellow', 'red'];
+                  return `
+                    <div class="progress-item">
+                      <div class="progress-header">
+                        <span class="progress-label">${concern.name}</span>
+                        <span class="progress-value">${concern.count} users</span>
+                      </div>
+                      <div class="progress-bar">
+                        <div class="progress-fill ${colors[i % colors.length]}" style="width: ${pct}%"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('') : '<p style="color: var(--text-muted)">No concern data yet</p>'
+              }
+            </div>
+          </div>
+
+          <!-- Calibration Status -->
+          <div class="section">
+            <div class="section-header">
+              <h2 class="section-title">ML Calibration</h2>
+            </div>
+            <div class="card">
+              <div class="calibration-status">
+                <div class="calibration-dot ${calibration.needsRecalibration ? 'warning' : 'ok'}"></div>
+                <div>
+                  <strong>${calibration.needsRecalibration ? 'Recalibration Recommended' : 'Calibration Current'}</strong>
+                  <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                    ${calibration.recommendation || 'No recommendation'}
+                  </p>
+                </div>
+              </div>
+              <div style="font-size: 13px; color: var(--text-muted);">
+                Last calibrated: ${calibration.lastCalibration ? new Date(calibration.lastCalibration).toLocaleString() : 'Never'}
+              </div>
+              <div style="margin-top: 16px;">
+                <strong>${calibration.attributeCount || 0}</strong> attributes calibrated
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Insights & Recommendations -->
+          <div class="section">
+            <div class="section-header">
+              <h2 class="section-title">Insights & Learnings</h2>
+            </div>
+            <div class="card">
+              <ul class="insights-list">
+                ${(insights.learnings || []).map(l => `
+                  <li>
+                    <span class="insight-icon">${l.startsWith('✅') ? '✅' : l.startsWith('⚠️') ? '⚠️' : l.startsWith('🎯') ? '🎯' : '📊'}</span>
+                    <span>${l.replace(/^[✅⚠️🎯📈📊]\s*/, '')}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+
+          <!-- Recommendations -->
+          <div class="section">
+            <div class="section-header">
+              <h2 class="section-title">Recommendations</h2>
+            </div>
+            <div class="card">
+              <ul class="insights-list">
+                ${(insights.recommendations || []).map(r => `
+                  <li>
+                    <span class="insight-icon">${r.startsWith('🚀') ? '🚀' : r.startsWith('💬') ? '💬' : r.startsWith('🔧') ? '🔧' : '✨'}</span>
+                    <span>${r.replace(/^[🚀💬🔧✨📊]\s*/, '')}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scan Quality Distribution -->
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">Scan Quality Distribution</h2>
+          </div>
+          <div class="card">
+            <div class="grid-3">
+              <div class="progress-item">
+                <div class="progress-header">
+                  <span class="progress-label">High Quality (≥80%)</span>
+                  <span class="progress-value">${skinInsights.scanQuality?.high || 0}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill green" style="width: ${getQualityPct(skinInsights.scanQuality, 'high')}%"></div>
+                </div>
+              </div>
+              <div class="progress-item">
+                <div class="progress-header">
+                  <span class="progress-label">Medium Quality (50-80%)</span>
+                  <span class="progress-value">${skinInsights.scanQuality?.medium || 0}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill yellow" style="width: ${getQualityPct(skinInsights.scanQuality, 'medium')}%"></div>
+                </div>
+              </div>
+              <div class="progress-item">
+                <div class="progress-header">
+                  <span class="progress-label">Low Quality (<50%)</span>
+                  <span class="progress-value">${skinInsights.scanQuality?.low || 0}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill red" style="width: ${getQualityPct(skinInsights.scanQuality, 'low')}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">System Health</h2>
+          </div>
+          <div class="card" style="display: flex; gap: 48px; flex-wrap: wrap;">
+            <div>
+              <div class="stat-label">Memory Usage</div>
+              <div style="font-size: 20px; font-weight: 600;">${(system.memoryUsage?.heapUsed / 1024 / 1024).toFixed(1)} MB</div>
+            </div>
+            <div>
+              <div class="stat-label">Uptime</div>
+              <div style="font-size: 20px; font-weight: 600;">${formatUptime(system.uptime)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Node Version</div>
+              <div style="font-size: 20px; font-weight: 600;">${system.nodeVersion}</div>
+            </div>
+            <div>
+              <div class="stat-label">Query Time</div>
+              <div style="font-size: 20px; font-weight: 600;">${system.queryTimeMs}ms</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="last-updated">Last updated: ${new Date().toLocaleString()}</p>
+      `;
+    }
+
+    function getQualityPct(quality, type) {
+      if (!quality) return 0;
+      const total = (quality.high || 0) + (quality.medium || 0) + (quality.low || 0);
+      if (total === 0) return 0;
+      return ((quality[type] / total) * 100).toFixed(0);
+    }
+
+    function formatUptime(seconds) {
+      if (!seconds) return '0s';
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      if (hours > 0) return `${hours}h ${minutes}m`;
+      return `${minutes}m`;
+    }
+
+    // Load dashboard on page load
+    loadDashboard();
+
+    // Auto-refresh every 60 seconds
+    setInterval(loadDashboard, 60000);
+  </script>
+</body>
+</html>
