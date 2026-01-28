@@ -521,6 +521,7 @@ export class GoalService {
       'smooth_texture': { metric: 'texture_score', threshold: 70 },
       'reduce_redness': { metric: 'redness_score', threshold: 30 },
       'control_oil': { metric: 'oiliness_score', threshold: 30 },
+      'reduce_dark_circles': { metric: 'dark_circles_score', threshold: 30 }, // Added dark circles
     };
 
     // Identify concerns that need attention
@@ -541,6 +542,10 @@ export class GoalService {
     }
     if ((analysis.oiliness_score || 0) > 50) {
       priorities.push({ type: 'control_oil', severity: analysis.oiliness_score });
+    }
+    // Dark circles - added to sync with analysis
+    if ((analysis.dark_circles_score || analysis.under_eye_darkness || 0) > 30) {
+      priorities.push({ type: 'reduce_dark_circles', severity: analysis.dark_circles_score || analysis.under_eye_darkness });
     }
 
     // Higher is better for these - low values = concern
@@ -574,6 +579,7 @@ export class GoalService {
       'smooth_texture': analysis.texture_score,
       'reduce_redness': analysis.redness_score,
       'control_oil': analysis.oiliness_score,
+      'reduce_dark_circles': analysis.dark_circles_score || analysis.under_eye_darkness, // Added
     };
 
     for (const priority of priorities.slice(0, 3)) {

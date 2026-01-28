@@ -26,7 +26,8 @@ const CONCERN_INGREDIENT_KEYWORDS: Record<string, string[]> = {
   even_tone: ['vitamin c', 'niacinamide', 'arbutin', 'kojic', 'azelaic', 'tranexamic'],
   smooth_texture: ['aha', 'glycolic', 'lactic', 'mandelic', 'pha'],
   reduce_redness: ['centella', 'cica', 'aloe', 'chamomile', 'green tea', 'azelaic'],
-  control_oil: ['niacinamide', 'salicylic', 'clay', 'zinc', 'charcoal', 'witch hazel']
+  control_oil: ['niacinamide', 'salicylic', 'clay', 'zinc', 'charcoal', 'witch hazel'],
+  reduce_dark_circles: ['caffeine', 'vitamin c', 'vitamin k', 'retinol', 'peptide', 'niacinamide', 'arnica']
 };
 
 // Standard skincare routine steps
@@ -91,6 +92,11 @@ const GOAL_PRODUCT_RECOMMENDATIONS: Record<string, Record<string, string[]>> = {
     toner: ['witch hazel toner', 'niacinamide toner', 'BHA toner'],
     serum: ['niacinamide serum', 'salicylic acid serum', 'zinc serum'],
     moisturizer: ['gel moisturizer', 'oil-free lotion', 'mattifying moisturizer'],
+  },
+  reduce_dark_circles: {
+    eye_cream: ['caffeine eye cream', 'vitamin c eye serum', 'peptide eye cream', 'retinol eye cream'],
+    serum: ['vitamin c serum', 'niacinamide serum', 'caffeine serum'],
+    treatment: ['eye brightening treatment', 'dark circle corrector'],
   },
 };
 
@@ -160,7 +166,8 @@ const PRIMARY_ACTIVES_BY_CONCERN: Record<string, { active: string; name: string;
   even_tone: { active: 'vitamin_c', name: 'Vitamin C Serum (10-15%)', benefit: 'Brightens and protects' },
   smooth_texture: { active: 'aha', name: 'Gentle AHA Treatment', benefit: 'Exfoliates dead skin cells' },
   reduce_redness: { active: 'centella', name: 'Centella/Cica Serum', benefit: 'Calms and soothes inflammation' },
-  control_oil: { active: 'niacinamide', name: 'Niacinamide Serum', benefit: 'Regulates sebum production' }
+  control_oil: { active: 'niacinamide', name: 'Niacinamide Serum', benefit: 'Regulates sebum production' },
+  reduce_dark_circles: { active: 'caffeine', name: 'Caffeine Eye Serum', benefit: 'Reduces puffiness and dark circles' }
 };
 
 // Phase interface
@@ -1426,28 +1433,81 @@ export class RoutineGeneratorService {
     const { primary, secondary } = await this.prioritizeConcerns(userId);
     const goalTypes = [primary, secondary].filter(Boolean) as string[];
 
+    // SCAN-DRIVEN: Get user's face scan to add concern-specific steps
+    const scanData = await this.getUserScanForRoutine(userId);
+
+    // Dynamically add steps based on scan analysis - even in Phase 1
+    let amSteps = [...phaseTemplate.amSteps];
+    let pmSteps = [...phaseTemplate.pmSteps];
+
+    if (scanData && scanData.concerns.length > 0) {
+      // Sort concerns by severity (highest first)
+      const sortedConcerns = scanData.concerns.sort((a, b) => b.severity - a.severity);
+      console.log(`[Routine] Scan concerns for ${userId}:`, sortedConcerns);
+
+      // Add eye_cream if dark circles detected (any phase)
+      const hasDarkCircles = sortedConcerns.find(c => c.type === 'dark_circles' && c.severity > 30);
+      if (hasDarkCircles && !amSteps.includes('eye_cream')) {
+        // Insert before moisturizer
+        const moisturizerIdx = amSteps.indexOf('moisturizer');
+        if (moisturizerIdx > 0) {
+          amSteps.splice(moisturizerIdx, 0, 'eye_cream');
+        } else {
+          amSteps.push('eye_cream');
+        }
+      }
+      if (hasDarkCircles && !pmSteps.includes('eye_cream')) {
+        const moisturizerIdx = pmSteps.indexOf('moisturizer');
+        if (moisturizerIdx > 0) {
+          pmSteps.splice(moisturizerIdx, 0, 'eye_cream');
+        } else {
+          pmSteps.push('eye_cream');
+        }
+      }
+
+      // Add serum if any significant concern (severity > 40) - even in Phase 1
+      const significantConcern = sortedConcerns.find(c => c.severity > 40);
+      if (significantConcern && !pmSteps.includes('serum')) {
+        const moisturizerIdx = pmSteps.indexOf('moisturizer');
+        if (moisturizerIdx > 0) {
+          pmSteps.splice(moisturizerIdx, 0, 'serum');
+        }
+      }
+
+      // Add hydrating toner if low hydration
+      const hasLowHydration = sortedConcerns.find(c => c.type === 'hydration' && c.severity > 50);
+      if (hasLowHydration && !amSteps.includes('toner')) {
+        const serumIdx = amSteps.indexOf('serum');
+        const moisturizerIdx = amSteps.indexOf('moisturizer');
+        const insertIdx = serumIdx > 0 ? serumIdx : (moisturizerIdx > 0 ? moisturizerIdx : 1);
+        amSteps.splice(insertIdx, 0, 'toner');
+      }
+    }
+
     // Get phase info for active frequency
     const phaseInfo = await this.getUserPhase(userId);
     const activeFrequency = phaseInfo?.currentFrequency || phaseTemplate.activeFrequency;
 
-    // Create AM routine with phase-filtered steps
+    console.log(`[Routine] Generating Phase ${phaseNumber} for ${userId} - AM: ${amSteps.join(', ')}, PM: ${pmSteps.join(', ')}`);
+
+    // Create AM routine with SCAN-DRIVEN steps (not just phase template)
     const amRoutine = await this.createPhaseRoutine(
       userId,
       actualStoreId,
       'am',
       `Morning Routine (${phaseTemplate.name})`,
-      phaseTemplate.amSteps,
+      amSteps,  // Use scan-driven steps
       goalTypes,
       activeFrequency
     );
 
-    // Create PM routine with phase-filtered steps
+    // Create PM routine with SCAN-DRIVEN steps
     const pmRoutine = await this.createPhaseRoutine(
       userId,
       actualStoreId,
       'pm',
       `Evening Routine (${phaseTemplate.name})`,
-      phaseTemplate.pmSteps,
+      pmSteps,  // Use scan-driven steps
       goalTypes,
       activeFrequency
     );
@@ -1647,9 +1707,13 @@ export class RoutineGeneratorService {
 
       const analysis = scanResult.rows[0];
 
-      // Build concerns list from scan scores
+      // Build concerns list from scan scores - ALL attributes from analysis
       const concerns: { type: string; severity: number }[] = [];
 
+      // Dark circles - PRIMARY concern if detected
+      if ((analysis.dark_circles_score || analysis.under_eye_darkness || 0) > 25) {
+        concerns.push({ type: 'dark_circles', severity: analysis.dark_circles_score || analysis.under_eye_darkness });
+      }
       if ((analysis.acne_score || 0) > 25) {
         concerns.push({ type: 'acne', severity: analysis.acne_score });
       }
@@ -1664,6 +1728,10 @@ export class RoutineGeneratorService {
       }
       if ((analysis.texture_score || 100) < 70) {
         concerns.push({ type: 'texture', severity: 100 - (analysis.texture_score || 0) });
+      }
+      // Hydration - if low, it's a concern
+      if ((analysis.hydration_score || 100) < 50) {
+        concerns.push({ type: 'hydration', severity: 100 - (analysis.hydration_score || 0) });
       }
 
       // Determine skin type from oiliness and hydration
