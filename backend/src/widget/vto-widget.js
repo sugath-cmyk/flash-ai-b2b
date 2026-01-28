@@ -2312,7 +2312,7 @@
         </div>
       `;
 
-      resultsContent.insertAdjacentHTML('beforeend', promptHtml);
+      resultsContent.insertAdjacentHTML('afterbegin', promptHtml);
 
       // Add click handler
       document.getElementById('flashai-vto-save-results-btn')?.addEventListener('click', () => {

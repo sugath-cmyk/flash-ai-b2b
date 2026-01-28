@@ -2391,14 +2391,10 @@
    ========================================================================== */
 
 .flashai-vto-save-prompt {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
   background: linear-gradient(135deg, var(--flashai-primary) 0%, var(--flashai-secondary) 100%);
-  padding: 16px 20px;
-  margin: 20px -20px -20px -20px;
-  border-radius: 0 0 var(--flashai-radius-xl) var(--flashai-radius-xl);
+  padding: 14px 16px;
+  margin: -20px -20px 16px -20px;
+  border-radius: var(--flashai-radius-xl) var(--flashai-radius-xl) 0 0;
 }
 
 .flashai-vto-save-prompt-content {
