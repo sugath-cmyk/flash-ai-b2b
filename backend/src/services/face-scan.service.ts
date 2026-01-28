@@ -136,7 +136,10 @@ export async function getFaceScan(scanId: string) {
       t_zone_oiliness: row.t_zone_oiliness,
       sensitivity_level: row.sensitivity_level,
       under_eye_darkness: row.under_eye_darkness,
-      dark_circles_score: row.under_eye_darkness || 35, // Map to widget expected field, default to moderate
+      // Map to widget expected field - use 35 (moderate) as default if null/0/missing
+      dark_circles_score: (row.under_eye_darkness != null && row.under_eye_darkness > 0)
+        ? row.under_eye_darkness
+        : 35,
       puffiness_score: row.puffiness_score,
       analysis_confidence: row.analysis_confidence
     } : null
