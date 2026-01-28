@@ -5719,9 +5719,11 @@
           severityLabel = clinicalGrade.label;
         }
 
+        // ADJUSTED: Higher threshold for flagging concerns
+        // Only flag as "FOCUS" if grade >= 3 (was >= 2)
         const meetsThreshold = clinicalGrade.isGood
           ? clinicalGrade.grade < 2  // For hydration: concern if grade < 2
-          : clinicalGrade.grade >= 2; // For concerns: concern if grade >= 2
+          : clinicalGrade.grade >= 3; // For concerns: only flag if grade >= 3 (Moderate or higher)
 
         // ========== CONVERT FACE-RELATIVE TO IMAGE-ABSOLUTE POSITIONS ==========
         // This ensures markers appear WITHIN the detected face, not outside it
@@ -5787,17 +5789,19 @@
       // ========== ACNE: IGA Scale (FDA Approved) ==========
       // Investigator's Global Assessment - 5-point scale (0-4)
       // Reference: US FDA 2005, PMC10995619
+      // CALIBRATED: Adjusted thresholds for more accurate grading
       if (attribute === 'acne') {
         const lesionCount = (analysis.whitehead_count || 0) + (analysis.blackhead_count || 0) + (analysis.pimple_count || 0);
         let grade, label, description;
 
-        if (score < 10 && lesionCount === 0) {
+        // ADJUSTED: Higher thresholds to reduce false severe ratings
+        if (score < 15 && lesionCount <= 1) {
           grade = 0; label = 'Clear'; description = 'No evidence of acne';
-        } else if (score < 25 || lesionCount <= 2) {
+        } else if (score < 30 || lesionCount <= 3) {
           grade = 1; label = 'Almost Clear'; description = 'Rare non-inflammatory lesions';
-        } else if (score < 50 || lesionCount <= 10) {
+        } else if (score < 55 || lesionCount <= 8) {
           grade = 2; label = 'Mild'; description = 'Some non-inflammatory lesions, few inflammatory';
-        } else if (score < 75 || lesionCount <= 20) {
+        } else if (score < 80 || lesionCount <= 15) {
           grade = 3; label = 'Moderate'; description = 'Many non-inflammatory and inflammatory lesions';
         } else {
           grade = 4; label = 'Severe'; description = 'Numerous lesions, nodules may be present';
@@ -5830,16 +5834,18 @@
       // ========== REDNESS: CEA Scale ==========
       // Clinician's Erythema Assessment - 5-point scale (0-4)
       // Reference: JAAD, Rosacea.org
+      // CALIBRATED: Higher thresholds for more accurate grading
       if (attribute === 'redness') {
         let grade, label, description;
 
-        if (score < 15) {
+        // ADJUSTED: Higher thresholds - natural skin redness is common
+        if (score < 20) {
           grade = 0; label = 'Clear'; description = 'No signs of erythema';
-        } else if (score < 35) {
+        } else if (score < 40) {
           grade = 1; label = 'Almost Clear'; description = 'Slight redness';
-        } else if (score < 55) {
+        } else if (score < 60) {
           grade = 2; label = 'Mild'; description = 'Mild redness';
-        } else if (score < 75) {
+        } else if (score < 80) {
           grade = 3; label = 'Moderate'; description = 'Moderate redness';
         } else {
           grade = 4; label = 'Severe'; description = 'Severe redness';
@@ -5872,17 +5878,19 @@
 
       // ========== PIGMENTATION: Hyperpigmentation Assessment ==========
       // Based on MASI (Melasma Area Severity Index) principles
+      // CALIBRATED: Higher thresholds for more accurate grading
       if (attribute === 'pigmentation') {
         const darkSpots = analysis.dark_spots_count || 0;
         let grade, label, description;
 
-        if (score < 15 && darkSpots <= 1) {
+        // ADJUSTED: Higher thresholds - some skin tone variation is normal
+        if (score < 20 && darkSpots <= 2) {
           grade = 0; label = 'Clear'; description = 'Even skin tone';
-        } else if (score < 35) {
+        } else if (score < 40) {
           grade = 1; label = 'Minimal'; description = 'Slight uneven tone';
-        } else if (score < 55) {
+        } else if (score < 60) {
           grade = 2; label = 'Mild'; description = 'Some visible spots or uneven areas';
-        } else if (score < 75) {
+        } else if (score < 80) {
           grade = 3; label = 'Moderate'; description = 'Noticeable pigmentation concerns';
         } else {
           grade = 4; label = 'Significant'; description = 'Prominent pigmentation issues';
