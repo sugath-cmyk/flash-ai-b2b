@@ -205,6 +205,15 @@ export async function updateFaceScan(scanId: string, data: {
 
 // Save face analysis results
 export async function saveFaceAnalysis(scanId: string, analysis: any) {
+  // CALIBRATION: Reduce dark circles detection to moderate levels by default
+  // Dark circles are often over-detected due to lighting/shadows
+  if (analysis.under_eye_darkness !== undefined) {
+    const original = analysis.under_eye_darkness;
+    // Reduce score by 35% to make it more moderate, with min of 10
+    analysis.under_eye_darkness = Math.max(10, Math.round(original * 0.65));
+    console.log(`[FaceScan] Dark circles calibrated: ${original} → ${analysis.under_eye_darkness}`);
+  }
+
   // Define allowed database columns to prevent errors from new ML fields
   const ALLOWED_COLUMNS = new Set([
     'skin_score', 'skin_tone', 'skin_undertone', 'skin_hex_color',
