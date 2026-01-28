@@ -204,6 +204,9 @@ safeLoadRoute('./routes/knowledge.routes', '/api/widget/knowledge');
 // Prediction and visualization routes (Phase 6 - Skincare Platform)
 safeLoadRoute('./routes/prediction.routes', '/api/widget/predictions');
 
+// ML Training and Feedback routes (Continuous Learning System)
+safeLoadRoute('./routes/ml-training.routes', '/api/ml');
+
 // Route status endpoint
 app.get('/routes-status', (req: Request, res: Response) => {
   res.json({

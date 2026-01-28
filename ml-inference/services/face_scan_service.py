@@ -1085,10 +1085,11 @@ class FaceScanService:
         skin_mean = np.mean(skin_pixels)
         skin_std = np.std(skin_pixels)
 
-        # Detect red/inflamed areas - STRICT: Higher saturation requirement
-        lower_red1 = np.array([0, 75, 70])  # High saturation required
-        upper_red1 = np.array([8, 255, 255])
-        lower_red2 = np.array([172, 75, 70])
+        # Detect red/inflamed areas - VERY STRICT: Only true inflammation
+        # Increased saturation requirement to avoid detecting normal skin flush
+        lower_red1 = np.array([0, 120, 80])  # Very high saturation required
+        upper_red1 = np.array([6, 255, 255])   # Narrower hue range
+        lower_red2 = np.array([174, 120, 80])  # Very high saturation
         upper_red2 = np.array([180, 255, 255])
 
         red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
@@ -1119,9 +1120,9 @@ class FaceScanService:
         whitehead_count = 0
         acne_locations = []
 
-        # STRICT: Higher minimum area
-        min_area = 25
-        max_area = 350
+        # VERY STRICT: Much higher minimum area to avoid texture false positives
+        min_area = 50  # Increased from 25 - ignore tiny spots that are likely pores/texture
+        max_area = 400
         skin_area = max(np.sum(mask > 0), 1)
         area_scale = skin_area / 100000
 
@@ -1154,14 +1155,16 @@ class FaceScanService:
 
             surround_mean = np.mean(surround_pixels)
 
-            # Calculate contrast ratio
+            # Calculate contrast ratio - VERY STRICT thresholds
             if spot_type == "dark":
                 contrast = surround_mean - spot_mean
-                # Must be significantly darker than surroundings
-                is_valid = contrast > 15 and spot_mean < skin_mean - 0.5 * skin_std
+                # Must be SIGNIFICANTLY darker than surroundings (25+ units, not 15)
+                # AND significantly darker than overall skin mean
+                is_valid = contrast > 25 and spot_mean < skin_mean - 1.0 * skin_std
             else:  # bright
                 contrast = spot_mean - surround_mean
-                is_valid = contrast > 20 and spot_mean > skin_mean + skin_std
+                # Whiteheads must be much brighter
+                is_valid = contrast > 30 and spot_mean > skin_mean + 1.5 * skin_std
 
             return is_valid, cx / w, cy / h
 
@@ -1175,8 +1178,8 @@ class FaceScanService:
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    # STRICT: Higher circularity required
-                    if circularity > 0.4:
+                    # VERY STRICT: Higher circularity required (0.55 = more circular)
+                    if circularity > 0.55:
                         # VERIFY contrast with surroundings
                         is_valid, cx, cy = verify_spot_contrast(cnt, "dark")
                         if is_valid:
@@ -1196,15 +1199,15 @@ class FaceScanService:
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    if circularity > 0.4:
+                    if circularity > 0.5:  # Higher circularity for pimples
                         # Verify it's actually red/inflamed, not just skin tone
                         spot_mask = np.zeros((h, w), dtype=np.uint8)
                         cv2.drawContours(spot_mask, [cnt], -1, 255, -1)
                         spot_hsv = hsv[spot_mask > 0]
                         if len(spot_hsv) > 0:
                             avg_saturation = np.mean(spot_hsv[:, 1])
-                            # Must have high saturation to be true inflammation
-                            if avg_saturation > 80:
+                            # Must have VERY high saturation to be true inflammation
+                            if avg_saturation > 110:  # Increased from 80
                                 M = cv2.moments(cnt)
                                 if M["m00"] > 0:
                                     cx = M["m10"] / M["m00"] / w
@@ -1243,15 +1246,16 @@ class FaceScanService:
         pimple_count = min(pimple_count, 10)
         whitehead_count = min(whitehead_count, 8)
 
-        # Calculate score - only verified blemishes count
-        total_blemishes = blackhead_count + pimple_count * 2.5 + whitehead_count
-        acne_score = min(100, int(total_blemishes * 2.5))  # Higher weight per verified blemish
+        # Calculate score - conservative scoring to avoid over-reporting
+        # Each verified blemish counts, but with lower multiplier
+        total_blemishes = blackhead_count + pimple_count * 2 + whitehead_count
+        acne_score = min(100, int(total_blemishes * 1.8))  # Reduced from 2.5
 
-        # Inflammation based on verified red pixels
+        # Inflammation based on verified red pixels - STRICTER thresholds
         red_pixel_ratio = np.sum(red_mask > 0) / skin_area
-        if red_pixel_ratio > 0.15:
+        if red_pixel_ratio > 0.25:  # Increased from 0.15 - must be really red
             inflammation = 0.66
-        elif red_pixel_ratio > 0.06:
+        elif red_pixel_ratio > 0.12:  # Increased from 0.06
             inflammation = 0.33
         else:
             inflammation = 0.0
@@ -1636,25 +1640,25 @@ class FaceScanService:
         median_saturation = np.median(s_channel)
         median_a = np.median(a_channel)  # Baseline red-green axis
 
-        # STRICT: Only count pixels significantly redder than person's baseline
+        # VERY STRICT: Only count pixels SIGNIFICANTLY redder than person's baseline
         # Using LAB 'a' channel which better captures red vs non-red
-        red_threshold_a = median_a + 15  # Must be 15 units redder than baseline
+        red_threshold_a = median_a + 20  # Increased from 15 to 20 - must be much redder than baseline
         abnormal_red_pixels = np.sum(a_channel > red_threshold_a)
         abnormal_red_ratio = abnormal_red_pixels / total_pixels
 
-        # HSV-based red with STRICT thresholds
-        # Narrow hue range AND high saturation AND brightness check
+        # HSV-based red with VERY STRICT thresholds
+        # Narrower hue range AND much higher saturation AND brightness check
         strict_red = np.sum(
-            ((h_channel < 8) | (h_channel > 172)) &
-            (s_channel > 70) &
-            (v_channel > 50)
+            ((h_channel < 6) | (h_channel > 174)) &  # Narrower hue range
+            (s_channel > 100) &  # Increased from 70 - must be obviously red
+            (v_channel > 60)
         )
         strict_red_ratio = strict_red / total_pixels
 
         # Intense inflammation: very high saturation red
         intense_red = np.sum(
-            ((h_channel < 6) | (h_channel > 174)) &
-            (s_channel > 100)
+            ((h_channel < 5) | (h_channel > 175)) &  # Very narrow hue
+            (s_channel > 130)  # Increased from 100 - only true inflammation
         )
         intense_ratio = intense_red / total_pixels
 
@@ -2032,10 +2036,19 @@ class FaceScanService:
                 if len(cheek_pixels) > 0:
                     cheek_brightness = 255 - np.mean(cheek_pixels)
 
-            # Calculate dark circle severity relative to cheeks
-            # If under-eye is darker than cheeks, there are dark circles
-            left_severity = max(0, (left_darkness - cheek_brightness) / 50)  # Normalize
-            right_severity = max(0, (right_darkness - cheek_brightness) / 50)
+            # Calculate dark circle severity - MORE SENSITIVE detection
+            # Method 1: Relative comparison to cheeks (but with lower divisor)
+            left_relative = max(0, (left_darkness - cheek_brightness) / 30)  # Changed from 50 to 30
+            right_relative = max(0, (right_darkness - cheek_brightness) / 30)
+
+            # Method 2: Absolute darkness threshold (eyes are typically lighter areas)
+            # If under-eye L channel (inverted) is above 140, there's noticeable darkness
+            left_absolute = max(0, (left_darkness - 120) / 80) if left_darkness > 120 else 0
+            right_absolute = max(0, (right_darkness - 120) / 80) if right_darkness > 120 else 0
+
+            # Combine both methods - take the MAXIMUM to catch dark circles either way
+            left_severity = max(left_relative, left_absolute * 0.8)
+            right_severity = max(right_relative, right_absolute * 0.8)
 
             # Clamp to 0-1 range
             left_severity = min(1.0, left_severity)
@@ -2043,7 +2056,8 @@ class FaceScanService:
 
             # Overall score (0-100, higher = worse dark circles)
             avg_severity = (left_severity + right_severity) / 2
-            dark_circles_score = int(avg_severity * 100)
+            # Apply slight boost to catch subtle dark circles
+            dark_circles_score = min(100, int(avg_severity * 100 * 1.2))
 
             return {
                 "dark_circles_score": dark_circles_score,

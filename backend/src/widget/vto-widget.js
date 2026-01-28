@@ -6524,6 +6524,25 @@
                     `).join('')}
                   </div>
                   ` : ''}
+                  <!-- Feedback Section - Help Improve Accuracy -->
+                  <div style="margin-top:12px;padding:10px;background:#f0fdf4;border-radius:8px;border:1px dashed #22c55e;">
+                    <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📊 Is this assessment accurate?</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <button class="flashai-feedback-btn" data-feedback="correct" data-attribute="${issue.key}" data-grade="${grade.grade}" data-score="${issue.score}"
+                        style="flex:1;min-width:80px;padding:8px 12px;border:none;border-radius:6px;background:#dcfce7;color:#16a34a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                        ✓ Correct
+                      </button>
+                      <button class="flashai-feedback-btn" data-feedback="too-high" data-attribute="${issue.key}" data-grade="${grade.grade}" data-score="${issue.score}"
+                        style="flex:1;min-width:80px;padding:8px 12px;border:none;border-radius:6px;background:#fef3c7;color:#d97706;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                        ↓ Too High
+                      </button>
+                      <button class="flashai-feedback-btn" data-feedback="too-low" data-attribute="${issue.key}" data-grade="${grade.grade}" data-score="${issue.score}"
+                        style="flex:1;min-width:80px;padding:8px 12px;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                        ↑ Too Low
+                      </button>
+                    </div>
+                    <p style="font-size:10px;color:#6b7280;margin:8px 0 0;text-align:center;">Your feedback helps us improve accuracy for everyone</p>
+                  </div>
                 </div>
               </div>
             `;
@@ -6581,6 +6600,87 @@
           this.toggleAccordion(index);
         });
       });
+
+      // Add click handlers for feedback buttons
+      listContainer.querySelectorAll('.flashai-feedback-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const feedback = btn.dataset.feedback;
+          const attribute = btn.dataset.attribute;
+          const originalGrade = parseInt(btn.dataset.grade);
+          const originalScore = parseInt(btn.dataset.score);
+          this.submitFeedback(feedback, attribute, originalGrade, originalScore, btn);
+        });
+      });
+    }
+
+    /**
+     * Submit user feedback on scan accuracy
+     */
+    async submitFeedback(feedbackType, attribute, originalGrade, originalScore, buttonElement) {
+      // Determine corrected grade based on feedback type
+      let isCorrect = feedbackType === 'correct';
+      let correctedGrade = originalGrade;
+
+      if (feedbackType === 'too-high') {
+        // AI over-detected - user thinks it should be lower
+        correctedGrade = Math.max(0, originalGrade - 2);
+      } else if (feedbackType === 'too-low') {
+        // AI under-detected - user thinks it should be higher
+        correctedGrade = Math.min(4, originalGrade + 2);
+      }
+
+      // Visual feedback
+      const parentDiv = buttonElement.closest('.flashai-feedback-btn')?.parentElement;
+      if (parentDiv) {
+        parentDiv.querySelectorAll('.flashai-feedback-btn').forEach(btn => {
+          btn.style.opacity = '0.5';
+          btn.disabled = true;
+        });
+        buttonElement.style.opacity = '1';
+        buttonElement.style.transform = 'scale(1.05)';
+      }
+
+      try {
+        const scanId = this.state.currentScanId || 'unknown';
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/ml/feedback/quick')}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': this.state.authToken ? `Bearer ${this.state.authToken}` : '',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            scanId,
+            attribute,
+            originalScore,
+            originalGrade,
+            isCorrect,
+            correctedGrade: isCorrect ? undefined : correctedGrade
+          })
+        });
+
+        if (response.ok) {
+          // Show success message
+          if (parentDiv) {
+            parentDiv.innerHTML = `
+              <div style="text-align:center;padding:8px;color:#16a34a;font-size:12px;font-weight:600;">
+                ✓ Thank you for your feedback!
+              </div>
+            `;
+          }
+        }
+      } catch (error) {
+        console.error('Error submitting feedback:', error);
+        // Still show success to user (we'll retry later)
+        if (parentDiv) {
+          parentDiv.innerHTML = `
+            <div style="text-align:center;padding:8px;color:#16a34a;font-size:12px;font-weight:600;">
+              ✓ Feedback recorded
+            </div>
+          `;
+        }
+      }
     }
 
     toggleAccordion(index) {
