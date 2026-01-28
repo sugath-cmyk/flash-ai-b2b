@@ -127,6 +127,11 @@
       this.elements.inlineButton = button;
     }
 
+    // Alias for openModal (for backward compatibility)
+    open() {
+      this.openModal();
+    }
+
     openModal() {
       // Create modal if it doesn't exist
       if (!this.elements.modal) {
