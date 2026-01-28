@@ -82,6 +82,13 @@ const runPendingMigrations = async () => {
     } else {
       console.log('✅ Skincare platform tables already exist');
     }
+
+    // Run routine product matching migration (adds columns if they don't exist)
+    console.log('📦 Running routine product matching migration...');
+    const { ROUTINE_PRODUCT_MATCHING_MIGRATION_SQL } = require('../migrations/routine-product-matching-migration');
+    await pool.query(ROUTINE_PRODUCT_MATCHING_MIGRATION_SQL);
+    console.log('✅ Routine product matching migration completed');
+
   } catch (error: any) {
     console.error('⚠️ Migration check/run failed (non-fatal):', error.message);
     // Don't crash the server - migrations can be run manually

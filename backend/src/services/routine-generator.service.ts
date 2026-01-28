@@ -4,6 +4,31 @@ import { createError } from '../middleware/errorHandler';
 // Use existing store for demo/test
 const DEMO_FALLBACK_STORE_UUID = '62130715-ff42-4160-934e-c663fc1e7872';
 
+// Step type to product category/keyword mapping for product matching
+const STEP_TYPE_KEYWORDS: Record<string, string[]> = {
+  cleanser: ['cleanser', 'face wash', 'cleansing', 'gel wash', 'foam wash', 'micellar'],
+  toner: ['toner', 'essence', 'mist', 'water'],
+  serum: ['serum', 'concentrate', 'ampoule', 'booster', 'treatment'],
+  moisturizer: ['moisturizer', 'cream', 'lotion', 'hydrator', 'moisturiser', 'gel cream'],
+  sunscreen: ['sunscreen', 'spf', 'sun protection', 'sun block', 'uv'],
+  eye_cream: ['eye cream', 'eye gel', 'eye serum', 'under eye'],
+  exfoliant: ['exfoliant', 'peel', 'aha', 'bha', 'scrub', 'exfoliating'],
+  treatment: ['treatment', 'spot', 'acne', 'blemish', 'corrector'],
+  face_oil: ['face oil', 'facial oil', 'oil serum', 'rosehip', 'marula'],
+  makeup_remover: ['makeup remover', 'cleansing oil', 'cleansing balm', 'micellar']
+};
+
+// Concern-specific ingredient keywords for better matching
+const CONCERN_INGREDIENT_KEYWORDS: Record<string, string[]> = {
+  clear_acne: ['salicylic', 'benzoyl', 'niacinamide', 'tea tree', 'zinc', 'sulfur', 'bha'],
+  reduce_wrinkles: ['retinol', 'retinoid', 'peptide', 'collagen', 'vitamin c', 'bakuchiol'],
+  improve_hydration: ['hyaluronic', 'ceramide', 'glycerin', 'squalane', 'aloe'],
+  even_tone: ['vitamin c', 'niacinamide', 'arbutin', 'kojic', 'azelaic', 'tranexamic'],
+  smooth_texture: ['aha', 'glycolic', 'lactic', 'mandelic', 'pha'],
+  reduce_redness: ['centella', 'cica', 'aloe', 'chamomile', 'green tea', 'azelaic'],
+  control_oil: ['niacinamide', 'salicylic', 'clay', 'zinc', 'charcoal', 'witch hazel']
+};
+
 // Standard skincare routine steps
 const AM_ROUTINE_TEMPLATE = [
   { stepType: 'cleanser', name: 'Gentle Cleanser', instructions: 'Massage onto damp skin for 30-60 seconds, then rinse', durationSeconds: 60, frequency: 'daily' },
@@ -195,6 +220,24 @@ interface RoutineStep {
   durationSeconds: number;
   isOptional: boolean;
   frequency: string;
+  // New fields for actual product matching
+  actualProductId?: string | null;       // External product ID from store
+  actualProductTitle?: string | null;    // Actual product name
+  actualProductImage?: string | null;    // Product image URL
+  actualProductPrice?: string | null;    // Product price
+  recommendationReason?: string | null;  // Why this was recommended
+  scanScore?: number | null;             // The scan score that triggered this
+  concernAddressed?: string | null;      // Which concern this addresses
+}
+
+// Interface for matched product from store
+interface MatchedProduct {
+  productId: string;
+  title: string;
+  price: string;
+  imageUrl: string | null;
+  matchScore: number;
+  matchedKeywords: string[];
 }
 
 interface Routine {
@@ -232,6 +275,186 @@ interface CreateRoutineData {
 }
 
 export class RoutineGeneratorService {
+
+  /**
+   * Find matching products from the store catalog for a routine step type
+   * Uses keyword matching on product titles, descriptions, and tags
+   */
+  async findMatchingProducts(
+    storeId: string,
+    stepType: string,
+    goalTypes: string[],
+    limit: number = 3
+  ): Promise<MatchedProduct[]> {
+    try {
+      // Get keywords for this step type
+      const stepKeywords = STEP_TYPE_KEYWORDS[stepType] || [stepType];
+
+      // Get ingredient keywords for user's goals/concerns
+      const ingredientKeywords: string[] = [];
+      for (const goal of goalTypes) {
+        const keywords = CONCERN_INGREDIENT_KEYWORDS[goal];
+        if (keywords) {
+          ingredientKeywords.push(...keywords);
+        }
+      }
+
+      // Build search query for products
+      const searchTerms = [...stepKeywords, ...ingredientKeywords];
+      const searchPattern = searchTerms.map(t => `%${t}%`).join('|');
+
+      // Query products that match step type keywords
+      const result = await pool.query(
+        `SELECT
+          external_id as product_id,
+          title,
+          COALESCE(variants->0->>'price', '0') as price,
+          images->0->>'src' as image_url,
+          LOWER(title) as lower_title,
+          LOWER(COALESCE(description, '')) as lower_desc,
+          LOWER(COALESCE(tags, '')) as lower_tags
+        FROM extracted_products
+        WHERE store_id = $1
+        ORDER BY created_at DESC
+        LIMIT 200`,
+        [storeId]
+      );
+
+      // Score each product based on keyword matches
+      const scoredProducts: MatchedProduct[] = [];
+
+      for (const product of result.rows) {
+        let matchScore = 0;
+        const matchedKeywords: string[] = [];
+        const searchText = `${product.lower_title} ${product.lower_desc} ${product.lower_tags}`;
+
+        // Check step type keywords (higher weight)
+        for (const keyword of stepKeywords) {
+          if (searchText.includes(keyword.toLowerCase())) {
+            matchScore += 10;
+            matchedKeywords.push(keyword);
+          }
+        }
+
+        // Check ingredient keywords (medium weight)
+        for (const keyword of ingredientKeywords) {
+          if (searchText.includes(keyword.toLowerCase())) {
+            matchScore += 5;
+            matchedKeywords.push(keyword);
+          }
+        }
+
+        // Only include products with some match
+        if (matchScore > 0) {
+          scoredProducts.push({
+            productId: product.product_id,
+            title: product.title,
+            price: product.price,
+            imageUrl: product.image_url,
+            matchScore,
+            matchedKeywords
+          });
+        }
+      }
+
+      // Sort by match score and return top matches
+      scoredProducts.sort((a, b) => b.matchScore - a.matchScore);
+      return scoredProducts.slice(0, limit);
+
+    } catch (error) {
+      console.error(`Error finding matching products for ${stepType}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get user's latest face scan analysis for reasoning
+   */
+  async getUserScanAnalysis(userId: string): Promise<Record<string, any> | null> {
+    try {
+      // Get visitor_id for this user
+      const userResult = await pool.query(
+        `SELECT visitor_id FROM widget_users WHERE id = $1`,
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) return null;
+
+      const visitorId = userResult.rows[0].visitor_id;
+
+      // Get latest face analysis
+      const analysisResult = await pool.query(
+        `SELECT fa.* FROM face_analysis fa
+         JOIN face_scans fs ON fa.face_scan_id = fs.id
+         WHERE fs.visitor_id = $1 OR fs.user_id = $2
+         ORDER BY fs.created_at DESC
+         LIMIT 1`,
+        [visitorId, userId]
+      );
+
+      return analysisResult.rows[0] || null;
+    } catch (error) {
+      console.error('Error getting user scan analysis:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Generate recommendation reason based on scan analysis and goal
+   */
+  generateRecommendationReason(
+    stepType: string,
+    goalType: string,
+    scanAnalysis: Record<string, any> | null,
+    matchedKeywords: string[]
+  ): { reason: string; scanScore: number | null; concern: string } {
+    const goalToScore: Record<string, { field: string; label: string }> = {
+      'clear_acne': { field: 'acne_score', label: 'acne' },
+      'reduce_wrinkles': { field: 'wrinkle_score', label: 'wrinkles' },
+      'improve_hydration': { field: 'hydration_score', label: 'hydration' },
+      'even_tone': { field: 'pigmentation_score', label: 'pigmentation' },
+      'smooth_texture': { field: 'texture_score', label: 'texture' },
+      'reduce_redness': { field: 'redness_score', label: 'redness' },
+      'control_oil': { field: 'oiliness_score', label: 'oiliness' }
+    };
+
+    const goalInfo = goalToScore[goalType];
+    let scanScore: number | null = null;
+    let reason = '';
+
+    if (goalInfo && scanAnalysis) {
+      scanScore = scanAnalysis[goalInfo.field];
+      if (scanScore !== null && scanScore !== undefined) {
+        // For hydration/texture, lower is worse; for others, higher is worse
+        const isLowerBetter = ['hydration_score', 'texture_score'].includes(goalInfo.field);
+        const severity = isLowerBetter ? (100 - scanScore) : scanScore;
+
+        if (severity > 50) {
+          reason = `Your scan showed ${goalInfo.label} at ${scanScore}% - this ${stepType} targets that concern`;
+        } else if (severity > 30) {
+          reason = `Recommended for your ${goalInfo.label} level (${scanScore}%)`;
+        } else {
+          reason = `Helps maintain your ${goalInfo.label} levels`;
+        }
+      }
+    }
+
+    // Add ingredient info if matched
+    if (matchedKeywords.length > 0 && !reason) {
+      reason = `Contains ${matchedKeywords.slice(0, 2).join(', ')} for ${goalInfo?.label || 'skin health'}`;
+    }
+
+    if (!reason) {
+      reason = `Recommended ${stepType} for your skin profile`;
+    }
+
+    return {
+      reason,
+      scanScore,
+      concern: goalInfo?.label || 'general'
+    };
+  }
+
   async generateRoutines(userId: string, storeId: string): Promise<{ am: Routine; pm: Routine }> {
     // Handle demo stores
     const isDemoStore = storeId === 'demo-store' || storeId === 'demo' || storeId === 'test';
@@ -607,6 +830,9 @@ export class RoutineGeneratorService {
       );
     }
 
+    // Get user's latest scan analysis for reasoning
+    const scanAnalysis = await this.getUserScanAnalysis(userId);
+
     // Create new routine
     const routineResult = await pool.query(
       `INSERT INTO user_routines (user_id, store_id, name, routine_type, generated_from_goals)
@@ -617,42 +843,86 @@ export class RoutineGeneratorService {
 
     const routine = routineResult.rows[0];
 
-    // Create steps with goal-specific recommendations
+    // Create steps with goal-specific recommendations AND actual products
     const steps: RoutineStep[] = [];
     let stepOrder = 1;
 
     for (const templateStep of template) {
-      // Get product recommendations based on goals
-      let productRecommendations: string[] = [];
+      // Get generic product type recommendations based on goals
+      let productTypeRecommendations: string[] = [];
+      let primaryGoal = goalTypes[0] || 'general';
+
       for (const goalType of goalTypes) {
         const goalRecs = GOAL_PRODUCT_RECOMMENDATIONS[goalType];
         if (goalRecs && goalRecs[templateStep.stepType]) {
-          productRecommendations.push(...goalRecs[templateStep.stepType]);
+          productTypeRecommendations.push(...goalRecs[templateStep.stepType]);
+          if (!primaryGoal || primaryGoal === 'general') primaryGoal = goalType;
         }
       }
+      productTypeRecommendations = [...new Set(productTypeRecommendations)];
 
-      // Remove duplicates
-      productRecommendations = [...new Set(productRecommendations)];
+      // Try to find ACTUAL products from the store catalog
+      const matchedProducts = await this.findMatchingProducts(
+        storeId,
+        templateStep.stepType,
+        goalTypes,
+        1 // Get top match
+      );
 
+      // Determine product info
+      let actualProduct: MatchedProduct | null = matchedProducts[0] || null;
+      let productName = productTypeRecommendations.length > 0
+        ? productTypeRecommendations[0]
+        : templateStep.name;
+
+      // Generate recommendation reason
+      const { reason, scanScore, concern } = this.generateRecommendationReason(
+        templateStep.stepType,
+        primaryGoal,
+        scanAnalysis,
+        actualProduct?.matchedKeywords || []
+      );
+
+      // Insert step with all info
       const stepResult = await pool.query(
         `INSERT INTO routine_steps (
           routine_id, step_order, step_type, custom_product_name,
-          instructions, duration_seconds, is_optional, frequency
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          instructions, duration_seconds, is_optional, frequency,
+          product_id, custom_product_brand, recommendation_reason, scan_score, concern_addressed
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *`,
         [
           routine.id,
           stepOrder++,
           templateStep.stepType,
-          productRecommendations.length > 0 ? productRecommendations[0] : templateStep.name,
+          actualProduct?.title || productName, // Use actual product title if found
           templateStep.instructions,
           templateStep.durationSeconds,
           templateStep.isOptional || false,
           templateStep.frequency,
+          actualProduct?.productId || null,  // Actual product ID from store
+          actualProduct?.price ? `₹${actualProduct.price}` : null, // Store price in brand field for now
+          reason,
+          scanScore,
+          concern
         ]
       );
 
-      steps.push(this.formatStep(stepResult.rows[0]));
+      // Format step with additional fields
+      const formattedStep = this.formatStep(stepResult.rows[0]);
+
+      // Add actual product info if available
+      if (actualProduct) {
+        formattedStep.actualProductId = actualProduct.productId;
+        formattedStep.actualProductTitle = actualProduct.title;
+        formattedStep.actualProductImage = actualProduct.imageUrl;
+        formattedStep.actualProductPrice = actualProduct.price;
+      }
+      formattedStep.recommendationReason = reason;
+      formattedStep.scanScore = scanScore;
+      formattedStep.concernAddressed = concern;
+
+      steps.push(formattedStep);
     }
 
     return {
@@ -689,6 +959,10 @@ export class RoutineGeneratorService {
       durationSeconds: row.duration_seconds,
       isOptional: row.is_optional,
       frequency: row.frequency,
+      // New fields for actual product and reasoning
+      recommendationReason: row.recommendation_reason || null,
+      scanScore: row.scan_score || null,
+      concernAddressed: row.concern_addressed || null,
     };
   }
 
