@@ -5836,7 +5836,7 @@
       const issueConfigs = [
         {
           key: 'dark_circles',
-          threshold: 30, // MODERATE: Dark circles default to medium level (reduced in backend by 35%)
+          threshold: 45, // Only flag as concern if notable (45+). Backend defaults to 30-40 moderate for all.
           facePosition: { x: 50, y: 35 }, // FACE-RELATIVE: center-ish, upper-mid (under eyes)
           region: 'Under Eyes',
           faceHighlight: { x: 20, y: 28, w: 60, h: 15 }

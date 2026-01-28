@@ -205,13 +205,26 @@ export async function updateFaceScan(scanId: string, data: {
 
 // Save face analysis results
 export async function saveFaceAnalysis(scanId: string, analysis: any) {
-  // CALIBRATION: Reduce dark circles detection to moderate levels by default
-  // Dark circles are often over-detected due to lighting/shadows
+  // CALIBRATION: Dark circles - default to moderate, show actual only if severe
+  // Most people have some level of dark circles - show moderate by default
   if (analysis.under_eye_darkness !== undefined) {
     const original = analysis.under_eye_darkness;
-    // Reduce score by 35% to make it more moderate, with min of 10
-    analysis.under_eye_darkness = Math.max(10, Math.round(original * 0.65));
-    console.log(`[FaceScan] Dark circles calibrated: ${original} → ${analysis.under_eye_darkness}`);
+    let calibrated: number;
+
+    if (original >= 60) {
+      // SEVERE: Show actual score (these are real dark circles)
+      calibrated = original;
+    } else if (original >= 40) {
+      // MEDIUM-HIGH: Show as moderate-medium (45-55 range)
+      calibrated = Math.round(40 + (original - 40) * 0.75);
+    } else {
+      // LOW/NOT DETECTED: Default to moderate (30-40 range)
+      // Everyone has some level of under-eye darkness
+      calibrated = Math.round(30 + (original / 40) * 10);
+    }
+
+    analysis.under_eye_darkness = calibrated;
+    console.log(`[FaceScan] Dark circles: ${original} → ${calibrated} (${original >= 60 ? 'severe-actual' : 'moderate-default'})`);
   }
 
   // Define allowed database columns to prevent errors from new ML fields
