@@ -6964,7 +6964,8 @@
           colorScheme = 'orange';
           break;
         case 'pores':
-          score = (analysis.enlarged_pores_count || 0) * 5;
+          // Consistent formula: count * 2 + 10 (matches SKIN_ATTRIBUTES)
+          score = Math.min(100, (analysis.enlarged_pores_count || 0) * 2 + 10);
           colorScheme = 'orange';
           break;
         case 'texture':
