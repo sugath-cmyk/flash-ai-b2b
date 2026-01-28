@@ -37,6 +37,31 @@ const GRADE_PERCENTILES = {
   severe: 100    // Top 20% = Grade 4
 };
 
+// SAFETY: Absolute minimum thresholds to ensure severe issues are NEVER missed
+// Even if population data suggests otherwise, scores above these = at least Grade 3
+const ABSOLUTE_SEVERITY_THRESHOLDS: Record<string, number> = {
+  'acne_score': 70,          // Severe acne should never be missed
+  'dark_circles_score': 75,  // Significant dark circles
+  'pigmentation_score': 70,  // Significant pigmentation
+  'wrinkle_score': 65,       // Significant wrinkles
+  'redness_score': 60,       // High redness (could indicate condition)
+  'texture_score': 70,       // Poor texture
+  'hydration_score': 30,     // Very dehydrated (inverted - low is bad)
+  'oiliness_score': 80       // Very oily
+};
+
+// SAFETY: Absolute maximum for "none" grade - anything above this is at least mild
+const ABSOLUTE_NONE_MAX: Record<string, number> = {
+  'acne_score': 15,
+  'dark_circles_score': 20,
+  'pigmentation_score': 15,
+  'wrinkle_score': 15,
+  'redness_score': 15,
+  'texture_score': 20,
+  'hydration_score': 80,     // Inverted
+  'oiliness_score': 20
+};
+
 export interface CalibrationData {
   attribute: string;
   sampleSize: number;
@@ -81,14 +106,26 @@ class ScanCalibrationService {
    */
   async analyzeDistribution(attribute: string): Promise<CalibrationData | null> {
     try {
-      // Get all scores for this attribute
+      // Map attribute names to actual column names in face_analysis table
+      const columnMap: Record<string, string> = {
+        'acne_score': 'acne_score',
+        'dark_circles_score': 'under_eye_darkness',
+        'pigmentation_score': 'pigmentation_score',
+        'wrinkle_score': 'wrinkle_score',
+        'redness_score': 'redness_score',
+        'texture_score': 'texture_score',
+        'hydration_score': 'hydration_score',
+        'oiliness_score': 'oiliness_score'
+      };
+
+      const columnName = columnMap[attribute] || attribute;
+
+      // Get all scores for this attribute from face_analysis table
       const result = await pool.query(`
-        SELECT
-          (analysis->>'${attribute}')::float as score
-        FROM face_scans
-        WHERE analysis IS NOT NULL
-          AND analysis->>'${attribute}' IS NOT NULL
-          AND (analysis->>'${attribute}')::float >= 0
+        SELECT ${columnName}::float as score
+        FROM face_analysis
+        WHERE ${columnName} IS NOT NULL
+          AND ${columnName} >= 0
         ORDER BY score
       `);
 
@@ -121,13 +158,22 @@ class ScanCalibrationService {
         p90: getPercentile(90),
       };
 
-      // Calculate thresholds based on percentiles
+      // Calculate thresholds based on percentiles with SAFETY LIMITS
+      // Ensure we never set thresholds that would miss severe issues
+      const absoluteNoneMax = ABSOLUTE_NONE_MAX[attribute] ?? 20;
+      const absoluteSeverityMin = ABSOLUTE_SEVERITY_THRESHOLDS[attribute] ?? 70;
+
       const thresholds = {
-        none_max: percentiles.p20,
-        mild_max: percentiles.p40,
-        moderate_max: percentiles.p60,
-        significant_max: percentiles.p80,
+        // None threshold: minimum of percentile and absolute max
+        none_max: Math.min(percentiles.p20, absoluteNoneMax),
+        mild_max: Math.min(percentiles.p40, absoluteNoneMax + 20),
+        moderate_max: Math.min(percentiles.p60, absoluteSeverityMin - 10),
+        // Significant threshold: must be below absolute severity threshold
+        significant_max: Math.min(percentiles.p80, absoluteSeverityMin),
       };
+
+      console.log(`[Calibration] ${attribute}: Raw p20=${percentiles.p20}, Applied none_max=${thresholds.none_max} (absolute limit: ${absoluteNoneMax})`);
+      console.log(`[Calibration] ${attribute}: Raw p80=${percentiles.p80}, Applied significant_max=${thresholds.significant_max} (severity floor: ${absoluteSeverityMin})`);
 
       return {
         attribute,
@@ -163,8 +209,8 @@ class ScanCalibrationService {
       }
     }
 
-    // Get total scan count
-    const countResult = await pool.query('SELECT COUNT(*) FROM face_scans WHERE analysis IS NOT NULL');
+    // Get total scan count from face_analysis table
+    const countResult = await pool.query('SELECT COUNT(*) FROM face_analysis');
     const totalScans = parseInt(countResult.rows[0].count);
 
     // Save snapshot to database
@@ -268,8 +314,16 @@ class ScanCalibrationService {
 
   /**
    * Convert raw score to grade (0-4) using dynamic thresholds
+   * SAFETY: Always checks absolute severity thresholds to never miss severe issues
    */
   async scoreToGrade(attribute: string, score: number): Promise<number> {
+    // SAFETY CHECK: If score exceeds absolute severity threshold, it's at least significant
+    const absoluteSeverityMin = ABSOLUTE_SEVERITY_THRESHOLDS[attribute];
+    if (absoluteSeverityMin && score >= absoluteSeverityMin) {
+      // Score is above absolute severity threshold - at minimum Grade 3, possibly 4
+      return score >= absoluteSeverityMin + 15 ? 4 : 3;
+    }
+
     const thresholds = await this.getThresholds(attribute);
 
     if (!thresholds) {
@@ -313,7 +367,7 @@ class ScanCalibrationService {
     recommendation: string;
   }> {
     const benchmark = await this.getLatestBenchmark();
-    const countResult = await pool.query('SELECT COUNT(*) FROM face_scans WHERE analysis IS NOT NULL');
+    const countResult = await pool.query('SELECT COUNT(*) FROM face_analysis');
     const currentScans = parseInt(countResult.rows[0].count);
 
     if (!benchmark) {
@@ -354,30 +408,47 @@ class ScanCalibrationService {
     const benchmark = await this.getLatestBenchmark();
     if (!benchmark) return {};
 
+    // Map attribute names to actual column names
+    const columnMap: Record<string, string> = {
+      'acne_score': 'acne_score',
+      'dark_circles_score': 'under_eye_darkness',
+      'pigmentation_score': 'pigmentation_score',
+      'wrinkle_score': 'wrinkle_score',
+      'redness_score': 'redness_score',
+      'texture_score': 'texture_score',
+      'hydration_score': 'hydration_score',
+      'oiliness_score': 'oiliness_score'
+    };
+
     const distribution: Record<string, Record<number, number>> = {};
 
     for (const calibration of benchmark.calibrations) {
       const attr = calibration.attribute;
+      const columnName = columnMap[attr] || attr;
       const thresholds = calibration.thresholds;
 
-      const result = await pool.query(`
-        SELECT
-          SUM(CASE WHEN (analysis->>'${attr}')::float <= $1 THEN 1 ELSE 0 END) as grade_0,
-          SUM(CASE WHEN (analysis->>'${attr}')::float > $1 AND (analysis->>'${attr}')::float <= $2 THEN 1 ELSE 0 END) as grade_1,
-          SUM(CASE WHEN (analysis->>'${attr}')::float > $2 AND (analysis->>'${attr}')::float <= $3 THEN 1 ELSE 0 END) as grade_2,
-          SUM(CASE WHEN (analysis->>'${attr}')::float > $3 AND (analysis->>'${attr}')::float <= $4 THEN 1 ELSE 0 END) as grade_3,
-          SUM(CASE WHEN (analysis->>'${attr}')::float > $4 THEN 1 ELSE 0 END) as grade_4
-        FROM face_scans
-        WHERE analysis IS NOT NULL AND analysis->>'${attr}' IS NOT NULL
-      `, [thresholds.none_max, thresholds.mild_max, thresholds.moderate_max, thresholds.significant_max]);
+      try {
+        const result = await pool.query(`
+          SELECT
+            SUM(CASE WHEN ${columnName}::float <= $1 THEN 1 ELSE 0 END) as grade_0,
+            SUM(CASE WHEN ${columnName}::float > $1 AND ${columnName}::float <= $2 THEN 1 ELSE 0 END) as grade_1,
+            SUM(CASE WHEN ${columnName}::float > $2 AND ${columnName}::float <= $3 THEN 1 ELSE 0 END) as grade_2,
+            SUM(CASE WHEN ${columnName}::float > $3 AND ${columnName}::float <= $4 THEN 1 ELSE 0 END) as grade_3,
+            SUM(CASE WHEN ${columnName}::float > $4 THEN 1 ELSE 0 END) as grade_4
+          FROM face_analysis
+          WHERE ${columnName} IS NOT NULL
+        `, [thresholds.none_max, thresholds.mild_max, thresholds.moderate_max, thresholds.significant_max]);
 
-      distribution[attr] = {
-        0: parseInt(result.rows[0].grade_0) || 0,
-        1: parseInt(result.rows[0].grade_1) || 0,
-        2: parseInt(result.rows[0].grade_2) || 0,
-        3: parseInt(result.rows[0].grade_3) || 0,
-        4: parseInt(result.rows[0].grade_4) || 0
-      };
+        distribution[attr] = {
+          0: parseInt(result.rows[0].grade_0) || 0,
+          1: parseInt(result.rows[0].grade_1) || 0,
+          2: parseInt(result.rows[0].grade_2) || 0,
+          3: parseInt(result.rows[0].grade_3) || 0,
+          4: parseInt(result.rows[0].grade_4) || 0
+        };
+      } catch (error) {
+        console.error(`[Calibration] Error getting distribution for ${attr}:`, error);
+      }
     }
 
     return distribution;
