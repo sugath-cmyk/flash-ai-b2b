@@ -1120,8 +1120,8 @@ class FaceScanService:
         whitehead_count = 0
         acne_locations = []
 
-        # VERY STRICT: Much higher minimum area to avoid texture false positives
-        min_area = 50  # Increased from 25 - ignore tiny spots that are likely pores/texture
+        # ULTRA STRICT: Much higher minimum area to avoid texture/pore false positives
+        min_area = 90  # Increased from 50 - ignore spots that could be normal pores
         max_area = 400
         skin_area = max(np.sum(mask > 0), 1)
         area_scale = skin_area / 100000
@@ -1155,16 +1155,16 @@ class FaceScanService:
 
             surround_mean = np.mean(surround_pixels)
 
-            # Calculate contrast ratio - VERY STRICT thresholds
+            # Calculate contrast ratio - ULTRA STRICT thresholds
             if spot_type == "dark":
                 contrast = surround_mean - spot_mean
-                # Must be SIGNIFICANTLY darker than surroundings (25+ units, not 15)
-                # AND significantly darker than overall skin mean
-                is_valid = contrast > 25 and spot_mean < skin_mean - 1.0 * skin_std
+                # Must be VERY SIGNIFICANTLY darker than surroundings (35+ units)
+                # AND much darker than overall skin mean (1.5 std devs)
+                is_valid = contrast > 35 and spot_mean < skin_mean - 1.5 * skin_std
             else:  # bright
                 contrast = spot_mean - surround_mean
-                # Whiteheads must be much brighter
-                is_valid = contrast > 30 and spot_mean > skin_mean + 1.5 * skin_std
+                # Whiteheads must be much brighter - higher threshold
+                is_valid = contrast > 40 and spot_mean > skin_mean + 2.0 * skin_std
 
             return is_valid, cx / w, cy / h
 
@@ -1178,8 +1178,8 @@ class FaceScanService:
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    # VERY STRICT: Higher circularity required (0.55 = more circular)
-                    if circularity > 0.55:
+                    # ULTRA STRICT: Higher circularity required (0.65 = very circular)
+                    if circularity > 0.65:
                         # VERIFY contrast with surroundings
                         is_valid, cx, cy = verify_spot_contrast(cnt, "dark")
                         if is_valid:
@@ -1241,15 +1241,17 @@ class FaceScanService:
                                 "type": "whitehead", "size": "small"
                             })
 
-        # Cap counts
-        blackhead_count = min(blackhead_count, 15)
-        pimple_count = min(pimple_count, 10)
-        whitehead_count = min(whitehead_count, 8)
+        # Cap counts - LOWER caps to prevent over-detection
+        blackhead_count = min(blackhead_count, 10)  # Reduced from 15
+        pimple_count = min(pimple_count, 8)         # Reduced from 10
+        whitehead_count = min(whitehead_count, 5)   # Reduced from 8
 
-        # Calculate score - conservative scoring to avoid over-reporting
-        # Each verified blemish counts, but with lower multiplier
-        total_blemishes = blackhead_count + pimple_count * 2 + whitehead_count
-        acne_score = min(100, int(total_blemishes * 1.8))  # Reduced from 2.5
+        # Calculate score - MORE conservative scoring to avoid false positives
+        # Weight: blackheads (least severe), whiteheads (moderate), pimples (most severe)
+        # Max possible: 10 + 5 + 8*2 = 31 blemishes → 31 * 1.5 = 46.5 score at max
+        # This leaves room for genuinely severe cases through inflammation bonus
+        total_blemishes = blackhead_count + whitehead_count + pimple_count * 2
+        acne_score = min(100, int(total_blemishes * 1.5))  # Reduced from 1.8
 
         # Inflammation based on verified red pixels - STRICTER thresholds
         red_pixel_ratio = np.sum(red_mask > 0) / skin_area
@@ -1640,39 +1642,47 @@ class FaceScanService:
         median_saturation = np.median(s_channel)
         median_a = np.median(a_channel)  # Baseline red-green axis
 
-        # VERY STRICT: Only count pixels SIGNIFICANTLY redder than person's baseline
+        # ULTRA STRICT: Only count pixels EXTREMELY redder than person's baseline
         # Using LAB 'a' channel which better captures red vs non-red
-        red_threshold_a = median_a + 20  # Increased from 15 to 20 - must be much redder than baseline
+        # Increased threshold from 20 to 35 - must be VERY obviously redder than baseline
+        red_threshold_a = median_a + 35  # Much higher threshold for true redness
         abnormal_red_pixels = np.sum(a_channel > red_threshold_a)
         abnormal_red_ratio = abnormal_red_pixels / total_pixels
 
-        # HSV-based red with VERY STRICT thresholds
-        # Narrower hue range AND much higher saturation AND brightness check
+        # HSV-based red with ULTRA STRICT thresholds
+        # Very narrow hue range AND very high saturation AND brightness check
         strict_red = np.sum(
-            ((h_channel < 6) | (h_channel > 174)) &  # Narrower hue range
-            (s_channel > 100) &  # Increased from 70 - must be obviously red
-            (v_channel > 60)
+            ((h_channel < 5) | (h_channel > 175)) &  # Very narrow hue range
+            (s_channel > 130) &  # Very high saturation - only true inflammation
+            (v_channel > 70)
         )
         strict_red_ratio = strict_red / total_pixels
 
-        # Intense inflammation: very high saturation red
+        # Intense inflammation: extreme saturation red only
         intense_red = np.sum(
-            ((h_channel < 5) | (h_channel > 175)) &  # Very narrow hue
-            (s_channel > 130)  # Increased from 100 - only true inflammation
+            ((h_channel < 4) | (h_channel > 176)) &  # Extremely narrow hue
+            (s_channel > 150)  # Only very obvious inflammation
         )
         intense_ratio = intense_red / total_pixels
 
-        # Account for natural skin undertone - STRICT baseline subtraction
-        # Warm skin tones naturally have higher redness
-        natural_baseline = min(0.20, median_saturation / 400)  # Higher saturation = warmer undertone
+        # Account for natural skin undertone - GENEROUS baseline subtraction
+        # Warm skin tones (common in Indian population) naturally have higher redness
+        natural_baseline = min(0.35, median_saturation / 300)  # More generous for warm undertones
         adjusted_red_ratio = max(0, strict_red_ratio - natural_baseline)
-        adjusted_abnormal_ratio = max(0, abnormal_red_ratio - 0.05)  # 5% is normal variation
+        adjusted_abnormal_ratio = max(0, abnormal_red_ratio - 0.15)  # 15% is normal variation (was 5%)
 
-        # Calculate redness score - based on ABNORMAL redness only
+        # SAFETY: If most of the face appears "red", it's likely natural skin tone
+        # Cap the ratios to prevent natural warm skin from scoring high
+        if abnormal_red_ratio > 0.5:  # More than 50% "abnormal" = probably just natural tone
+            adjusted_abnormal_ratio = min(adjusted_abnormal_ratio, 0.10)
+        if strict_red_ratio > 0.3:  # More than 30% "red" = probably just warm undertone
+            adjusted_red_ratio = min(adjusted_red_ratio, 0.08)
+
+        # Calculate redness score - LOWER multipliers to reduce false positives
         redness_score = min(100, int(
-            adjusted_abnormal_ratio * 80 +  # LAB-based abnormal redness
-            adjusted_red_ratio * 40 +        # HSV-based strict redness
-            intense_ratio * 150              # Intense inflammation
+            adjusted_abnormal_ratio * 50 +  # Reduced from 80 - LAB-based abnormal redness
+            adjusted_red_ratio * 30 +        # Reduced from 40 - HSV-based strict redness
+            intense_ratio * 100              # Reduced from 150 - Intense inflammation
         ))
 
         # Determine sensitivity level - STRICT thresholds
