@@ -5719,11 +5719,10 @@
           severityLabel = clinicalGrade.label;
         }
 
-        // ADJUSTED: Higher threshold for flagging concerns
-        // Only flag as "FOCUS" if grade >= 3 (was >= 2)
+        // Flag concerns at grade >= 2 (Mild and above)
         const meetsThreshold = clinicalGrade.isGood
           ? clinicalGrade.grade < 2  // For hydration: concern if grade < 2
-          : clinicalGrade.grade >= 3; // For concerns: only flag if grade >= 3 (Moderate or higher)
+          : clinicalGrade.grade >= 2; // For concerns: flag if grade >= 2
 
         // ========== CONVERT FACE-RELATIVE TO IMAGE-ABSOLUTE POSITIONS ==========
         // This ensures markers appear WITHIN the detected face, not outside it

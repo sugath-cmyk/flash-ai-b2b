@@ -1082,10 +1082,10 @@ class FaceScanService:
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
         # Detect red/inflamed areas (acne typically appears redder)
-        # ADJUSTED: Higher saturation threshold (70 instead of 50) to reduce false positives
-        lower_red1 = np.array([0, 70, 70])
-        upper_red1 = np.array([8, 255, 255])  # Narrower hue range
-        lower_red2 = np.array([172, 70, 70])  # Narrower hue range
+        # BALANCED: Moderate saturation threshold (60) - between original 50 and overcorrected 70
+        lower_red1 = np.array([0, 60, 60])
+        upper_red1 = np.array([10, 255, 255])  # Slightly narrower hue range
+        lower_red2 = np.array([170, 60, 60])
         upper_red2 = np.array([180, 255, 255])
 
         red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
@@ -1098,13 +1098,13 @@ class FaceScanService:
         red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel)
 
         # Blob detection for pimples/blemishes
-        blurred = cv2.GaussianBlur(gray_masked, (7, 7), 0)  # Stronger blur to reduce noise
+        blurred = cv2.GaussianBlur(gray_masked, (5, 5), 0)  # Standard blur
 
         # Adaptive threshold for darker spots (blackheads)
-        # ADJUSTED: Larger block size (15 instead of 11) and higher C value (4 instead of 2)
+        # BALANCED: Moderate block size (13) and C value (3)
         thresh_dark = cv2.adaptiveThreshold(
             blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV, 15, 4
+            cv2.THRESH_BINARY_INV, 13, 3
         )
         thresh_dark = cv2.bitwise_and(thresh_dark, mask)
 
@@ -1122,9 +1122,9 @@ class FaceScanService:
         whitehead_count = 0
         acne_locations = []  # Store locations for overlay
 
-        # ADJUSTED: Higher minimum area (30 instead of 15) to ignore skin texture
-        min_area = 30
-        max_area = 350  # Slightly reduced max
+        # BALANCED: Moderate minimum area (20) - between original 15 and overcorrected 30
+        min_area = 20
+        max_area = 400
         skin_area = max(np.sum(mask > 0), 1)
         area_scale = skin_area / 100000  # Normalize for image size
 
@@ -1137,8 +1137,8 @@ class FaceScanService:
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    # ADJUSTED: Higher circularity threshold (0.45 instead of 0.3)
-                    if circularity > 0.45:
+                    # BALANCED: Moderate circularity (0.35) - between original 0.3 and overcorrected 0.45
+                    if circularity > 0.35:
                         blackhead_count += 1
                         # Get centroid for location
                         M = cv2.moments(cnt)
@@ -1216,9 +1216,9 @@ class FaceScanService:
         whitehead_count = min(whitehead_count, 10)
 
         # Calculate acne score (0-100, lower is better)
-        # ADJUSTED: Lower multiplier (1.5 instead of 2) for less aggressive scoring
+        # BALANCED: Moderate multiplier (1.8) - between original 2 and overcorrected 1.5
         total_blemishes = blackhead_count + pimple_count * 2 + whitehead_count
-        acne_score = min(100, int(total_blemishes * 1.5))
+        acne_score = min(100, int(total_blemishes * 1.8))
 
         # Determine inflammation level (0.0-1.0 scale for database)
         red_pixel_ratio = np.sum(red_mask > 0) / skin_area
@@ -1774,16 +1774,15 @@ class FaceScanService:
         mean_lightness = np.mean(skin_lightness)
         std_lightness = np.std(skin_lightness)
 
-        # ADJUSTED: Higher threshold (2.0 std instead of 1.5) to reduce false positives
-        # Only detect spots that are significantly darker than surrounding skin
-        dark_threshold = mean_lightness - 2.0 * std_lightness
-        dark_threshold = max(dark_threshold, mean_lightness * 0.65)  # More conservative
+        # BALANCED: Moderate threshold (1.7 std) - between original 1.5 and overcorrected 2.0
+        dark_threshold = mean_lightness - 1.7 * std_lightness
+        dark_threshold = max(dark_threshold, mean_lightness * 0.70)
 
         dark_mask = (l_channel < dark_threshold).astype(np.uint8) * 255
         dark_mask = cv2.bitwise_and(dark_mask, mask)
 
-        # ADJUSTED: Stronger morphological cleanup
-        kernel = np.ones((5, 5), np.uint8)  # Larger kernel
+        # BALANCED: Standard morphological cleanup
+        kernel = np.ones((3, 3), np.uint8)
         dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_OPEN, kernel)
         dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_CLOSE, kernel)
 
@@ -1799,11 +1798,11 @@ class FaceScanService:
         large_patches = 0
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            # ADJUSTED: Higher minimum area (30 instead of 15) to ignore small variations
-            if 30 * max(area_scale, 0.5) < area < 1200 * max(area_scale, 0.5):
+            # BALANCED: Moderate minimum area (20) - between original 15 and overcorrected 30
+            if 20 * max(area_scale, 0.5) < area < 1400 * max(area_scale, 0.5):
                 dark_spots_count += 1
                 total_dark_area += area
-                if area > 500 * max(area_scale, 0.5):  # Higher threshold for large patches
+                if area > 450 * max(area_scale, 0.5):
                     large_patches += 1
                 # Get centroid for location
                 M = cv2.moments(cnt)
@@ -1816,11 +1815,11 @@ class FaceScanService:
                         "size": round(area / skin_area * 1000, 3)  # Normalized size
                     })
 
-        dark_spots_count = min(dark_spots_count, 20)  # Lower cap
+        dark_spots_count = min(dark_spots_count, 25)
 
-        # Pigmentation score - ADJUSTED: Lower multipliers
+        # Pigmentation score - BALANCED: Moderate multipliers
         dark_ratio = total_dark_area / skin_area
-        pigmentation_score = min(100, int(dark_ratio * 300 + dark_spots_count * 2.0))
+        pigmentation_score = min(100, int(dark_ratio * 350 + dark_spots_count * 2.2))
 
         # Severity classification (0.0-1.0 scale for database) - ADJUSTED: Higher thresholds
         if dark_spots_count > 15 or dark_ratio > 0.10:
