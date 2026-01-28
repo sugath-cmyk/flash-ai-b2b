@@ -117,14 +117,10 @@ export async function getFaceScan(scanId: string) {
       pigmentation_score: row.pigmentation_score,
       acne_score: row.acne_score,
       wrinkle_score: row.wrinkle_score,
-      // Texture is a "good" attribute - higher is better (0 = rough, 100 = smooth)
-      // Default to 55 (moderate) if not detected
-      texture_score: (row.texture_score != null && row.texture_score > 0) ? row.texture_score : 55,
+      texture_score: row.texture_score,
       redness_score: row.redness_score,
-      // Hydration is a "good" attribute - higher is better (0 = dry, 100 = hydrated)
-      // Default to 55 (moderate) if not detected
-      hydration_score: (row.hydration_score != null && row.hydration_score > 0) ? row.hydration_score : 55,
-      hydration_level: row.hydration_level || 'normal',
+      hydration_score: row.hydration_score,
+      hydration_level: row.hydration_level,
       oiliness_score: row.oiliness_score,
       skin_age_estimate: row.skin_age_estimate,
       dark_spots_count: row.dark_spots_count,
@@ -134,17 +130,13 @@ export async function getFaceScan(scanId: string) {
       fine_lines_count: row.fine_lines_count,
       deep_wrinkles_count: row.deep_wrinkles_count,
       pore_size_average: row.pore_size_average,
-      enlarged_pores_count: row.enlarged_pores_count || 0,
-      // Smoothness is a "good" attribute (fallback for texture) - higher is better
-      smoothness_score: (row.smoothness_score != null && row.smoothness_score > 0) ? row.smoothness_score : 55,
+      enlarged_pores_count: row.enlarged_pores_count,
+      smoothness_score: row.smoothness_score,
       roughness_level: row.roughness_level,
       t_zone_oiliness: row.t_zone_oiliness,
       sensitivity_level: row.sensitivity_level,
       under_eye_darkness: row.under_eye_darkness,
-      // Map to widget expected field - use 35 (moderate) as default if null/0/missing
-      dark_circles_score: (row.under_eye_darkness != null && row.under_eye_darkness > 0)
-        ? row.under_eye_darkness
-        : 35,
+      dark_circles_score: row.under_eye_darkness,  // Direct mapping from ML
       puffiness_score: row.puffiness_score,
       analysis_confidence: row.analysis_confidence
     } : null
@@ -226,30 +218,26 @@ export async function updateFaceScan(scanId: string, data: {
 
 // Save face analysis results
 export async function saveFaceAnalysis(scanId: string, analysis: any) {
-  // CALIBRATION: Dark circles - default to moderate, show actual only if severe
-  // Most people have some level of dark circles - show moderate by default
-  const originalDarkCircles = analysis.under_eye_darkness;
-  let calibratedDarkCircles: number;
+  // Map ML field names to database column names
+  // ML returns 'dark_circles_score' but DB column is 'under_eye_darkness'
+  const ML_TO_DB_FIELD_MAP: Record<string, string> = {
+    'dark_circles_score': 'under_eye_darkness',
+    'dark_circles_left_severity': 'dark_circles_left_severity',  // Keep as-is
+    'dark_circles_right_severity': 'dark_circles_right_severity',
+  };
 
-  if (originalDarkCircles !== undefined && originalDarkCircles !== null) {
-    if (originalDarkCircles >= 60) {
-      // SEVERE: Show actual score (these are real dark circles)
-      calibratedDarkCircles = originalDarkCircles;
-    } else if (originalDarkCircles >= 40) {
-      // MEDIUM-HIGH: Show as moderate-medium (45-55 range)
-      calibratedDarkCircles = Math.round(40 + (originalDarkCircles - 40) * 0.75);
-    } else {
-      // LOW/NOT DETECTED: Default to moderate (30-40 range)
-      // Everyone has some level of under-eye darkness
-      calibratedDarkCircles = Math.round(30 + (originalDarkCircles / 40) * 10);
+  // Apply field mapping
+  for (const [mlField, dbField] of Object.entries(ML_TO_DB_FIELD_MAP)) {
+    if (analysis[mlField] !== undefined && mlField !== dbField) {
+      analysis[dbField] = analysis[mlField];
+      delete analysis[mlField];
+      console.log(`[FaceScan] Mapped ${mlField} → ${dbField}: ${analysis[dbField]}`);
     }
-  } else {
-    // ML service didn't detect/return dark circles - default to moderate (35)
-    calibratedDarkCircles = 35;
   }
 
-  analysis.under_eye_darkness = calibratedDarkCircles;
-  console.log(`[FaceScan] Dark circles: ${originalDarkCircles ?? 'not detected'} → ${calibratedDarkCircles}`);
+  // Log all ML values for debugging
+  console.log(`[FaceScan] ML Analysis fields: ${Object.keys(analysis).join(', ')}`);
+  console.log(`[FaceScan] under_eye_darkness: ${analysis.under_eye_darkness ?? 'not provided'}`);
 
   // Define allowed database columns to prevent errors from new ML fields
   const ALLOWED_COLUMNS = new Set([
@@ -271,6 +259,7 @@ export async function saveFaceAnalysis(scanId: string, analysis: any) {
     't_zone_oiliness', 'dry_patches_detected', 'hydration_map',
     'skin_age_estimate', 'skin_firmness_score',
     'under_eye_darkness', 'puffiness_score',
+    'dark_circles_left_severity', 'dark_circles_right_severity', 'dark_circles_regions',
     'skin_tone_confidence', 'face_shape_confidence', 'analysis_confidence',
     'problem_areas_overlay', 'heatmap_data', 'metadata'
   ]);
