@@ -1062,30 +1062,33 @@ class FaceScanService:
         }
 
     def _detect_acne(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
-        """Detect acne and blemishes using blob detection and color analysis.
+        """Detect acne and blemishes with HIGH ACCURACY multi-stage validation.
 
-        CALIBRATED for reduced false positives:
-        - Higher minimum area to ignore skin texture
-        - Stricter circularity for true blemishes
-        - Higher saturation threshold for red detection
-        - Morphological cleaning to reduce noise
+        STRICT ACCURACY MODE:
+        - Multi-stage validation: each spot must pass multiple criteria
+        - Contrast verification: spot must be significantly different from surroundings
+        - Local intensity comparison: compare to immediate neighborhood
+        - Only count high-confidence detections
         """
 
-        # Get image dimensions for coordinate normalization
         h, w = img.shape[:2]
-
-        # Convert to grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray_masked = cv2.bitwise_and(gray, gray, mask=mask)
-
-        # Convert to HSV for redness detection
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 
-        # Detect red/inflamed areas (acne typically appears redder)
-        # BALANCED: Moderate saturation threshold (60) - between original 50 and overcorrected 70
-        lower_red1 = np.array([0, 60, 60])
-        upper_red1 = np.array([10, 255, 255])  # Slightly narrower hue range
-        lower_red2 = np.array([170, 60, 60])
+        # Calculate skin baseline statistics for comparison
+        skin_pixels = gray[mask > 0]
+        if len(skin_pixels) == 0:
+            return self._default_acne()
+
+        skin_mean = np.mean(skin_pixels)
+        skin_std = np.std(skin_pixels)
+
+        # Detect red/inflamed areas - STRICT: Higher saturation requirement
+        lower_red1 = np.array([0, 75, 70])  # High saturation required
+        upper_red1 = np.array([8, 255, 255])
+        lower_red2 = np.array([172, 75, 70])
         upper_red2 = np.array([180, 255, 255])
 
         red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
@@ -1093,41 +1096,76 @@ class FaceScanService:
         red_mask = cv2.bitwise_or(red_mask1, red_mask2)
         red_mask = cv2.bitwise_and(red_mask, mask)
 
-        # Morphological operations to clean up noise
+        # Strong morphological cleaning
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel)
+        red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel)
 
-        # Blob detection for pimples/blemishes
-        blurred = cv2.GaussianBlur(gray_masked, (5, 5), 0)  # Standard blur
+        # Blob detection with stronger blur to reduce texture noise
+        blurred = cv2.GaussianBlur(gray_masked, (5, 5), 0)
 
-        # Adaptive threshold for darker spots (blackheads)
-        # BALANCED: Moderate block size (13) and C value (3)
+        # Adaptive threshold - STRICT parameters
         thresh_dark = cv2.adaptiveThreshold(
             blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV, 13, 3
+            cv2.THRESH_BINARY_INV, 15, 5  # Larger block, higher C = stricter
         )
         thresh_dark = cv2.bitwise_and(thresh_dark, mask)
-
-        # Clean up with morphological operations
         thresh_dark = cv2.morphologyEx(thresh_dark, cv2.MORPH_OPEN, kernel)
 
-        # Find contours
-        contours_dark, _ = cv2.findContours(
-            thresh_dark, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours_dark, _ = cv2.findContours(thresh_dark, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Filter by size and shape
         blackhead_count = 0
         pimple_count = 0
         whitehead_count = 0
-        acne_locations = []  # Store locations for overlay
+        acne_locations = []
 
-        # BALANCED: Moderate minimum area (20) - between original 15 and overcorrected 30
-        min_area = 20
-        max_area = 400
+        # STRICT: Higher minimum area
+        min_area = 25
+        max_area = 350
         skin_area = max(np.sum(mask > 0), 1)
-        area_scale = skin_area / 100000  # Normalize for image size
+        area_scale = skin_area / 100000
 
+        def verify_spot_contrast(cnt, spot_type="dark"):
+            """Verify spot has significant contrast with surrounding skin"""
+            M = cv2.moments(cnt)
+            if M["m00"] == 0:
+                return False, 0, 0
+
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+
+            # Get spot intensity
+            spot_mask = np.zeros_like(gray)
+            cv2.drawContours(spot_mask, [cnt], -1, 255, -1)
+            spot_pixels = gray[spot_mask > 0]
+            if len(spot_pixels) == 0:
+                return False, 0, 0
+
+            spot_mean = np.mean(spot_pixels)
+
+            # Get surrounding area intensity (dilate the contour)
+            dilated = cv2.dilate(spot_mask, kernel, iterations=3)
+            surround_mask = cv2.subtract(dilated, spot_mask)
+            surround_mask = cv2.bitwise_and(surround_mask, mask)
+            surround_pixels = gray[surround_mask > 0]
+
+            if len(surround_pixels) < 10:
+                return False, 0, 0
+
+            surround_mean = np.mean(surround_pixels)
+
+            # Calculate contrast ratio
+            if spot_type == "dark":
+                contrast = surround_mean - spot_mean
+                # Must be significantly darker than surroundings
+                is_valid = contrast > 15 and spot_mean < skin_mean - 0.5 * skin_std
+            else:  # bright
+                contrast = spot_mean - surround_mean
+                is_valid = contrast > 20 and spot_mean > skin_mean + skin_std
+
+            return is_valid, cx / w, cy / h
+
+        # Detect blackheads with contrast verification
         for cnt in contours_dark:
             area = cv2.contourArea(cnt)
             scaled_min = min_area * max(area_scale, 0.5)
@@ -1137,100 +1175,88 @@ class FaceScanService:
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    # BALANCED: Moderate circularity (0.35) - between original 0.3 and overcorrected 0.45
-                    if circularity > 0.35:
-                        blackhead_count += 1
-                        # Get centroid for location
-                        M = cv2.moments(cnt)
-                        if M["m00"] > 0:
-                            cx = M["m10"] / M["m00"] / w  # Normalized x
-                            cy = M["m01"] / M["m00"] / h  # Normalized y
+                    # STRICT: Higher circularity required
+                    if circularity > 0.4:
+                        # VERIFY contrast with surroundings
+                        is_valid, cx, cy = verify_spot_contrast(cnt, "dark")
+                        if is_valid:
+                            blackhead_count += 1
                             acne_locations.append({
-                                "x": round(cx, 3),
-                                "y": round(cy, 3),
+                                "x": round(cx, 3), "y": round(cy, 3),
                                 "type": "blackhead",
                                 "size": "small" if area < 60 else "medium"
                             })
 
-        # Detect pimples using red mask
-        contours_red, _ = cv2.findContours(
-            red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        # Detect pimples with strict validation
+        contours_red, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for cnt in contours_red:
             area = cv2.contourArea(cnt)
-            # ADJUSTED: Higher minimum area for pimples
             if min_area * 1.5 * max(area_scale, 0.5) < area < max_area * 2 * max(area_scale, 0.5):
-                # Additional check: pimples should be somewhat circular
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    if circularity > 0.35:  # Must be somewhat circular
-                        pimple_count += 1
-                        # Get centroid for location
-                        M = cv2.moments(cnt)
-                        if M["m00"] > 0:
-                            cx = M["m10"] / M["m00"] / w
-                            cy = M["m01"] / M["m00"] / h
-                            acne_locations.append({
-                                "x": round(cx, 3),
-                                "y": round(cy, 3),
-                                "type": "pimple",
-                                "size": "small" if area < 120 else "large"
-                            })
+                    if circularity > 0.4:
+                        # Verify it's actually red/inflamed, not just skin tone
+                        spot_mask = np.zeros((h, w), dtype=np.uint8)
+                        cv2.drawContours(spot_mask, [cnt], -1, 255, -1)
+                        spot_hsv = hsv[spot_mask > 0]
+                        if len(spot_hsv) > 0:
+                            avg_saturation = np.mean(spot_hsv[:, 1])
+                            # Must have high saturation to be true inflammation
+                            if avg_saturation > 80:
+                                M = cv2.moments(cnt)
+                                if M["m00"] > 0:
+                                    cx = M["m10"] / M["m00"] / w
+                                    cy = M["m01"] / M["m00"] / h
+                                    pimple_count += 1
+                                    acne_locations.append({
+                                        "x": round(cx, 3), "y": round(cy, 3),
+                                        "type": "pimple",
+                                        "size": "small" if area < 120 else "large"
+                                    })
 
-        # Detect whiteheads (bright spots)
-        # ADJUSTED: Higher threshold (210 instead of 200)
-        _, thresh_bright = cv2.threshold(blurred, 210, 255, cv2.THRESH_BINARY)
+        # Detect whiteheads with contrast verification
+        _, thresh_bright = cv2.threshold(blurred, 215, 255, cv2.THRESH_BINARY)
         thresh_bright = cv2.bitwise_and(thresh_bright, mask)
         thresh_bright = cv2.morphologyEx(thresh_bright, cv2.MORPH_OPEN, kernel)
 
-        contours_bright, _ = cv2.findContours(
-            thresh_bright, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours_bright, _ = cv2.findContours(thresh_bright, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for cnt in contours_bright:
             area = cv2.contourArea(cnt)
-            if min_area * max(area_scale, 0.5) < area < max_area * 0.8 * max(area_scale, 0.5):
-                # Whiteheads should be circular
+            if min_area * max(area_scale, 0.5) < area < max_area * 0.7 * max(area_scale, 0.5):
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    if circularity > 0.5:  # Must be quite circular
-                        whitehead_count += 1
-                        # Get centroid for location
-                        M = cv2.moments(cnt)
-                        if M["m00"] > 0:
-                            cx = M["m10"] / M["m00"] / w
-                            cy = M["m01"] / M["m00"] / h
+                    if circularity > 0.55:  # Whiteheads are very circular
+                        is_valid, cx, cy = verify_spot_contrast(cnt, "bright")
+                        if is_valid:
+                            whitehead_count += 1
                             acne_locations.append({
-                                "x": round(cx, 3),
-                                "y": round(cy, 3),
-                                "type": "whitehead",
-                                "size": "small"
+                                "x": round(cx, 3), "y": round(cy, 3),
+                                "type": "whitehead", "size": "small"
                             })
 
-        # Cap counts to reasonable values - ADJUSTED: Lower caps
-        blackhead_count = min(blackhead_count, 20)
-        pimple_count = min(pimple_count, 12)
-        whitehead_count = min(whitehead_count, 10)
+        # Cap counts
+        blackhead_count = min(blackhead_count, 15)
+        pimple_count = min(pimple_count, 10)
+        whitehead_count = min(whitehead_count, 8)
 
-        # Calculate acne score (0-100, lower is better)
-        # BALANCED: Moderate multiplier (1.8) - between original 2 and overcorrected 1.5
-        total_blemishes = blackhead_count + pimple_count * 2 + whitehead_count
-        acne_score = min(100, int(total_blemishes * 1.8))
+        # Calculate score - only verified blemishes count
+        total_blemishes = blackhead_count + pimple_count * 2.5 + whitehead_count
+        acne_score = min(100, int(total_blemishes * 2.5))  # Higher weight per verified blemish
 
-        # Determine inflammation level (0.0-1.0 scale for database)
+        # Inflammation based on verified red pixels
         red_pixel_ratio = np.sum(red_mask > 0) / skin_area
-        if red_pixel_ratio > 0.12:
-            inflammation = 0.66  # moderate
-        elif red_pixel_ratio > 0.04:
-            inflammation = 0.33  # mild
+        if red_pixel_ratio > 0.15:
+            inflammation = 0.66
+        elif red_pixel_ratio > 0.06:
+            inflammation = 0.33
         else:
-            inflammation = 0.0  # none
+            inflammation = 0.0
 
-        # Limit locations to max 20 for performance
-        acne_locations = acne_locations[:20]
+        acne_locations = acne_locations[:15]
 
         return {
             "acne_score": int(acne_score),
@@ -1239,6 +1265,17 @@ class FaceScanService:
             "pimple_count": int(pimple_count),
             "inflammation_level": float(inflammation),
             "acne_locations": acne_locations,
+        }
+
+    def _default_acne(self):
+        """Return default acne values when detection fails"""
+        return {
+            "acne_score": 0,
+            "whitehead_count": 0,
+            "blackhead_count": 0,
+            "pimple_count": 0,
+            "inflammation_level": 0.0,
+            "acne_locations": [],
         }
 
     def _detect_wrinkles(self, img: np.ndarray, mask: np.ndarray, face_data: Dict) -> Dict:
@@ -1572,17 +1609,19 @@ class FaceScanService:
         }
 
     def _analyze_redness(self, img: np.ndarray, mask: np.ndarray) -> Dict:
-        """Analyze skin redness and sensitivity using HSV color analysis.
+        """Analyze skin redness with HIGH ACCURACY validation.
 
-        CALIBRATED for reduced false positives:
-        - Narrower hue range for red detection
-        - Higher saturation threshold
-        - Account for natural skin undertones
-        - Lower score multipliers
+        STRICT ACCURACY MODE:
+        - Compare to individual's skin tone baseline
+        - Verify redness is abnormal, not natural undertone
+        - Use LAB color space for better red detection
+        - Only flag clinically significant redness
         """
 
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         hsv_pixels = hsv[mask > 0]
+        lab_pixels = lab[mask > 0]
 
         if len(hsv_pixels) == 0:
             return self._default_redness()
@@ -1590,66 +1629,94 @@ class FaceScanService:
         h_channel = hsv_pixels[:, 0]
         s_channel = hsv_pixels[:, 1]
         v_channel = hsv_pixels[:, 2]
+        a_channel = lab_pixels[:, 1]  # LAB 'a' channel: negative=green, positive=red
         total_pixels = len(h_channel)
 
-        # ADJUSTED: Narrower hue range (0-10 and 170-180 instead of 0-15 and 165-180)
-        # and require minimum saturation to exclude pale skin
-        red_pixels = np.sum(((h_channel < 10) | (h_channel > 170)) & (s_channel > 50))
-        red_ratio = red_pixels / total_pixels
+        # Calculate baseline skin tone
+        median_saturation = np.median(s_channel)
+        median_a = np.median(a_channel)  # Baseline red-green axis
 
-        # Intense red - ADJUSTED: Higher saturation threshold (100 instead of 80)
-        intense_red = np.sum(((h_channel < 10) | (h_channel > 170)) & (s_channel > 100))
+        # STRICT: Only count pixels significantly redder than person's baseline
+        # Using LAB 'a' channel which better captures red vs non-red
+        red_threshold_a = median_a + 15  # Must be 15 units redder than baseline
+        abnormal_red_pixels = np.sum(a_channel > red_threshold_a)
+        abnormal_red_ratio = abnormal_red_pixels / total_pixels
+
+        # HSV-based red with STRICT thresholds
+        # Narrow hue range AND high saturation AND brightness check
+        strict_red = np.sum(
+            ((h_channel < 8) | (h_channel > 172)) &
+            (s_channel > 70) &
+            (v_channel > 50)
+        )
+        strict_red_ratio = strict_red / total_pixels
+
+        # Intense inflammation: very high saturation red
+        intense_red = np.sum(
+            ((h_channel < 6) | (h_channel > 174)) &
+            (s_channel > 100)
+        )
         intense_ratio = intense_red / total_pixels
 
-        # Calculate average skin saturation to account for natural undertones
-        avg_saturation = np.mean(s_channel)
+        # Account for natural skin undertone - STRICT baseline subtraction
+        # Warm skin tones naturally have higher redness
+        natural_baseline = min(0.20, median_saturation / 400)  # Higher saturation = warmer undertone
+        adjusted_red_ratio = max(0, strict_red_ratio - natural_baseline)
+        adjusted_abnormal_ratio = max(0, abnormal_red_ratio - 0.05)  # 5% is normal variation
 
-        # ADJUSTED: Lower multipliers and account for natural undertones
-        # Subtract baseline for natural skin redness
-        adjusted_red_ratio = max(0, red_ratio - 0.15)  # Many people have ~15% natural redness
-        adjusted_intense_ratio = max(0, intense_ratio - 0.02)
+        # Calculate redness score - based on ABNORMAL redness only
+        redness_score = min(100, int(
+            adjusted_abnormal_ratio * 80 +  # LAB-based abnormal redness
+            adjusted_red_ratio * 40 +        # HSV-based strict redness
+            intense_ratio * 150              # Intense inflammation
+        ))
 
-        # Calculate redness score - ADJUSTED: Lower multipliers
-        redness_score = min(100, int(adjusted_red_ratio * 60 + adjusted_intense_ratio * 100))
-
-        # Determine sensitivity level - ADJUSTED: Higher thresholds
-        if adjusted_intense_ratio > 0.15:
+        # Determine sensitivity level - STRICT thresholds
+        if intense_ratio > 0.10 or adjusted_abnormal_ratio > 0.15:
             sensitivity = "high"
-        elif adjusted_intense_ratio > 0.06:
+        elif intense_ratio > 0.04 or adjusted_abnormal_ratio > 0.08:
             sensitivity = "medium"
         else:
             sensitivity = "low"
 
-        # Check for irritation patterns - ADJUSTED: Higher threshold
+        # Check for irritation patterns
         red_binary = np.zeros_like(mask)
         hsv_full = hsv.copy()
-        red_binary[((hsv_full[:, :, 0] < 10) | (hsv_full[:, :, 0] > 170)) &
-                   (hsv_full[:, :, 1] > 80) & (mask > 0)] = 255
+        red_binary[((hsv_full[:, :, 0] < 8) | (hsv_full[:, :, 0] > 172)) &
+                   (hsv_full[:, :, 1] > 90) & (mask > 0)] = 255
+
+        # Morphological cleanup
+        kernel = np.ones((3, 3), np.uint8)
+        red_binary = cv2.morphologyEx(red_binary, cv2.MORPH_OPEN, kernel)
 
         num_labels, _ = cv2.connectedComponents(red_binary)
-        irritation_detected = bool((num_labels - 1) > 8)  # Higher threshold
+        irritation_detected = bool((num_labels - 1) > 10)
 
-        # Rosacea indicators - ADJUSTED: Higher thresholds
-        rosacea_indicators = bool(adjusted_intense_ratio > 0.20 and adjusted_red_ratio > 0.30)
+        # Rosacea indicators - STRICT: requires multiple strong signals
+        rosacea_indicators = bool(
+            intense_ratio > 0.12 and
+            adjusted_abnormal_ratio > 0.20 and
+            adjusted_red_ratio > 0.15
+        )
 
-        # Build redness regions for overlay - ADJUSTED: Higher thresholds
+        # Build redness regions - only for significant redness
         redness_regions = []
-        if adjusted_red_ratio > 0.20:
+        if adjusted_red_ratio > 0.15 or adjusted_abnormal_ratio > 0.12:
             redness_regions.append({
                 "region": "cheeks",
-                "bbox": [0.10, 0.35, 0.40, 0.65],  # left cheek
-                "intensity": round(adjusted_red_ratio, 2)
+                "bbox": [0.10, 0.35, 0.40, 0.65],
+                "intensity": round(max(adjusted_red_ratio, adjusted_abnormal_ratio), 2)
             })
             redness_regions.append({
                 "region": "cheeks",
-                "bbox": [0.60, 0.35, 0.90, 0.65],  # right cheek
-                "intensity": round(adjusted_red_ratio, 2)
+                "bbox": [0.60, 0.35, 0.90, 0.65],
+                "intensity": round(max(adjusted_red_ratio, adjusted_abnormal_ratio), 2)
             })
-        if adjusted_intense_ratio > 0.08:
+        if intense_ratio > 0.06:
             redness_regions.append({
                 "region": "nose",
-                "bbox": [0.38, 0.40, 0.62, 0.70],  # nose area
-                "intensity": round(adjusted_intense_ratio, 2)
+                "bbox": [0.38, 0.40, 0.62, 0.70],
+                "intensity": round(intense_ratio, 2)
             })
 
         return {
@@ -1755,17 +1822,19 @@ class FaceScanService:
         }
 
     def _detect_pigmentation(self, img: np.ndarray, mask: np.ndarray) -> Dict:
-        """Detect pigmentation issues and dark spots using LAB color space.
+        """Detect pigmentation with HIGH ACCURACY contrast validation.
 
-        CALIBRATED for reduced false positives:
-        - Higher threshold for dark spot detection
-        - Larger minimum area for spots
-        - Account for natural skin tone variation
-        - Lower score multipliers
+        STRICT ACCURACY MODE:
+        - Each spot must have significant contrast vs surroundings
+        - Verify spots are true pigmentation, not shadows
+        - Use local neighborhood comparison
+        - Only count validated dark spots
         """
 
         lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         l_channel = lab[:, :, 0]
+        a_channel = lab[:, :, 1]  # For color-based validation
+        h, w = l_channel.shape
 
         skin_lightness = l_channel[mask > 0]
         if len(skin_lightness) == 0:
@@ -1773,69 +1842,119 @@ class FaceScanService:
 
         mean_lightness = np.mean(skin_lightness)
         std_lightness = np.std(skin_lightness)
+        median_lightness = np.median(skin_lightness)
 
-        # BALANCED: Moderate threshold (1.7 std) - between original 1.5 and overcorrected 2.0
-        dark_threshold = mean_lightness - 1.7 * std_lightness
-        dark_threshold = max(dark_threshold, mean_lightness * 0.70)
+        # STRICT: Use 2.0 std for initial detection, then validate
+        dark_threshold = mean_lightness - 2.0 * std_lightness
+        dark_threshold = max(dark_threshold, mean_lightness * 0.65)
 
         dark_mask = (l_channel < dark_threshold).astype(np.uint8) * 255
         dark_mask = cv2.bitwise_and(dark_mask, mask)
 
-        # BALANCED: Standard morphological cleanup
+        # Strong morphological cleanup
         kernel = np.ones((3, 3), np.uint8)
         dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_OPEN, kernel)
         dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_CLOSE, kernel)
 
         contours, _ = cv2.findContours(dark_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        h, w = l_channel.shape
 
         dark_spots_count = 0
         total_dark_area = 0
-        dark_spots_locations = []  # Store locations for overlay
+        dark_spots_locations = []
         skin_area = max(np.sum(mask > 0), 1)
         area_scale = skin_area / 100000
+
+        # STRICT: Higher minimum area
+        min_area = 25
+        max_area = 1200
+
+        def verify_pigmentation_spot(cnt):
+            """Verify spot is true pigmentation with contrast validation"""
+            M = cv2.moments(cnt)
+            if M["m00"] == 0:
+                return False, 0
+
+            # Get spot intensity
+            spot_mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.drawContours(spot_mask, [cnt], -1, 255, -1)
+            spot_pixels = l_channel[spot_mask > 0]
+
+            if len(spot_pixels) < 5:
+                return False, 0
+
+            spot_mean = np.mean(spot_pixels)
+
+            # Get surrounding area (dilate contour)
+            dilated = cv2.dilate(spot_mask, kernel, iterations=4)
+            surround_mask = cv2.subtract(dilated, spot_mask)
+            surround_mask = cv2.bitwise_and(surround_mask, mask)
+            surround_pixels = l_channel[surround_mask > 0]
+
+            if len(surround_pixels) < 20:
+                return False, 0
+
+            surround_mean = np.mean(surround_pixels)
+
+            # STRICT: Spot must be at least 12 units darker than immediate surroundings
+            contrast = surround_mean - spot_mean
+            if contrast < 12:
+                return False, 0
+
+            # Additional check: spot should also be darker than global median
+            if spot_mean > median_lightness - 5:
+                return False, 0
+
+            return True, contrast
 
         large_patches = 0
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            # BALANCED: Moderate minimum area (20) - between original 15 and overcorrected 30
-            if 20 * max(area_scale, 0.5) < area < 1400 * max(area_scale, 0.5):
-                dark_spots_count += 1
-                total_dark_area += area
-                if area > 450 * max(area_scale, 0.5):
-                    large_patches += 1
-                # Get centroid for location
-                M = cv2.moments(cnt)
-                if M["m00"] > 0 and len(dark_spots_locations) < 12:
-                    cx = M["m10"] / M["m00"] / w
-                    cy = M["m01"] / M["m00"] / h
-                    dark_spots_locations.append({
-                        "x": round(cx, 3),
-                        "y": round(cy, 3),
-                        "size": round(area / skin_area * 1000, 3)  # Normalized size
-                    })
+            scaled_min = min_area * max(area_scale, 0.5)
+            scaled_max = max_area * max(area_scale, 0.5)
 
-        dark_spots_count = min(dark_spots_count, 25)
+            if scaled_min < area < scaled_max:
+                # VERIFY this is true pigmentation
+                is_valid, contrast = verify_pigmentation_spot(cnt)
 
-        # Pigmentation score - BALANCED: Moderate multipliers
+                if is_valid:
+                    dark_spots_count += 1
+                    total_dark_area += area
+
+                    if area > 400 * max(area_scale, 0.5):
+                        large_patches += 1
+
+                    M = cv2.moments(cnt)
+                    if M["m00"] > 0 and len(dark_spots_locations) < 10:
+                        cx = M["m10"] / M["m00"] / w
+                        cy = M["m01"] / M["m00"] / h
+                        dark_spots_locations.append({
+                            "x": round(cx, 3),
+                            "y": round(cy, 3),
+                            "size": round(area / skin_area * 1000, 3),
+                            "contrast": round(contrast, 1)
+                        })
+
+        dark_spots_count = min(dark_spots_count, 20)
+
+        # Pigmentation score - based on VERIFIED spots only
         dark_ratio = total_dark_area / skin_area
-        pigmentation_score = min(100, int(dark_ratio * 350 + dark_spots_count * 2.2))
+        pigmentation_score = min(100, int(dark_ratio * 400 + dark_spots_count * 3.0))
 
-        # Severity classification (0.0-1.0 scale for database) - ADJUSTED: Higher thresholds
-        if dark_spots_count > 15 or dark_ratio > 0.10:
+        # Severity classification - STRICT thresholds
+        if dark_spots_count > 12 or dark_ratio > 0.08:
             severity = 1.0  # severe
-        elif dark_spots_count > 8 or dark_ratio > 0.05:
+        elif dark_spots_count > 6 or dark_ratio > 0.04:
             severity = 0.66  # moderate
-        elif dark_spots_count > 3:
+        elif dark_spots_count > 2:
             severity = 0.33  # mild
         else:
             severity = 0.0  # none
 
-        # Sun damage score - ADJUSTED: Lower multipliers
-        sun_damage_score = int(min(100, int(std_lightness * 1.5 + dark_spots_count * 1.2)))
+        # Sun damage score
+        sun_damage_score = int(min(100, int(std_lightness * 1.8 + dark_spots_count * 1.5)))
 
-        # Melasma detection - ADJUSTED: Higher threshold
-        melasma_detected = bool(large_patches >= 3)
+        # Melasma detection - requires multiple large verified patches
+        melasma_detected = bool(large_patches >= 2)
 
         return {
             "pigmentation_score": int(pigmentation_score),
