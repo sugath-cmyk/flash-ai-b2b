@@ -41,6 +41,7 @@
         cameraStream: null,
         visitorId: this.getOrCreateVisitorId(),
         authToken: null,
+        refreshToken: null,
         user: null,
         routines: null,
         // NEW: Skin context for improved accuracy
@@ -1546,8 +1547,10 @@
 
         if (data.success) {
           this.state.authToken = data.data.accessToken;
+          this.state.refreshToken = data.data.refreshToken;
           this.state.user = data.data.user;
           localStorage.setItem('flashai_auth_token', data.data.accessToken);
+          localStorage.setItem('flashai_refresh_token', data.data.refreshToken);
           localStorage.setItem('flashai_user', JSON.stringify(data.data.user));
           this.updateAuthUI();
           this.hideAuthModal();
@@ -1610,8 +1613,10 @@
 
         if (data.success) {
           this.state.authToken = data.data.accessToken;
+          this.state.refreshToken = data.data.refreshToken;
           this.state.user = data.data.user;
           localStorage.setItem('flashai_auth_token', data.data.accessToken);
+          localStorage.setItem('flashai_refresh_token', data.data.refreshToken);
           localStorage.setItem('flashai_user', JSON.stringify(data.data.user));
           this.updateAuthUI();
           this.hideAuthModal();
@@ -1945,8 +1950,10 @@
       // Simple logout for now
       if (confirm('Do you want to sign out?')) {
         this.state.authToken = null;
+        this.state.refreshToken = null;
         this.state.user = null;
         localStorage.removeItem('flashai_auth_token');
+        localStorage.removeItem('flashai_refresh_token');
         localStorage.removeItem('flashai_user');
         this.updateAuthUI();
       }
@@ -1998,13 +2005,109 @@
       this.migrateToPhaseSystem();
 
       const token = localStorage.getItem('flashai_auth_token');
+      const refreshToken = localStorage.getItem('flashai_refresh_token');
       const user = localStorage.getItem('flashai_user');
 
       if (token && user) {
         this.state.authToken = token;
+        this.state.refreshToken = refreshToken;
         this.state.user = JSON.parse(user);
         this.updateAuthUI();
       }
+    }
+
+    // ==========================================================================
+    // Token Refresh & Auth Error Handling
+    // ==========================================================================
+
+    async refreshAuthToken() {
+      if (!this.state.refreshToken) {
+        return false;
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({ refreshToken: this.state.refreshToken })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          this.state.authToken = data.data.accessToken;
+          this.state.refreshToken = data.data.refreshToken;
+          localStorage.setItem('flashai_auth_token', data.data.accessToken);
+          localStorage.setItem('flashai_refresh_token', data.data.refreshToken);
+          console.log('[Auth] Token refreshed successfully');
+          return true;
+        }
+      } catch (error) {
+        console.error('[Auth] Token refresh failed:', error);
+      }
+
+      // Refresh failed - clear auth state
+      this.handleAuthExpired();
+      return false;
+    }
+
+    handleAuthExpired() {
+      console.log('[Auth] Session expired, clearing auth state');
+      this.state.authToken = null;
+      this.state.refreshToken = null;
+      this.state.user = null;
+      localStorage.removeItem('flashai_auth_token');
+      localStorage.removeItem('flashai_refresh_token');
+      localStorage.removeItem('flashai_user');
+      this.updateAuthUI();
+    }
+
+    async authenticatedFetch(url, options = {}) {
+      // If no auth token, prompt login
+      if (!this.state.authToken) {
+        this.showAuthModal();
+        throw new Error('Please sign in to continue');
+      }
+
+      // Add auth header
+      const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${this.state.authToken}`
+      };
+
+      let response = await fetch(url, { ...options, headers });
+
+      // If unauthorized, try to refresh token
+      if (response.status === 401) {
+        const data = await response.json();
+        const isExpired = data.error?.message?.toLowerCase().includes('expired') ||
+                          data.message?.toLowerCase().includes('expired');
+
+        if (isExpired && this.state.refreshToken) {
+          console.log('[Auth] Token expired, attempting refresh...');
+          const refreshed = await this.refreshAuthToken();
+
+          if (refreshed) {
+            // Retry the request with new token
+            headers['Authorization'] = `Bearer ${this.state.authToken}`;
+            response = await fetch(url, { ...options, headers });
+          } else {
+            // Refresh failed, show login
+            this.showAuthModal();
+            throw new Error('Session expired. Please sign in again.');
+          }
+        } else {
+          // Not a token expiry issue, show login
+          this.handleAuthExpired();
+          this.showAuthModal();
+          throw new Error('Please sign in to continue');
+        }
+      }
+
+      return response;
     }
 
     // ==========================================================================
@@ -3305,6 +3408,12 @@
         return;
       }
 
+      // Check if user is logged in - if not, show login modal
+      if (!this.state.authToken) {
+        this.showAuthModal();
+        return;
+      }
+
       const submitBtn = document.getElementById('flashai-vto-questionnaire-submit');
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -3313,11 +3422,10 @@
 
       try {
         const url = this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines') + '/questionnaire';
-        const response = await fetch(url, {
+        const response = await this.authenticatedFetch(url, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + this.state.authToken
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             skincareExperience: answers.skincareExperience,
@@ -3355,7 +3463,10 @@
         }
       } catch (error) {
         console.error('[Questionnaire] Error:', error);
-        alert('Failed to create routine: ' + error.message);
+        // Don't show alert if it's just a login prompt
+        if (!error.message.includes('sign in')) {
+          alert('Failed to create routine: ' + error.message);
+        }
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
