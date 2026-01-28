@@ -2349,15 +2349,15 @@
      */
     getGoalRecommendation(key) {
       const recommendations = {
-        acne: 'Use salicylic acid cleanser, niacinamide serum. Avoid touching face.',
-        dark_circles: 'Get 7-8 hours sleep, use caffeine eye cream, stay hydrated.',
-        wrinkles: 'Apply retinol at night, use SPF 50 daily, add vitamin C serum.',
-        redness: 'Use gentle, fragrance-free products. Try centella/cica ingredients.',
-        pigmentation: 'Vitamin C in AM, exfoliate 2x/week, never skip sunscreen.',
-        hydration: 'Layer hydrating products, use hyaluronic acid, drink more water.',
-        oiliness: 'Use niacinamide, lightweight moisturizer, don\'t over-cleanse.',
-        pores: 'BHA exfoliant 2-3x/week, niacinamide serum, clay mask weekly.',
-        texture: 'AHA/BHA exfoliants, retinol at night, gentle physical exfoliation.'
+        acne: 'Use Salicylic Acid or Neem cleanser. Niacinamide serum controls oil. Monsoon: watch for fungal acne. Multani Mitti mask weekly.',
+        dark_circles: 'Get 7-8 hours sleep, use caffeine eye cream. Traditional: Almond oil massage + Rose Water pads. Stay hydrated (crucial in Indian heat).',
+        wrinkles: 'SPF 50 daily (essential in Indian sun). Retinol or Bakuchiol at night. Try Kumkumadi oil - traditional anti-aging secret.',
+        redness: 'Use gentle, fragrance-free products. Traditional: Rose Water, Aloe Vera, Sandalwood soothe. Avoid hot water. AC dryness can trigger sensitivity.',
+        pigmentation: 'Vitamin C in AM + SPF 50 always. Avoid 10am-4pm sun. Try Kesar, Mulethi, Manjistha for natural brightening. Results take 8-12 weeks.',
+        hydration: 'Layer hydrating products - lighter in monsoon, richer in winter. Hyaluronic Acid on damp skin. Rose Water spritz throughout day. 8+ glasses water.',
+        oiliness: 'Niacinamide + lightweight gel moisturizer. Monsoon: use lighter products. Multani Mitti mask 2x/week. Don\'t over-cleanse.',
+        pores: 'BHA exfoliant 2-3x/week, Niacinamide serum. Double cleanse after pollution exposure. Multani Mitti + Rose Water mask weekly.',
+        texture: 'AHA/BHA exfoliants 2-3x/week. Traditional Besan-Haldi ubtan for gentle exfoliation. Go easy during monsoon - fungal issues increase.'
       };
       return recommendations[key] || 'Follow your personalized routine consistently.';
     }
@@ -2695,17 +2695,17 @@
       const issues = this.state.detectedIssues || [];
       const concerns = issues.filter(i => i.isConcern).map(i => i.key);
 
-      // Ingredient database based on concerns
+      // Ingredient database based on concerns (with Ayurvedic alternatives)
       const ingredientsByConern = {
-        acne: { primary: 'Salicylic Acid (BHA)', secondary: 'Niacinamide', avoid: 'Heavy oils' },
-        dark_circles: { primary: 'Caffeine', secondary: 'Vitamin K, Peptides', avoid: 'Harsh rubbing' },
-        wrinkles: { primary: 'Retinol', secondary: 'Peptides, Vitamin C', avoid: 'Sun without SPF' },
-        redness: { primary: 'Centella Asiatica', secondary: 'Niacinamide, Azelaic Acid', avoid: 'Fragrance, Alcohol' },
-        pigmentation: { primary: 'Vitamin C', secondary: 'Alpha Arbutin, Tranexamic Acid', avoid: 'Sun exposure' },
-        hydration: { primary: 'Hyaluronic Acid', secondary: 'Ceramides, Glycerin', avoid: 'Alcohol-based products' },
-        oiliness: { primary: 'Niacinamide', secondary: 'BHA, Zinc', avoid: 'Heavy creams' },
-        pores: { primary: 'Niacinamide', secondary: 'BHA, Retinol', avoid: 'Pore-clogging ingredients' },
-        texture: { primary: 'AHA (Glycolic/Lactic)', secondary: 'Retinol, Vitamin C', avoid: 'Over-exfoliation' }
+        acne: { primary: 'Salicylic Acid (BHA)', secondary: 'Niacinamide, Neem', ayurvedic: 'Neem, Tulsi, Multani Mitti', avoid: 'Heavy oils' },
+        dark_circles: { primary: 'Caffeine', secondary: 'Vitamin K, Peptides', ayurvedic: 'Almond Oil, Rose Water, Kumkumadi', avoid: 'Harsh rubbing' },
+        wrinkles: { primary: 'Retinol', secondary: 'Peptides, Vitamin C', ayurvedic: 'Kumkumadi, Bakuchiol, Ashwagandha', avoid: 'Sun without SPF' },
+        redness: { primary: 'Centella Asiatica', secondary: 'Niacinamide, Azelaic Acid', ayurvedic: 'Rose Water, Aloe Vera, Sandalwood, Vetiver', avoid: 'Fragrance, Alcohol' },
+        pigmentation: { primary: 'Vitamin C', secondary: 'Alpha Arbutin, Tranexamic Acid', ayurvedic: 'Saffron, Licorice, Manjistha, Turmeric', avoid: 'Sun exposure' },
+        hydration: { primary: 'Hyaluronic Acid', secondary: 'Ceramides, Glycerin', ayurvedic: 'Aloe Vera, Rose Water, Coconut Oil', avoid: 'Alcohol-based products' },
+        oiliness: { primary: 'Niacinamide', secondary: 'BHA, Zinc', ayurvedic: 'Multani Mitti, Neem, Tulsi', avoid: 'Heavy creams' },
+        pores: { primary: 'Niacinamide', secondary: 'BHA, Retinol', ayurvedic: 'Multani Mitti, Rose Water, Besan', avoid: 'Pore-clogging ingredients' },
+        texture: { primary: 'AHA (Glycolic/Lactic)', secondary: 'Retinol, Vitamin C', ayurvedic: 'Besan, Turmeric, Papaya', avoid: 'Over-exfoliation' }
       };
 
       // Get primary ingredients for this user's concerns
@@ -7024,15 +7024,16 @@
             return 'Significant dark circles visible. This could indicate lack of sleep, dehydration, or genetics.';
           },
           getSolution: (a, score) => {
-            if (score < 30) return 'Maintain good sleep habits and stay hydrated to keep this area healthy.';
-            return 'Use an eye cream with Vitamin C, caffeine, or retinol. Ensure 7-8 hours of sleep and stay hydrated. Cold compresses can help reduce puffiness.';
+            if (score < 30) return 'Maintain good sleep habits and stay hydrated (especially important in Indian summers). Chilled cucumber slices or Rose Water (Gulab Jal) pads refresh tired eyes.';
+            return 'Use an eye cream with Caffeine or Vitamin C. Indian climate tip: AC and heat cause dehydration around eyes - use hydrating eye cream. Traditional Almond Oil (Badam Tel) massage at night and chilled Rose Water pads work wonders. Screen time and pollution in metros worsen dark circles. Try Kumkumadi oil for brightening. Ensure 7-8 hours sleep.';
           },
           getIngredients: () => 'Vitamin C, Caffeine, Vitamin K, Retinol, Niacinamide, Peptides, Hyaluronic Acid',
+          getAyurvedicIngredients: () => 'Almond Oil (Badam Tel), Rose Water (Gulab Jal), Saffron (Kesar), Kumkumadi, Cucumber Extract, Potato Extract',
           getUsage: () => 'Apply a pea-sized amount of eye cream to your ring finger. Gently pat (don\'t rub) around the orbital bone, from inner to outer corner. Use morning and night after cleansing and before moisturizer.',
           getProducts: () => [
-            { name: 'Eye Cream with Caffeine', brands: 'The Ordinary Caffeine Solution 5% (Nykaa), Minimalist 5% Caffeine Eye Serum, Plum Bright Years Under-Eye Recovery Gel' },
-            { name: 'Vitamin C Eye Serum', brands: 'Dot & Key Vitamin C + E Super Bright Eye Cream, Mamaearth Vitamin C Under Eye Cream, Kiehl\'s Powerful-Strength Eye (Nykaa)' },
-            { name: 'Retinol Eye Cream', brands: 'Minimalist 0.3% Retinol Eye Cream, Olay Regenerist Retinol24 Eye Cream, Neutrogena Rapid Wrinkle Repair Eye' }
+            { name: 'Eye Cream with Caffeine', brands: 'Minimalist 5% Caffeine Eye Serum (₹449), mCaffeine Coffee Under Eye Cream (₹499), Plum Bright Years Under-Eye Recovery Gel (₹575), The Ordinary Caffeine Solution 5% (₹750 Nykaa)' },
+            { name: 'Vitamin C Eye Serum', brands: 'Dot & Key Vitamin C + E Super Bright Eye Cream (₹545), Mamaearth Vitamin C Under Eye Cream (₹349), The Derma Co 5% Caffeine Under Eye Serum (₹349), Pilgrim Vitamin C Under Eye Cream (₹395)' },
+            { name: 'Ayurvedic Eye Care', brands: 'Kama Ayurveda Kumkumadi Eye Serum (₹1,750), Forest Essentials Under Eye Serum (₹1,495), Just Herbs Kumkumadi Under Eye Gel (₹545), Biotique Almond Oil Eye Cream (₹245)' }
           ]
         },
         acne: {
@@ -7047,15 +7048,17 @@
             return `Multiple blemishes visible (${count > 0 ? count : 'several'}). A consistent skincare routine can help.`;
           },
           getSolution: (a, score) => {
-            if (score < 20) return 'Continue your current routine. Use non-comedogenic products to prevent future breakouts.';
-            return 'Use a gentle cleanser with Salicylic Acid or Benzoyl Peroxide. Avoid touching your face and change pillowcases frequently. Consider a spot treatment for active breakouts.';
+            if (score < 20) return 'Continue your current routine. In humid Indian monsoons, acne can flare up - keep Neem face wash handy. Use non-comedogenic products always.';
+            return 'Indian climate tip: Monsoon humidity triggers fungal acne and breakouts - use lightweight, non-comedogenic products. Summer sweat clogs pores - cleanse immediately after sweating. Use Salicylic Acid or Neem cleanser. Neem and Tulsi are powerful natural antibacterials for Indian skin. Multani Mitti mask weekly absorbs excess oil. Pollution in metros worsens acne - double cleanse at night. Change pillowcases frequently.';
           },
           getIngredients: () => 'Salicylic Acid (BHA), Benzoyl Peroxide, Tea Tree Oil, Niacinamide, Zinc, Sulfur, Azelaic Acid',
+          getAyurvedicIngredients: () => 'Neem (Nimba), Tea Tree Oil, Tulsi (Holy Basil), Multani Mitti (Fuller\'s Earth), Turmeric (Haldi), Sandalwood (Chandan), Aloe Vera (Ghritkumari)',
           getUsage: () => 'Cleanse face twice daily with acne cleanser. Apply spot treatment directly on blemishes at night. Use oil-free moisturizer. For prevention, use BHA toner 2-3 times per week on affected areas.',
           getProducts: () => [
-            { name: 'Salicylic Acid Cleanser', brands: 'Minimalist 2% Salicylic Acid Face Wash, CeraVe SA Cleanser (Nykaa), Neutrogena Oil-Free Acne Wash, Himalaya Purifying Neem Face Wash' },
-            { name: 'Acne Treatment Gel', brands: 'Minimalist 2% Salicylic Acid Serum, Re\'equil Acne Clarifying Gel, Fixderma Salyzap Daily Use Gel, La Roche-Posay Effaclar Duo (Nykaa)' },
-            { name: 'Spot Treatment & Patches', brands: 'COSRX Acne Pimple Master Patch (Nykaa), Dot & Key Acne Spot Corrector, The Ordinary Niacinamide 10% + Zinc 1% (Nykaa)' }
+            { name: 'Salicylic Acid Cleanser', brands: 'Minimalist 2% Salicylic Acid Face Wash (₹299), The Derma Co 1% Salicylic Acid Gel Face Wash (₹249), Deconstruct 2% Salicylic Acid Cleanser (₹350), Re\'equil Oil Control Anti Acne Face Wash (₹350)' },
+            { name: 'Acne Treatment Serum', brands: 'Minimalist 2% Salicylic Acid Serum (₹349), Dot & Key 2% Salicylic + Cica Face Serum (₹595), The Derma Co 2% Salicylic Acid Serum (₹349), Deconstruct 2% Salicylic Acid + 3% Niacinamide Serum (₹550)' },
+            { name: 'Spot Treatment & Patches', brands: 'COSRX Acne Pimple Master Patch (₹450 Nykaa), Dot & Key Acne Spot Corrector (₹345), Minimalist 10% Niacinamide Face Serum (₹549), Pilgrim 2% Salicylic Acid + 3% Niacinamide Serum (₹495)' },
+            { name: 'Ayurvedic Acne Care', brands: 'Kama Ayurveda Anti-Acne Cleansing Foam (₹795), Forest Essentials Neem & Clove Facial Cleanser (₹1,175), Biotique Bio Neem Face Wash (₹145), Himalaya Purifying Neem Face Wash (₹135)' }
           ]
         },
         wrinkles: {
@@ -7069,15 +7072,17 @@
             return 'Notable wrinkles detected in multiple areas including forehead, crow\'s feet, and nasolabial folds.';
           },
           getSolution: (a, score) => {
-            if (score < 20) return 'Start using SPF daily and a light retinol serum at night to maintain skin youth.';
-            return 'Use Retinol or Retinoid products at night. Apply SPF 30+ daily. Consider products with Peptides and Hyaluronic Acid for plumping effect.';
+            if (score < 20) return 'Indian climate tip: Strong UV rays accelerate aging - SPF 50 is non-negotiable daily. Use Bakuchiol (gentler than retinol in Indian heat) at night. Kumkumadi oil is an excellent Ayurvedic anti-aging treatment.';
+            return 'Indian climate tip: Sun damage is the #1 cause of premature aging in India - always use SPF 50, reapply every 2 hours outdoors. Use Retinol or Bakuchiol (better for hot weather) at night. AC dryness causes fine lines - keep skin hydrated. Pollution accelerates aging in metros. Ashwagandha and Amla help skin firmness. Traditional Kumkumadi Tailam has been used for centuries for youthful skin.';
           },
           getIngredients: () => 'Retinol/Retinoid, Peptides, Hyaluronic Acid, Vitamin C, Bakuchiol (natural alternative), Collagen, CoQ10',
+          getAyurvedicIngredients: () => 'Kumkumadi (Saffron Oil), Ashwagandha, Amla (Indian Gooseberry), Bakuchiol (Babchi), Ghee, Almond Oil (Badam Tel), Sandalwood (Chandan)',
           getUsage: () => 'Start with retinol 2x/week at night, gradually increasing to nightly use. Apply pea-sized amount to clean, dry skin. Wait 20 mins before moisturizer. Always use SPF next morning. Avoid mixing with Vitamin C or AHAs.',
           getProducts: () => [
-            { name: 'Retinol Serum', brands: 'Minimalist 0.3% Retinol Serum, The Ordinary Retinol 0.5% (Nykaa), Olay Regenerist Retinol24 Serum, Neutrogena Rapid Wrinkle Repair' },
-            { name: 'Peptide Cream', brands: 'The Ordinary Buffet (Nykaa), Olay Regenerist Micro-Sculpting Cream, Minimalist Multi-Peptide Serum, Plum Bright Years Cell Renewal Serum' },
-            { name: 'Sunscreen SPF 50+', brands: 'La Roche-Posay Anthelios (Nykaa), Minimalist SPF 50 Sunscreen, Re\'equil Ultra Matte SPF 50, Lakme Sun Expert SPF 50' }
+            { name: 'Retinol Serum', brands: 'Minimalist 0.3% Retinol Serum (₹599), The Derma Co 0.3% Retinol Serum (₹549), Deconstruct 0.2% Retinol Serum (₹650), The Ordinary Retinol 0.5% (₹850 Nykaa)' },
+            { name: 'Peptide & Anti-Aging Serum', brands: 'Minimalist Multi-Peptide Serum (₹649), Plum Bright Years Cell Renewal Serum (₹595), Dot & Key Anti-Aging Serum (₹645), The Ordinary Buffet (₹1,150 Nykaa)' },
+            { name: 'Bakuchiol (Natural Retinol)', brands: 'Pilgrim Bakuchiol Anti-Aging Serum (₹595), Earth Rhythm Bakuchiol Serum (₹499), Juicy Chemistry Bakuchiol Oil (₹850), Daughter Earth Bakuchiol Serum (₹1,490)' },
+            { name: 'Ayurvedic Anti-Aging', brands: 'Kama Ayurveda Kumkumadi Miraculous Beauty Serum (₹2,595), Forest Essentials Soundarya Radiance Cream (₹4,475), Just Herbs Kumkumadi Tailam (₹995), Biotique Bio Dandelion Anti-Ageing Serum (₹295)' }
           ]
         },
         pigmentation: {
@@ -7092,15 +7097,17 @@
             return `Uneven pigmentation visible${spots > 0 ? ` with ${spots} darker areas` : ''}. Brightening products and SPF can help over time.`;
           },
           getSolution: (a, score) => {
-            if (score < 20) return 'Maintain SPF use daily to prevent future pigmentation.';
-            return 'Use Vitamin C serum in the morning and Niacinamide for brightening. Apply SPF 50 daily. Consider products with Alpha Arbutin or Kojic Acid for stubborn spots.';
+            if (score < 20) return 'Maintain SPF 50 use daily (essential in Indian sun) to prevent future pigmentation. Kumkumadi oil helps maintain radiance.';
+            return 'Use Vitamin C serum in AM, followed by SPF 50 (essential in Indian sun). Traditional ingredients like Saffron (Kesar), Licorice (Mulethi), and Manjistha work wonders for brightening. Avoid sun exposure 10am-4pm. Consider Kumkumadi Tailam for stubborn spots.';
           },
           getIngredients: () => 'Vitamin C (L-Ascorbic Acid), Niacinamide, Alpha Arbutin, Kojic Acid, Tranexamic Acid, Licorice Root Extract, Azelaic Acid',
+          getAyurvedicIngredients: () => 'Saffron (Kesar), Licorice (Mulethi/Yashtimadhu), Manjistha, Turmeric (Haldi), Sandalwood (Chandan), Kumkumadi, Lemon Extract (Nimbu)',
           getUsage: () => 'Apply Vitamin C serum every morning after cleansing, before SPF. Use brightening serums with Alpha Arbutin at night. Apply SPF 50 generously and reapply every 2 hours when outdoors. Be patient - results take 8-12 weeks.',
           getProducts: () => [
-            { name: 'Vitamin C Serum', brands: 'Minimalist 10% Vitamin C Serum, The Ordinary Vitamin C Suspension 23% (Nykaa), Plum 15% Vitamin C Serum, Garnier Bright Complete Vitamin C Serum' },
-            { name: 'Brightening Serum', brands: 'Minimalist Alpha Arbutin 2% Serum, The Ordinary Alpha Arbutin 2% (Nykaa), Dot & Key Vitamin C Glow Serum, Deconstruct 10% Niacinamide Serum' },
-            { name: 'Sunscreen SPF 50+', brands: 'La Roche-Posay Anthelios (Nykaa), Minimalist SPF 50 Sunscreen, Bioderma Photoderm SPF 50+, Cipla Rivela SPF 50' }
+            { name: 'Vitamin C Serum', brands: 'Minimalist 10% Vitamin C Serum (₹599), Plum 15% Vitamin C Serum (₹695), The Derma Co 10% Vitamin C Serum (₹549), Deconstruct 10% Vitamin C Serum (₹550)' },
+            { name: 'Brightening Serum', brands: 'Minimalist Alpha Arbutin 2% Serum (₹549), Dot & Key Vitamin C + E Glow Serum (₹645), Re\'equil Glow Boosting Serum (₹750), Pilgrim Alpha Arbutin Serum (₹595)' },
+            { name: 'Sunscreen SPF 50+', brands: 'Minimalist SPF 50 Sunscreen (₹399), Re\'equil Ultra Matte SPF 50 (₹695), Dot & Key SPF 50+ Sunscreen (₹545), La Shield SPF 50 (₹699)' },
+            { name: 'Ayurvedic Brightening', brands: 'Kama Ayurveda Kumkumadi Miraculous Beauty Serum (₹2,595), Forest Essentials Soundarya Serum (₹4,475), Just Herbs Kumkumadi Tailam (₹995), Kama Ayurveda Pure Saffron Treatment (₹2,450)' }
           ]
         },
         redness: {
@@ -7114,15 +7121,17 @@
             return 'Noticeable redness detected. This could be temporary (heat, exercise) or indicate sensitivity. Calming products may help.';
           },
           getSolution: (a, score) => {
-            if (score < 20) return 'Continue using gentle products. Avoid harsh exfoliants to maintain calm skin.';
-            return 'Use fragrance-free, hypoallergenic products. Look for Centella Asiatica, Aloe Vera, or Green Tea. Avoid hot water and harsh scrubs. Consider Azelaic Acid for rosacea-prone skin.';
+            if (score < 20) return 'Continue using gentle products. Indian climate tip: Heat rash is common in summers - keep Rose Water spritz handy. Avoid harsh exfoliants.';
+            return 'Indian climate tip: Summer heat and spicy food can trigger redness and heat rash. Use fragrance-free products. Rose Water, Aloe Vera, and Sandalwood are cooling traditional remedies. Vetiver (Khus) is excellent for inflammation. AC causes skin dryness leading to sensitivity. Avoid hot water - use lukewarm. During humid monsoons, sensitivity may increase. Consider Brahmi for healing.';
           },
           getIngredients: () => 'Centella Asiatica (Cica), Aloe Vera, Green Tea, Azelaic Acid, Allantoin, Chamomile, Oat Extract, Panthenol',
+          getAyurvedicIngredients: () => 'Rose Water (Gulab Jal), Aloe Vera (Ghritkumari), Sandalwood (Chandan), Vetiver (Khus), Brahmi, Chamomile (Babune), Cucumber (Kheera)',
           getUsage: () => 'Use lukewarm water only. Apply calming products with gentle patting motions. Layer Cica serum before moisturizer. Avoid actives (AHA, retinol) until redness subsides. Test new products on small area first.',
           getProducts: () => [
-            { name: 'Calming Cleanser', brands: 'Cetaphil Gentle Skin Cleanser, Simple Kind To Skin Refreshing Facial Wash, Bioderma Sensibio Gel Moussant, CeraVe Hydrating Cleanser (Nykaa)' },
-            { name: 'Cica/Centella Serum', brands: 'Minimalist Sepicalm 3% + Oats Moisturizer, COSRX Centella Blemish Cream (Nykaa), Innisfree Bija Cica Balm, Dr. Sheth\'s Cica & Ceramide Overnight Repair Serum' },
-            { name: 'Soothing Moisturizer', brands: 'La Roche-Posay Cicaplast Baume B5 (Nykaa), Bioderma Atoderm Intensive Baume, Re\'equil Ceramide & Hyaluronic Acid Moisturizer, Avene Skin Recovery Cream (Nykaa)' }
+            { name: 'Calming Cleanser', brands: 'Cetaphil Gentle Skin Cleanser (₹350), Minimalist Multi-Vitamin Face Cleanser (₹299), Simple Kind To Skin Refreshing Wash (₹350), Bioderma Sensibio Gel Moussant (₹950 Nykaa)' },
+            { name: 'Cica/Centella Serum', brands: 'Minimalist Sepicalm 3% + Oats (₹349), Dr. Sheth\'s Cica & Ceramide Serum (₹595), COSRX Centella Blemish Cream (₹1,050 Nykaa), Dot & Key CICA Calming Serum (₹545)' },
+            { name: 'Soothing Moisturizer', brands: 'Re\'equil Ceramide & Hyaluronic Acid Moisturizer (₹650), La Roche-Posay Cicaplast Baume B5 (₹950 Nykaa), Minimalist 0.3% Ceramide Barrier Repair (₹449), Bioderma Atoderm Baume (₹1,200 Nykaa)' },
+            { name: 'Ayurvedic Calming Care', brands: 'Kama Ayurveda Rose Water (₹495), Forest Essentials Sandalwood & Vetiver Face Spritz (₹875), Biotique Bio Cucumber Pore Tightening Toner (₹175), Just Herbs Rose Petal Mist (₹345)' }
           ]
         },
         hydration: {
@@ -7136,15 +7145,17 @@
             return 'Low hydration detected. Your skin may feel tight, look dull, or show premature fine lines.';
           },
           getSolution: (a, score) => {
-            if (score > 70) return 'Maintain your hydration routine. Continue drinking water and using moisturizer.';
-            return 'Use Hyaluronic Acid serum on damp skin. Apply a rich moisturizer and consider overnight sleeping masks. Drink at least 8 glasses of water daily.';
+            if (score > 70) return 'Maintain your hydration routine. Indian climate tip: AC and heat dehydrate skin - keep Rose Water spritz handy. Monsoon humidity may reduce the need for heavy moisturizers.';
+            return 'Indian climate tip: Seasonal hydration varies - winters need heavier creams (especially in North India), monsoons need lighter gels, summers need water-based products. AC environment in offices/homes dehydrates skin significantly. Use Hyaluronic Acid serum on damp skin. Aloe Vera gel is perfect for Indian summers. Rose Water spritz throughout the day. Coconut Oil works well in dry winters. Drink 8+ glasses water (more in summer). Pollution creates invisible dehydration barrier.';
           },
           getIngredients: () => 'Hyaluronic Acid, Glycerin, Ceramides, Squalane, Aloe Vera, Beta Glucan, Sodium PCA, Urea',
+          getAyurvedicIngredients: () => 'Aloe Vera (Ghritkumari), Rose Water (Gulab Jal), Coconut Oil (Nariyal Tel), Honey (Shahad), Glycerin, Cucumber (Kheera), Milk (Doodh)',
           getUsage: () => 'Apply Hyaluronic Acid serum on DAMP skin (this is crucial!). Layer from thinnest to thickest: toner → serum → moisturizer. Use a sleeping mask 2-3x/week. Drink 8+ glasses of water daily.',
           getProducts: () => [
-            { name: 'Hyaluronic Acid Serum', brands: 'Minimalist 2% Hyaluronic Acid Serum, The Ordinary Hyaluronic Acid 2% + B5 (Nykaa), Neutrogena Hydro Boost Serum, Plum Grape Seed & Sea Buckthorn Glow Serum' },
-            { name: 'Hydrating Moisturizer', brands: 'CeraVe Moisturizing Cream (Nykaa), Neutrogena Hydro Boost Gel-Cream, Minimalist Sepicalm Moisturizer, Pond\'s Super Light Gel' },
-            { name: 'Sleeping Mask', brands: 'Laneige Water Sleeping Mask (Nykaa/Sephora), Innisfree Aloe Revital Sleeping Pack, Dot & Key Glow Reviving Vitamin C Sleeping Mask, Plum Green Tea Renewed Clarity Night Gel' }
+            { name: 'Hyaluronic Acid Serum', brands: 'Minimalist 2% Hyaluronic Acid Serum (₹449), The Derma Co 2% Hyaluronic Acid Serum (₹349), Deconstruct Hydrating Serum (₹550), Plum Grape Seed & Sea Buckthorn Glow Serum (₹590)' },
+            { name: 'Hydrating Moisturizer', brands: 'Minimalist Sepicalm 3% Moisturizer (₹349), Re\'equil Ceramide & HA Moisturizer (₹650), Dot & Key Water Drench Hydrating Gel (₹545), Pond\'s Super Light Gel (₹225)' },
+            { name: 'Sleeping Mask', brands: 'Dot & Key Glow Reviving Vitamin C Sleeping Mask (₹595), Plum Green Tea Renewed Clarity Night Gel (₹495), Innisfree Aloe Revital Sleeping Pack (₹850 Nykaa), Laneige Water Sleeping Mask (₹1,600 Nykaa)' },
+            { name: 'Ayurvedic Hydration', brands: 'Kama Ayurveda Rose Water (₹495), Forest Essentials Hydrating Facial Gel (₹1,295), Biotique Bio Aloe Vera Face Gel (₹175), Just Herbs Aloe Vera Facial Gel (₹395)' }
           ]
         },
         oiliness: {
@@ -7158,15 +7169,17 @@
             return 'High oil production detected, particularly in the T-zone. This may lead to enlarged pores and breakouts.';
           },
           getSolution: (a, score) => {
-            if (score < 30) return 'Your oil levels are balanced. Use a light moisturizer to maintain this balance.';
-            return 'Use a gentle foaming cleanser and oil-free moisturizer. Try Niacinamide to regulate sebum. Use clay masks 1-2x weekly. Avoid over-cleansing which can increase oil production.';
+            if (score < 30) return 'Your oil levels are balanced. Neem-based products can help maintain this balance naturally.';
+            return 'Use a gentle foaming cleanser with Neem or Tea Tree. Multani Mitti (Fuller\'s Earth) mask is excellent for absorbing excess oil. Rose Water helps balance skin. Avoid over-cleansing which triggers more oil production. In monsoon season, use lighter products.';
           },
           getIngredients: () => 'Niacinamide, Salicylic Acid, Kaolin Clay, Zinc, Tea Tree Oil, Witch Hazel, Green Tea Extract',
+          getAyurvedicIngredients: () => 'Multani Mitti (Fuller\'s Earth), Neem (Nimba), Tulsi (Holy Basil), Rose Water (Gulab Jal), Sandalwood (Chandan), Lemon (Nimbu), Tea Tree Oil',
           getUsage: () => 'Cleanse with foaming gel cleanser morning and night. Apply Niacinamide serum to T-zone after toning. Use oil-free gel moisturizer. Apply clay mask to oily areas 1-2x weekly for 10-15 mins. Blotting papers for midday touch-ups.',
           getProducts: () => [
-            { name: 'Oil-Control Cleanser', brands: 'CeraVe Foaming Facial Cleanser (Nykaa), Neutrogena Deep Clean Facial Cleanser, Himalaya Oil Clear Lemon Face Wash, Plum Green Tea Pore Cleansing Face Wash' },
-            { name: 'Niacinamide Serum', brands: 'Minimalist 10% Niacinamide Serum, The Ordinary Niacinamide 10% + Zinc 1% (Nykaa), Deconstruct 10% Niacinamide Serum, Mamaearth Vitamin C & Niacinamide Serum' },
-            { name: 'Clay Mask', brands: 'Innisfree Super Volcanic Pore Clay Mask (Nykaa), Mamaearth Charcoal Face Mask, Lotus Herbals Claywhite Black Clay Face Pack, WOW Skin Science Activated Charcoal Face Mask' }
+            { name: 'Oil-Control Cleanser', brands: 'Plum Green Tea Pore Cleansing Face Wash (₹345), Minimalist 2% Salicylic Acid Face Wash (₹299), The Derma Co 1% Salicylic Acid Cleanser (₹249), Himalaya Oil Clear Lemon Face Wash (₹145)' },
+            { name: 'Niacinamide Serum', brands: 'Minimalist 10% Niacinamide Serum (₹549), The Ordinary Niacinamide 10% + Zinc 1% (₹750 Nykaa), Deconstruct 10% Niacinamide Serum (₹490), Pilgrim Niacinamide & Zinc Serum (₹495)' },
+            { name: 'Clay Mask', brands: 'Innisfree Super Volcanic Pore Clay Mask (₹950 Nykaa), Dot & Key Pollution + Acne Defense Clay Mask (₹545), Mamaearth Charcoal Face Mask (₹399), Plum Green Tea Clear Face Mask (₹475)' },
+            { name: 'Ayurvedic Oil Control', brands: 'Kama Ayurveda Neem & Tea Tree Face Wash (₹595), Forest Essentials Neem & Tulsi Cleanser (₹875), Biotique Bio Neem Face Wash (₹145), Himalaya Purifying Neem Face Wash (₹135)' }
           ]
         },
         pores: {
@@ -7181,15 +7194,17 @@
             return `${count} visibly enlarged pores detected. This is often related to oiliness and can trap debris.`;
           },
           getSolution: (a, score) => {
-            if (score < 30) return 'Continue cleansing properly and using SPF to prevent pore enlargement.';
-            return 'Use BHA (Salicylic Acid) to clean inside pores. Try Niacinamide to tighten appearance. Use non-comedogenic products and consider regular clay masks.';
+            if (score < 30) return 'Continue cleansing properly and using SPF. Multani Mitti masks help maintain pore clarity.';
+            return 'During humid monsoon/summer months, pores get clogged faster - double cleanse daily. Use BHA (Salicylic Acid) to clean inside pores. Multani Mitti or Kaolin clay masks 2x weekly help absorb oil. Ice cube rubbing with Rose Water temporarily tightens pores. In pollution-heavy cities, cleanse thoroughly at night.';
           },
           getIngredients: () => 'Salicylic Acid (BHA), Niacinamide, Kaolin/Bentonite Clay, Retinol, Alpha Hydroxy Acids (AHA), Witch Hazel',
+          getAyurvedicIngredients: () => 'Multani Mitti (Fuller\'s Earth), Rose Water (Gulab Jal), Neem (Nimba), Besan (Gram Flour), Tulsi (Holy Basil), Ice/Cold Water',
           getUsage: () => 'Use BHA toner 2-3x/week at night. Apply to clean skin, wait 20 mins before next step. Use clay mask on nose/chin 1-2x weekly (15 mins max). Double cleanse at night with oil cleanser followed by water-based cleanser.',
           getProducts: () => [
-            { name: 'BHA Exfoliant', brands: 'Minimalist 2% Salicylic Acid Serum, COSRX BHA Blackhead Power Liquid (Nykaa), Deconstruct 2% Salicylic Acid Serum, Re\'equil Fruit AHA Face Wash' },
-            { name: 'Pore-Minimizing Serum', brands: 'Minimalist 10% Niacinamide + Zinc, The Ordinary Niacinamide 10% + Zinc 1% (Nykaa), Dot & Key CICA Calming Niacinamide Serum, Pilgrim Niacinamide & Zinc Serum' },
-            { name: 'Oil Cleanser', brands: 'Innisfree Apple Seed Cleansing Oil (Nykaa), Plum E-Luminence Deep Cleansing Oil, Kama Ayurveda Rose Jasmine Face Cleanser, Forest Essentials Makeup Remover Oil' }
+            { name: 'BHA Exfoliant', brands: 'Minimalist 2% Salicylic Acid Serum (₹349), COSRX BHA Blackhead Power Liquid (₹1,250 Nykaa), Deconstruct 2% Salicylic Acid Serum (₹550), The Derma Co 2% Salicylic Acid Serum (₹349)' },
+            { name: 'Pore-Minimizing Serum', brands: 'Minimalist 10% Niacinamide + Zinc (₹549), Dot & Key CICA Calming Niacinamide Serum (₹545), Pilgrim Niacinamide & Zinc Serum (₹495), The Ordinary Niacinamide 10% (₹750 Nykaa)' },
+            { name: 'Oil Cleanser', brands: 'Plum E-Luminence Deep Cleansing Oil (₹445), Innisfree Apple Seed Cleansing Oil (₹950 Nykaa), Minimalist Squalane Cleanser (₹399), Dot & Key Hydrating Oil Cleanser (₹595)' },
+            { name: 'Ayurvedic Pore Care', brands: 'Kama Ayurveda Rose Jasmine Face Cleanser (₹1,295), Forest Essentials Neem & Clove Cleanser (₹1,175), Biotique Bio Papaya Scrub (₹225), Himalaya Tan Removal Orange Face Wash (₹125)' }
           ]
         },
         texture: {
@@ -7203,15 +7218,17 @@
             return 'Uneven texture detected with visible bumps, roughness, or scarring.';
           },
           getSolution: (a, score) => {
-            if (score > 70) return 'Maintain your exfoliation routine. Use gentle products to keep skin smooth.';
-            return 'Incorporate AHA (Glycolic/Lactic Acid) for surface exfoliation. Use a gentle physical exfoliant 1-2x weekly. Retinol can help smooth texture over time.';
+            if (score > 70) return 'Maintain your exfoliation routine. Besan (gram flour) ubtan is a gentle traditional exfoliant for maintaining smoothness.';
+            return 'In humid Indian weather, texture issues often worsen due to sweat and dirt buildup. Use AHA (Glycolic/Lactic Acid) 2-3x weekly. Traditional Besan-Haldi ubtan is excellent for gentle exfoliation. Avoid heavy exfoliation during monsoon to prevent fungal issues. Rice water rinse adds smoothness naturally.';
           },
           getIngredients: () => 'Glycolic Acid (AHA), Lactic Acid, Mandelic Acid, Retinol, Niacinamide, Polyhydroxy Acids (PHA), Enzyme Exfoliants',
+          getAyurvedicIngredients: () => 'Besan (Gram Flour), Turmeric (Haldi), Rice Water, Papaya, Sandalwood (Chandan), Oatmeal, Honey (Shahad)',
           getUsage: () => 'Use AHA exfoliant 2-3x/week at night on clean skin. Start with lower concentrations (5-8%) and increase gradually. Never use with retinol on same night. Follow with hydrating serum and moisturizer. Always use SPF next day.',
           getProducts: () => [
-            { name: 'AHA Exfoliating Toner', brands: 'The Ordinary Glycolic Acid 7% Toning Solution (Nykaa), Minimalist 10% Lactic Acid Serum, Pixi Glow Tonic (Nykaa), Plum 1% Glycolic Acid Toner' },
-            { name: 'Resurfacing Serum', brands: 'Minimalist 25% AHA + 2% BHA Peeling Solution, The Ordinary AHA 30% + BHA 2% Peeling Solution (Nykaa), Deconstruct AHA + BHA Exfoliating Serum, Dot & Key 10% AHA Exfoliating Serum' },
-            { name: 'Smoothing Moisturizer', brands: 'CeraVe SA Cream for Rough & Bumpy Skin (Nykaa), Minimalist 0.3% Ceramide Moisturizer, Neutrogena Norwegian Formula Body Emulsion, Dermaco 1% Salicylic Acid Gel Moisturizer' }
+            { name: 'AHA Exfoliating Toner', brands: 'Minimalist 10% Lactic Acid Serum (₹549), The Ordinary Glycolic Acid 7% Toning Solution (₹850 Nykaa), Plum 1% Glycolic Acid Toner (₹425), Deconstruct 5% Lactic Acid Serum (₹450)' },
+            { name: 'Resurfacing Serum', brands: 'Minimalist 25% AHA + 2% BHA Peeling Solution (₹549), The Ordinary AHA 30% + BHA 2% Peeling Solution (₹850 Nykaa), Dot & Key 10% AHA Exfoliating Serum (₹595), Re\'equil Fruit AHA Face Wash (₹350)' },
+            { name: 'Smoothing Moisturizer', brands: 'Minimalist 0.3% Ceramide Moisturizer (₹449), CeraVe SA Cream (₹1,099 Nykaa), Dermaco 1% Salicylic Acid Gel Moisturizer (₹369), Dot & Key Barrier Repair Moisturizer (₹545)' },
+            { name: 'Ayurvedic Exfoliation', brands: 'Kama Ayurveda Kumkumadi Brightening Ayurvedic Scrub (₹1,295), Forest Essentials Facial Ubtan (₹1,475), Biotique Bio Papaya Scrub (₹225), Himalaya Gentle Exfoliating Apricot Scrub (₹150)' }
           ]
         }
       };
