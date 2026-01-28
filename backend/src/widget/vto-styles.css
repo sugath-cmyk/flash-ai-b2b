@@ -2385,3 +2385,76 @@
     border-top: 1px solid var(--flashai-gray-100);
   }
 }
+
+/* ==========================================================================
+   Save Results Prompt (shown after scan for non-logged users)
+   ========================================================================== */
+
+.flashai-vto-save-prompt {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, var(--flashai-primary) 0%, var(--flashai-secondary) 100%);
+  padding: 16px 20px;
+  margin: 20px -20px -20px -20px;
+  border-radius: 0 0 var(--flashai-radius-xl) var(--flashai-radius-xl);
+}
+
+.flashai-vto-save-prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flashai-vto-save-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.flashai-vto-save-text {
+  flex: 1;
+  color: white;
+}
+
+.flashai-vto-save-text strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.flashai-vto-save-text p {
+  font-size: 12px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.flashai-vto-save-btn {
+  padding: 10px 20px;
+  background: white !important;
+  color: var(--flashai-primary) !important;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.flashai-vto-save-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 480px) {
+  .flashai-vto-save-prompt-content {
+    flex-wrap: wrap;
+  }
+
+  .flashai-vto-save-btn {
+    width: 100%;
+    margin-top: 12px;
+  }
+}

@@ -1024,8 +1024,8 @@
       });
 
       modal.querySelector('#flashai-vto-select-facescan').addEventListener('click', () => {
-        // Show sign-in step first
-        this.showStep('signin');
+        // Go directly to face scan (login prompt comes after results)
+        this.showStep('facescan');
       });
 
       // Sign-in step buttons
@@ -2283,7 +2283,41 @@
       if (savedUser) {
         this.state.user = JSON.parse(savedUser);
         this.showLoggedInRoutine();
+      } else {
+        // Show save results prompt for non-logged-in users
+        this.showSaveResultsPrompt();
       }
+    }
+
+    showSaveResultsPrompt() {
+      // Add a banner at the bottom of results prompting to save
+      const resultsContent = document.querySelector('[data-tab-content="results"]');
+      if (!resultsContent) return;
+
+      // Check if prompt already exists
+      if (document.getElementById('flashai-vto-save-prompt')) return;
+
+      const promptHtml = `
+        <div id="flashai-vto-save-prompt" class="flashai-vto-save-prompt">
+          <div class="flashai-vto-save-prompt-content">
+            <span class="flashai-vto-save-icon">💾</span>
+            <div class="flashai-vto-save-text">
+              <strong>Save your results?</strong>
+              <p>Create a free account to track your skin journey</p>
+            </div>
+            <button id="flashai-vto-save-results-btn" class="flashai-vto-save-btn" style="background-color: ${this.config.primaryColor}">
+              Save Results
+            </button>
+          </div>
+        </div>
+      `;
+
+      resultsContent.insertAdjacentHTML('beforeend', promptHtml);
+
+      // Add click handler
+      document.getElementById('flashai-vto-save-results-btn')?.addEventListener('click', () => {
+        this.showSignInModal('email');
+      });
     }
 
     async loadProductRecommendations(scanId) {
