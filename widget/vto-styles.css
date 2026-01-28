@@ -632,30 +632,35 @@
   margin: 0;
 }
 
-/* Timeline Steps */
+/* Timeline Steps - 2x2 Grid Layout */
 .flashai-vto-timeline-steps {
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  padding: 20px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .flashai-vto-timeline-step {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  position: relative;
-  padding-bottom: 20px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 16px 12px;
+  background: #f9fafb;
+  border-radius: 16px;
+  border: 1px solid #e4e4e7;
   opacity: 0.5;
   transition: all 0.4s ease;
 }
 
 .flashai-vto-timeline-step:last-child {
-  padding-bottom: 0;
+  padding-bottom: 16px;
 }
 
-/* Vertical line connecting steps */
+/* Remove vertical line for grid layout */
 .flashai-vto-timeline-step::before {
+  display: none;
   content: '';
   position: absolute;
   left: 19px;
@@ -712,10 +717,11 @@
 
 /* Marker */
 .flashai-vto-timeline-marker {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: #f4f4f5;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #fff;
+  border: 2px solid #e4e4e7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -726,7 +732,7 @@
 }
 
 .flashai-vto-timeline-icon {
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .flashai-vto-timeline-check {
