@@ -412,6 +412,24 @@
           <!-- Face Scan Step 3: Results -->
           <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
+              <!-- Tab Navigation -->
+              <div class="flashai-vto-tabs">
+                <button class="flashai-vto-tab active" data-tab="results">
+                  <span class="flashai-vto-tab-icon">📊</span>
+                  <span>Results</span>
+                </button>
+                <button class="flashai-vto-tab" data-tab="routine">
+                  <span class="flashai-vto-tab-icon">🧴</span>
+                  <span>My Routine</span>
+                </button>
+                <button class="flashai-vto-tab" data-tab="progress">
+                  <span class="flashai-vto-tab-icon">📈</span>
+                  <span>Track</span>
+                </button>
+              </div>
+
+              <!-- Tab Content: Results -->
+              <div class="flashai-vto-tab-content active" data-tab-content="results">
               <div class="flashai-vto-results-header">
                 <h2>Your Skin Analysis</h2>
                 <div class="flashai-vto-skin-score-circle">
@@ -530,6 +548,166 @@
                   Shop Recommendations
                 </button>
               </div>
+              </div><!-- End Results Tab Content -->
+
+              <!-- Tab Content: My Routine (Pre-Login) -->
+              <div class="flashai-vto-tab-content" data-tab-content="routine">
+                <div class="flashai-vto-routine-promo" id="flashai-vto-routine-promo">
+                  <div class="flashai-vto-routine-header">
+                    <div class="flashai-vto-routine-icon">🧴✨</div>
+                    <h2>Your Personalized Routine</h2>
+                    <p class="flashai-vto-routine-subtitle">Based on your unique skin analysis</p>
+                  </div>
+
+                  <div class="flashai-vto-routine-preview">
+                    <div class="flashai-vto-routine-preview-card">
+                      <div class="flashai-vto-routine-time">
+                        <span class="flashai-vto-time-icon">☀️</span>
+                        <span>Morning Routine</span>
+                      </div>
+                      <div class="flashai-vto-routine-steps-preview" id="flashai-vto-am-preview">
+                        <div class="flashai-vto-step-preview">Cleanser</div>
+                        <div class="flashai-vto-step-preview">Serum</div>
+                        <div class="flashai-vto-step-preview">Moisturizer</div>
+                        <div class="flashai-vto-step-preview">SPF</div>
+                      </div>
+                    </div>
+                    <div class="flashai-vto-routine-preview-card">
+                      <div class="flashai-vto-routine-time">
+                        <span class="flashai-vto-time-icon">🌙</span>
+                        <span>Evening Routine</span>
+                      </div>
+                      <div class="flashai-vto-routine-steps-preview" id="flashai-vto-pm-preview">
+                        <div class="flashai-vto-step-preview">Double Cleanse</div>
+                        <div class="flashai-vto-step-preview">Treatment</div>
+                        <div class="flashai-vto-step-preview">Eye Cream</div>
+                        <div class="flashai-vto-step-preview">Night Cream</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flashai-vto-routine-focus" id="flashai-vto-routine-focus">
+                    <span class="flashai-vto-focus-label">Targeting:</span>
+                    <span class="flashai-vto-focus-concerns">Your top skin concerns</span>
+                  </div>
+
+                  <div class="flashai-vto-routine-benefits">
+                    <div class="flashai-vto-benefit">
+                      <span class="flashai-vto-benefit-icon">✓</span>
+                      <span>Products matched to your skin type</span>
+                    </div>
+                    <div class="flashai-vto-benefit">
+                      <span class="flashai-vto-benefit-icon">✓</span>
+                      <span>Daily reminders to stay consistent</span>
+                    </div>
+                    <div class="flashai-vto-benefit">
+                      <span class="flashai-vto-benefit-icon">✓</span>
+                      <span>Track progress over time</span>
+                    </div>
+                    <div class="flashai-vto-benefit">
+                      <span class="flashai-vto-benefit-icon">✓</span>
+                      <span>Adjust routine as your skin changes</span>
+                    </div>
+                  </div>
+
+                  <div class="flashai-vto-auth-section">
+                    <p class="flashai-vto-auth-prompt">Create a free account to unlock your personalized routine</p>
+                    <button id="flashai-vto-auth-email" class="flashai-vto-auth-btn flashai-vto-auth-email">
+                      <span class="flashai-vto-auth-icon">✉️</span>
+                      Continue with Email
+                    </button>
+                    <button id="flashai-vto-auth-google" class="flashai-vto-auth-btn flashai-vto-auth-google">
+                      <svg class="flashai-vto-google-icon" viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      Continue with Google
+                    </button>
+                    <p class="flashai-vto-auth-note">Your data stays private. We never share your skin analysis.</p>
+                  </div>
+                </div>
+
+                <!-- Logged-in Routine View (hidden by default) -->
+                <div class="flashai-vto-routine-full" id="flashai-vto-routine-full" style="display: none;">
+                  <div class="flashai-vto-routine-loading" id="flashai-vto-routine-loading">
+                    <div class="flashai-vto-spinner"></div>
+                    <p>Building your personalized routine...</p>
+                  </div>
+                  <div id="flashai-vto-routine-content"></div>
+                </div>
+              </div><!-- End Routine Tab Content -->
+
+              <!-- Tab Content: Track Progress -->
+              <div class="flashai-vto-tab-content" data-tab-content="progress">
+                <div class="flashai-vto-progress-promo">
+                  <div class="flashai-vto-progress-header">
+                    <div class="flashai-vto-progress-icon">📈</div>
+                    <h2>Track Your Skin Journey</h2>
+                    <p class="flashai-vto-progress-subtitle">See how your skin improves over time</p>
+                  </div>
+
+                  <div class="flashai-vto-progress-preview">
+                    <div class="flashai-vto-timeline-preview">
+                      <div class="flashai-vto-timeline-item">
+                        <div class="flashai-vto-timeline-dot current"></div>
+                        <div class="flashai-vto-timeline-content">
+                          <strong>Today</strong>
+                          <span>First scan complete</span>
+                        </div>
+                      </div>
+                      <div class="flashai-vto-timeline-item">
+                        <div class="flashai-vto-timeline-dot"></div>
+                        <div class="flashai-vto-timeline-content">
+                          <strong>Week 2</strong>
+                          <span>Early improvements visible</span>
+                        </div>
+                      </div>
+                      <div class="flashai-vto-timeline-item">
+                        <div class="flashai-vto-timeline-dot"></div>
+                        <div class="flashai-vto-timeline-content">
+                          <strong>Month 1</strong>
+                          <span>Noticeable skin changes</span>
+                        </div>
+                      </div>
+                      <div class="flashai-vto-timeline-item">
+                        <div class="flashai-vto-timeline-dot"></div>
+                        <div class="flashai-vto-timeline-content">
+                          <strong>Month 3</strong>
+                          <span>Transformed skin</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flashai-vto-progress-features">
+                    <div class="flashai-vto-feature-card">
+                      <span class="flashai-vto-feature-icon">📸</span>
+                      <h4>Photo Comparisons</h4>
+                      <p>Side-by-side before & after</p>
+                    </div>
+                    <div class="flashai-vto-feature-card">
+                      <span class="flashai-vto-feature-icon">📊</span>
+                      <h4>Score Trends</h4>
+                      <p>Watch your scores improve</p>
+                    </div>
+                    <div class="flashai-vto-feature-card">
+                      <span class="flashai-vto-feature-icon">🎯</span>
+                      <h4>Goal Tracking</h4>
+                      <p>Set and achieve skin goals</p>
+                    </div>
+                  </div>
+
+                  <div class="flashai-vto-progress-cta">
+                    <p>Start tracking your progress</p>
+                    <button id="flashai-vto-progress-auth" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor}">
+                      Create Free Account
+                    </button>
+                  </div>
+                </div>
+              </div><!-- End Progress Tab Content -->
+
             </div>
           </div>
 
@@ -624,6 +802,312 @@
       modal.querySelector('#flashai-vto-shop-recommended').addEventListener('click', () => {
         this.shopRecommendedProducts();
       });
+
+      // Tab navigation
+      modal.querySelectorAll('.flashai-vto-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabName = tab.dataset.tab;
+          this.switchTab(tabName);
+        });
+      });
+
+      // Auth buttons
+      const authEmailBtn = modal.querySelector('#flashai-vto-auth-email');
+      if (authEmailBtn) {
+        authEmailBtn.addEventListener('click', () => {
+          this.showAuthModal('email');
+        });
+      }
+
+      const authGoogleBtn = modal.querySelector('#flashai-vto-auth-google');
+      if (authGoogleBtn) {
+        authGoogleBtn.addEventListener('click', () => {
+          this.handleGoogleAuth();
+        });
+      }
+
+      const progressAuthBtn = modal.querySelector('#flashai-vto-progress-auth');
+      if (progressAuthBtn) {
+        progressAuthBtn.addEventListener('click', () => {
+          this.switchTab('routine');
+          setTimeout(() => this.showAuthModal('email'), 300);
+        });
+      }
+    }
+
+    // ==========================================================================
+    // Tab Switching
+    // ==========================================================================
+
+    switchTab(tabName) {
+      const modal = this.elements.modal;
+
+      // Update tab buttons
+      modal.querySelectorAll('.flashai-vto-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      });
+
+      // Update tab content
+      modal.querySelectorAll('.flashai-vto-tab-content').forEach(content => {
+        content.classList.toggle('active', content.dataset.tabContent === tabName);
+      });
+
+      // Track tab switch
+      this.trackEvent('tab_switched', { tab: tabName });
+
+      // If switching to routine tab and user is logged in, load routine
+      if (tabName === 'routine' && this.state.user) {
+        this.loadUserRoutine();
+      }
+
+      // Update routine focus based on scan results
+      if (tabName === 'routine' && this.state.lastScanAnalysis) {
+        this.updateRoutineFocus(this.state.lastScanAnalysis);
+      }
+    }
+
+    updateRoutineFocus(analysis) {
+      const focusElement = document.getElementById('flashai-vto-routine-focus');
+      if (!focusElement || !analysis) return;
+
+      // Determine top concerns based on scores
+      const concerns = [];
+      if (analysis.pigmentation_score > 40) concerns.push('Pigmentation');
+      if (analysis.acne_score > 30) concerns.push('Acne');
+      if (analysis.redness_score > 30) concerns.push('Redness');
+      if (analysis.wrinkle_score > 40) concerns.push('Anti-Aging');
+      if (analysis.hydration_score < 50) concerns.push('Hydration');
+
+      if (concerns.length === 0) concerns.push('Overall Skin Health');
+
+      const focusConcerns = focusElement.querySelector('.flashai-vto-focus-concerns');
+      if (focusConcerns) {
+        focusConcerns.textContent = concerns.slice(0, 3).join(', ');
+      }
+    }
+
+    // ==========================================================================
+    // Authentication
+    // ==========================================================================
+
+    showAuthModal(type) {
+      // Create auth modal
+      const authOverlay = document.createElement('div');
+      authOverlay.className = 'flashai-vto-auth-overlay';
+      authOverlay.innerHTML = `
+        <div class="flashai-vto-auth-modal">
+          <button class="flashai-vto-auth-close">&times;</button>
+          <div class="flashai-vto-auth-header">
+            <h3>Create Your Account</h3>
+            <p>Get your personalized skincare routine</p>
+          </div>
+          <form id="flashai-vto-auth-form" class="flashai-vto-auth-form">
+            <div class="flashai-vto-form-group">
+              <label>Email</label>
+              <input type="email" id="flashai-vto-auth-email-input" placeholder="your@email.com" required>
+            </div>
+            <div class="flashai-vto-form-group">
+              <label>Name (optional)</label>
+              <input type="text" id="flashai-vto-auth-name-input" placeholder="Your name">
+            </div>
+            <button type="submit" class="flashai-vto-auth-submit" style="background-color: ${this.config.primaryColor}">
+              Continue
+            </button>
+          </form>
+          <p class="flashai-vto-auth-terms">
+            By continuing, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+          </p>
+        </div>
+      `;
+
+      this.elements.modal.appendChild(authOverlay);
+
+      // Close button
+      authOverlay.querySelector('.flashai-vto-auth-close').addEventListener('click', () => {
+        authOverlay.remove();
+      });
+
+      // Overlay click
+      authOverlay.addEventListener('click', (e) => {
+        if (e.target === authOverlay) authOverlay.remove();
+      });
+
+      // Form submit
+      authOverlay.querySelector('#flashai-vto-auth-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('flashai-vto-auth-email-input').value;
+        const name = document.getElementById('flashai-vto-auth-name-input').value;
+        await this.registerUser(email, name, authOverlay);
+      });
+    }
+
+    async registerUser(email, name, authOverlay) {
+      const submitBtn = authOverlay.querySelector('.flashai-vto-auth-submit');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Creating account...';
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(this.config.apiBaseUrl.replace('/api/vto', '/api/widget/users'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            email,
+            name,
+            store_id: this.config.storeId,
+            visitor_id: this.state.visitorId,
+            scan_id: this.state.faceScanId
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Store user info
+          this.state.user = data.user;
+          localStorage.setItem('flashai_user', JSON.stringify(data.user));
+          localStorage.setItem('flashai_token', data.token);
+
+          // Remove auth overlay
+          authOverlay.remove();
+
+          // Show logged-in routine view
+          this.showLoggedInRoutine();
+
+          // Track registration
+          this.trackEvent('user_registered', { method: 'email' });
+        } else {
+          throw new Error(data.error || 'Registration failed');
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        alert('Registration failed. Please try again.');
+      }
+    }
+
+    handleGoogleAuth() {
+      // TODO: Implement Google OAuth
+      alert('Google sign-in coming soon! Please use email for now.');
+    }
+
+    showLoggedInRoutine() {
+      // Hide promo, show full routine view
+      const promo = document.getElementById('flashai-vto-routine-promo');
+      const full = document.getElementById('flashai-vto-routine-full');
+
+      if (promo) promo.style.display = 'none';
+      if (full) {
+        full.style.display = 'block';
+        this.loadUserRoutine();
+      }
+    }
+
+    async loadUserRoutine() {
+      const content = document.getElementById('flashai-vto-routine-content');
+      const loading = document.getElementById('flashai-vto-routine-loading');
+
+      if (!content) return;
+
+      try {
+        const token = localStorage.getItem('flashai_token');
+        if (!token) {
+          this.showLoggedOutRoutine();
+          return;
+        }
+
+        const response = await fetch(this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines'), {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'X-API-Key': this.config.apiKey
+          }
+        });
+
+        const data = await response.json();
+
+        if (loading) loading.style.display = 'none';
+
+        if (data.success && data.routines && data.routines.length > 0) {
+          this.displayRoutine(data.routines, content);
+        } else {
+          // No routine yet, show questionnaire prompt
+          this.showQuestionnairePrompt(content);
+        }
+      } catch (error) {
+        console.error('Load routine error:', error);
+        if (loading) loading.style.display = 'none';
+        content.innerHTML = '<p class="flashai-vto-error">Failed to load routine. Please try again.</p>';
+      }
+    }
+
+    showQuestionnairePrompt(content) {
+      content.innerHTML = `
+        <div class="flashai-vto-questionnaire-prompt">
+          <div class="flashai-vto-prompt-icon">📋</div>
+          <h3>Let's personalize your routine!</h3>
+          <p>Answer a few quick questions so we can create the perfect routine for your skin.</p>
+          <button class="flashai-vto-btn-primary flashai-vto-start-questionnaire" style="background-color: ${this.config.primaryColor}">
+            Start Questionnaire (2 min)
+          </button>
+        </div>
+      `;
+
+      content.querySelector('.flashai-vto-start-questionnaire').addEventListener('click', () => {
+        this.startQuestionnaire();
+      });
+    }
+
+    startQuestionnaire() {
+      // Redirect to questionnaire or show inline
+      this.trackEvent('questionnaire_started');
+      // For now, redirect to a questionnaire page
+      window.open('/pages/skin-questionnaire', '_blank');
+    }
+
+    displayRoutine(routines, content) {
+      const amRoutine = routines.find(r => r.routine_type === 'am');
+      const pmRoutine = routines.find(r => r.routine_type === 'pm');
+
+      content.innerHTML = `
+        <div class="flashai-vto-routine-display">
+          ${amRoutine ? this.renderRoutineCard(amRoutine, 'Morning', '☀️') : ''}
+          ${pmRoutine ? this.renderRoutineCard(pmRoutine, 'Evening', '🌙') : ''}
+        </div>
+      `;
+    }
+
+    renderRoutineCard(routine, title, icon) {
+      return `
+        <div class="flashai-vto-routine-card">
+          <div class="flashai-vto-routine-card-header">
+            <span class="flashai-vto-routine-card-icon">${icon}</span>
+            <h4>${title} Routine</h4>
+          </div>
+          <div class="flashai-vto-routine-steps">
+            ${routine.steps.map((step, i) => `
+              <div class="flashai-vto-routine-step">
+                <span class="flashai-vto-step-number">${i + 1}</span>
+                <div class="flashai-vto-step-content">
+                  <strong>${step.step_type}</strong>
+                  ${step.product_name ? `<span class="flashai-vto-step-product">${step.product_name}</span>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    showLoggedOutRoutine() {
+      const promo = document.getElementById('flashai-vto-routine-promo');
+      const full = document.getElementById('flashai-vto-routine-full');
+
+      if (promo) promo.style.display = 'block';
+      if (full) full.style.display = 'none';
     }
 
     // ==========================================================================
@@ -1152,6 +1636,9 @@
     }
 
     displayFaceResults(scan) {
+      // Store analysis for use in other tabs
+      this.state.lastScanAnalysis = scan.analysis;
+
       // Update skin score
       const scoreElement = document.getElementById('flashai-vto-skin-score');
       if (scoreElement) {
@@ -1213,6 +1700,16 @@
 
       // Show results step
       this.showStep('face-results');
+
+      // Update routine tab focus based on analysis
+      this.updateRoutineFocus(scan.analysis);
+
+      // Check if user is logged in and update routine tab accordingly
+      const savedUser = localStorage.getItem('flashai_user');
+      if (savedUser) {
+        this.state.user = JSON.parse(savedUser);
+        this.showLoggedInRoutine();
+      }
     }
 
     async loadProductRecommendations(scanId) {
