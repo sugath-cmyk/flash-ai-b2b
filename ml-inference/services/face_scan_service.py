@@ -2076,23 +2076,25 @@ class FaceScanService:
             print(f"[Dark Circles Debug] Left darkness: {left_darkness:.1f}, Right: {right_darkness:.1f}, Cheek: {cheek_brightness:.1f}, Face: {face_avg_darkness:.1f}")
             print(f"[Dark Circles Debug] Left blue: {left_blue_tone:.2f}, Right blue: {right_blue_tone:.2f}")
 
-            # === Method 1: Relative comparison to cheeks (VERY sensitive) ===
-            # Any darkness difference from cheeks is significant
-            left_vs_cheek = max(0, (left_darkness - cheek_brightness) / 15)  # Was /20, now /15
-            right_vs_cheek = max(0, (right_darkness - cheek_brightness) / 15)
+            # === Method 1: Relative comparison to cheeks ===
+            # RECALIBRATED: Diff of 40+ = severe, 30 = moderate, 20 = mild, <10 = none
+            left_vs_cheek = max(0, (left_darkness - cheek_brightness) / 40)  # Was /15, now /40
+            right_vs_cheek = max(0, (right_darkness - cheek_brightness) / 40)
 
             # === Method 2: Relative to forehead ===
-            left_vs_forehead = max(0, (left_darkness - forehead_brightness) / 18)
-            right_vs_forehead = max(0, (right_darkness - forehead_brightness) / 18)
+            # RECALIBRATED: Forehead comparison with reasonable scaling
+            left_vs_forehead = max(0, (left_darkness - forehead_brightness) / 45)  # Was /18, now /45
+            right_vs_forehead = max(0, (right_darkness - forehead_brightness) / 45)
 
-            # === Method 3: Absolute darkness threshold - VERY LOW ===
-            # Under-eye with darkness > 85 (inverted L) shows circles
-            left_absolute = max(0, (left_darkness - 85) / 50) if left_darkness > 85 else 0
-            right_absolute = max(0, (right_darkness - 85) / 50) if right_darkness > 85 else 0
+            # === Method 3: Absolute darkness threshold ===
+            # RECALIBRATED: Only flag truly dark under-eye areas
+            left_absolute = max(0, (left_darkness - 100) / 60) if left_darkness > 100 else 0  # Was 85/50, now 100/60
+            right_absolute = max(0, (right_darkness - 100) / 60) if right_darkness > 100 else 0
 
             # === Method 4: Compare to face average ===
-            left_vs_face = max(0, (left_darkness - face_avg_darkness) / 20)
-            right_vs_face = max(0, (right_darkness - face_avg_darkness) / 20)
+            # RECALIBRATED: Reasonable face comparison
+            left_vs_face = max(0, (left_darkness - face_avg_darkness) / 40)  # Was /20, now /40
+            right_vs_face = max(0, (right_darkness - face_avg_darkness) / 40)
 
             # === Method 5: Blue/purple tone detection ===
             # Dark circles often have bluish undertones
@@ -2214,12 +2216,12 @@ class FaceScanService:
 
             print(f"[Dark Circles Fallback] Left: {left_darkness:.1f}, Right: {right_darkness:.1f}, Cheek: {cheek_brightness:.1f}")
 
-            # Calculate severity using same logic as main method
-            left_vs_cheek = max(0, (left_darkness - cheek_brightness) / 15)
-            right_vs_cheek = max(0, (right_darkness - cheek_brightness) / 15)
+            # Calculate severity using RECALIBRATED logic (matching main method)
+            left_vs_cheek = max(0, (left_darkness - cheek_brightness) / 40)  # Was /15, now /40
+            right_vs_cheek = max(0, (right_darkness - cheek_brightness) / 40)
 
-            left_absolute = max(0, (left_darkness - 85) / 50) if left_darkness > 85 else 0
-            right_absolute = max(0, (right_darkness - 85) / 50) if right_darkness > 85 else 0
+            left_absolute = max(0, (left_darkness - 100) / 60) if left_darkness > 100 else 0  # Was 85/50, now 100/60
+            right_absolute = max(0, (right_darkness - 100) / 60) if right_darkness > 100 else 0
 
             left_severity = max(left_vs_cheek, left_absolute)
             right_severity = max(right_vs_cheek, right_absolute)
