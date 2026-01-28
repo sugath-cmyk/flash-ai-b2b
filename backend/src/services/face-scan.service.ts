@@ -117,10 +117,14 @@ export async function getFaceScan(scanId: string) {
       pigmentation_score: row.pigmentation_score,
       acne_score: row.acne_score,
       wrinkle_score: row.wrinkle_score,
-      texture_score: row.texture_score,
+      // Texture is a "good" attribute - higher is better (0 = rough, 100 = smooth)
+      // Default to 55 (moderate) if not detected
+      texture_score: (row.texture_score != null && row.texture_score > 0) ? row.texture_score : 55,
       redness_score: row.redness_score,
-      hydration_score: row.hydration_score,
-      hydration_level: row.hydration_level,
+      // Hydration is a "good" attribute - higher is better (0 = dry, 100 = hydrated)
+      // Default to 55 (moderate) if not detected
+      hydration_score: (row.hydration_score != null && row.hydration_score > 0) ? row.hydration_score : 55,
+      hydration_level: row.hydration_level || 'normal',
       oiliness_score: row.oiliness_score,
       skin_age_estimate: row.skin_age_estimate,
       dark_spots_count: row.dark_spots_count,
@@ -131,7 +135,8 @@ export async function getFaceScan(scanId: string) {
       deep_wrinkles_count: row.deep_wrinkles_count,
       pore_size_average: row.pore_size_average,
       enlarged_pores_count: row.enlarged_pores_count || 0,
-      smoothness_score: row.smoothness_score,
+      // Smoothness is a "good" attribute (fallback for texture) - higher is better
+      smoothness_score: (row.smoothness_score != null && row.smoothness_score > 0) ? row.smoothness_score : 55,
       roughness_level: row.roughness_level,
       t_zone_oiliness: row.t_zone_oiliness,
       sensitivity_level: row.sensitivity_level,
