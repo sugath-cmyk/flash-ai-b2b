@@ -595,33 +595,81 @@
 
           <!-- Face Scan Step 2: Processing -->
           <div id="flashai-vto-step-face-processing" class="flashai-vto-step">
-            <div class="flashai-vto-header">
-              <h2>Analyzing Your Skin</h2>
-              <p>This usually takes 10-15 seconds...</p>
+            <div class="flashai-vto-processing-hero">
+              <!-- Photo Preview with Scan Effect -->
+              <div class="flashai-vto-scan-container">
+                <div class="flashai-vto-scan-photo-wrapper">
+                  <img id="flashai-vto-scan-preview" class="flashai-vto-scan-preview" src="" alt="Your photo" />
+                  <div class="flashai-vto-scan-overlay">
+                    <div class="flashai-vto-scan-line"></div>
+                  </div>
+                  <div class="flashai-vto-scan-corners">
+                    <span class="corner tl"></span>
+                    <span class="corner tr"></span>
+                    <span class="corner bl"></span>
+                    <span class="corner br"></span>
+                  </div>
+                </div>
+                <div class="flashai-vto-scan-pulse"></div>
+              </div>
+
+              <!-- Title & Subtitle -->
+              <div class="flashai-vto-processing-header">
+                <h2>Analyzing Your Skin</h2>
+                <p>AI is examining your unique skin characteristics</p>
+              </div>
             </div>
 
-            <div class="flashai-vto-loader-container">
-              <div class="flashai-vto-loader"></div>
-              <div class="flashai-vto-loader-text">Analyzing skin and finding products</div>
+            <!-- Progress Steps - Vertical Timeline -->
+            <div class="flashai-vto-timeline-steps">
+              <div class="flashai-vto-timeline-step" data-step="1">
+                <div class="flashai-vto-timeline-marker">
+                  <span class="flashai-vto-timeline-icon">📷</span>
+                  <span class="flashai-vto-timeline-check">✓</span>
+                </div>
+                <div class="flashai-vto-timeline-content">
+                  <span class="flashai-vto-timeline-title">Photo Captured</span>
+                  <span class="flashai-vto-timeline-desc">High-quality image received</span>
+                </div>
+              </div>
+              <div class="flashai-vto-timeline-step" data-step="2">
+                <div class="flashai-vto-timeline-marker">
+                  <span class="flashai-vto-timeline-icon">🎨</span>
+                  <span class="flashai-vto-timeline-check">✓</span>
+                </div>
+                <div class="flashai-vto-timeline-content">
+                  <span class="flashai-vto-timeline-title">Skin Tone Analysis</span>
+                  <span class="flashai-vto-timeline-desc">Detecting undertones & texture</span>
+                </div>
+              </div>
+              <div class="flashai-vto-timeline-step" data-step="3">
+                <div class="flashai-vto-timeline-marker">
+                  <span class="flashai-vto-timeline-icon">🔬</span>
+                  <span class="flashai-vto-timeline-check">✓</span>
+                </div>
+                <div class="flashai-vto-timeline-content">
+                  <span class="flashai-vto-timeline-title">Concern Detection</span>
+                  <span class="flashai-vto-timeline-desc">Identifying areas to address</span>
+                </div>
+              </div>
+              <div class="flashai-vto-timeline-step" data-step="4">
+                <div class="flashai-vto-timeline-marker">
+                  <span class="flashai-vto-timeline-icon">✨</span>
+                  <span class="flashai-vto-timeline-check">✓</span>
+                </div>
+                <div class="flashai-vto-timeline-content">
+                  <span class="flashai-vto-timeline-title">Building Your Routine</span>
+                  <span class="flashai-vto-timeline-desc">Curating personalized products</span>
+                </div>
+              </div>
             </div>
 
-            <div class="flashai-vto-processing-steps">
-              <div class="flashai-vto-processing-step" data-step="1">
-                <div class="flashai-vto-step-icon">✓</div>
-                <div class="flashai-vto-step-text">Photos uploaded</div>
+            <!-- Progress Bar -->
+            <div class="flashai-vto-progress-footer">
+              <div class="flashai-vto-progress-track">
+                <div class="flashai-vto-progress-fill-animated" id="flashai-vto-analysis-progress"></div>
               </div>
-              <div class="flashai-vto-processing-step" data-step="2">
-                <div class="flashai-vto-step-icon">⋯</div>
-                <div class="flashai-vto-step-text">Analyzing skin tone & texture</div>
-              </div>
-              <div class="flashai-vto-processing-step" data-step="3">
-                <div class="flashai-vto-step-icon">⋯</div>
-                <div class="flashai-vto-step-text">Detecting skin concerns</div>
-              </div>
-              <div class="flashai-vto-processing-step" data-step="4">
-                <div class="flashai-vto-step-icon">⋯</div>
-                <div class="flashai-vto-step-text">Finding perfect products</div>
-              </div>
+              <p class="flashai-vto-progress-label">Usually takes 10-15 seconds</p>
             </div>
           </div>
 
@@ -630,7 +678,7 @@
             <div class="flashai-vto-face-results-content">
 
               <!-- Header with Score and User Account -->
-              <div class="flashai-vto-results-header-row" style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(135deg,#fafafa 0%,#fff 100%);border-bottom:1px solid #e4e4e7;margin:-20px -20px 0;">
+              <div class="flashai-vto-results-header-row" style="display:flex;align-items:center;gap:12px;padding:12px 56px 12px 16px;background:linear-gradient(135deg,#fafafa 0%,#fff 100%);border-bottom:1px solid #e4e4e7;margin:-20px -20px 0;">
                 <div class="flashai-vto-score-mini" style="position:relative;width:56px;height:56px;flex-shrink:0;">
                   <svg viewBox="0 0 80 80" class="flashai-vto-score-ring" style="width:100%;height:100%;">
                     <circle cx="40" cy="40" r="36" fill="none" stroke="#e5e7eb" stroke-width="6"></circle>
@@ -4558,6 +4606,18 @@
       // Show processing step
       this.showStep('face-processing');
 
+      // Set the scan preview image (use front photo)
+      const scanPreview = document.getElementById('flashai-vto-scan-preview');
+      if (scanPreview && this.state.facePhotos[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => { scanPreview.src = e.target.result; };
+        reader.readAsDataURL(this.state.facePhotos[0]);
+      }
+
+      // Initialize timeline steps
+      this.updateFaceScanStep(1, 'complete');
+      this.updateFaceScanStep(2, 'active');
+
       try {
         // Upload face scan with all 3 angles
         const formData = new FormData();
@@ -4645,20 +4705,35 @@
     }
 
     updateFaceScanStep(stepNumber, status) {
-      const step = document.querySelector(`#flashai-vto-step-face-processing .flashai-vto-processing-step[data-step="${stepNumber}"]`);
+      // Try new timeline step first
+      let step = document.querySelector(`#flashai-vto-step-face-processing .flashai-vto-timeline-step[data-step="${stepNumber}"]`);
+
+      // Fall back to old processing step
+      if (!step) {
+        step = document.querySelector(`#flashai-vto-step-face-processing .flashai-vto-processing-step[data-step="${stepNumber}"]`);
+      }
+
       if (!step) return;
 
-      const icon = step.querySelector('.flashai-vto-step-icon');
-      if (!icon) return;
+      // Update progress bar
+      const progressBar = document.getElementById('flashai-vto-analysis-progress');
+      if (progressBar) {
+        const progress = status === 'complete' ? (stepNumber * 25) : ((stepNumber - 1) * 25 + 12);
+        progressBar.style.width = `${Math.min(progress, 100)}%`;
+      }
 
       if (status === 'active') {
         step.classList.add('active');
         step.classList.remove('complete');
-        icon.textContent = '⋯';
+        // For old style
+        const icon = step.querySelector('.flashai-vto-step-icon');
+        if (icon) icon.textContent = '⋯';
       } else if (status === 'complete') {
         step.classList.remove('active');
         step.classList.add('complete');
-        icon.textContent = '✓';
+        // For old style
+        const icon = step.querySelector('.flashai-vto-step-icon');
+        if (icon) icon.textContent = '✓';
       }
     }
 
