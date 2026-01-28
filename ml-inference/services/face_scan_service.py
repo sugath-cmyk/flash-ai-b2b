@@ -1246,12 +1246,11 @@ class FaceScanService:
         pimple_count = min(pimple_count, 8)         # Reduced from 10
         whitehead_count = min(whitehead_count, 5)   # Reduced from 8
 
-        # Calculate score - MORE conservative scoring to avoid false positives
-        # Weight: blackheads (least severe), whiteheads (moderate), pimples (most severe)
-        # Max possible: 10 + 5 + 8*2 = 31 blemishes → 31 * 1.5 = 46.5 score at max
-        # This leaves room for genuinely severe cases through inflammation bonus
+        # Calculate score - direct count mapping per IGA clinical scale
+        # Weight: blackheads (1x), whiteheads (1x), pimples (2x - more severe)
+        # IGA Grade mapping: 0=Clear, 1-10=Almost Clear, 11-25=Mild, 26-50=Moderate, 51+=Severe
         total_blemishes = blackhead_count + whitehead_count + pimple_count * 2
-        acne_score = min(100, int(total_blemishes * 1.5))  # Reduced from 1.8
+        acne_score = min(100, total_blemishes)  # Direct mapping - no artificial multiplier
 
         # Inflammation based on verified red pixels - STRICTER thresholds
         red_pixel_ratio = np.sum(red_mask > 0) / skin_area
@@ -1808,9 +1807,9 @@ class FaceScanService:
         # Oiliness score
         oiliness_score = min(100, int(shine_ratio * 180 + brightness_std / 3))
 
-        # Hydration score
+        # Hydration score - no artificial floor, let true dryness show
         if shine_ratio < 0.02 and mean_brightness < 140:
-            hydration_score = int(max(30, 55 - int(brightness_std / 2)))
+            hydration_score = int(max(0, min(100, 55 - int(brightness_std / 2))))  # Can go below 30 for truly dry skin
             dry_patches = True
         else:
             hydration_score = int(min(100, 65 + int(shine_ratio * 60)))
@@ -2131,18 +2130,8 @@ class FaceScanService:
                 right_percentile
             )
 
-            # Apply VERY LOW minimum detection threshold
-            # If under-eye region has ANY noticeable darkness, flag it
-            if left_darkness > 90:  # Was 110, now 90
-                left_severity = max(left_severity, 0.20)  # At least mild
-            if right_darkness > 90:
-                right_severity = max(right_severity, 0.20)
-
-            # If BOTH eyes have some darkness, boost confidence
-            if left_darkness > 80 and right_darkness > 80:
-                boost = 0.15
-                left_severity = max(left_severity, boost)
-                right_severity = max(right_severity, boost)
+            # No artificial floor boosts - let actual detection methods determine severity
+            # Removed all minimum thresholds that were artificially inflating scores
 
             # Clamp to 0-1 range
             left_severity = min(1.0, left_severity)
@@ -2235,10 +2224,7 @@ class FaceScanService:
             left_severity = max(left_vs_cheek, left_absolute)
             right_severity = max(right_vs_cheek, right_absolute)
 
-            if left_darkness > 90:
-                left_severity = max(left_severity, 0.20)
-            if right_darkness > 90:
-                right_severity = max(right_severity, 0.20)
+            # No artificial floor boosts - let detection methods determine severity
 
             left_severity = min(1.0, left_severity)
             right_severity = min(1.0, right_severity)
