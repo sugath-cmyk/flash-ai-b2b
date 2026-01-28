@@ -6,6 +6,7 @@ import { Router } from 'express';
 import maintenanceController from '../controllers/maintenance.controller';
 import { FACE_SCAN_MIGRATION_SQL } from '../migrations/face-scan-migration';
 import { SKINCARE_PLATFORM_MIGRATION_SQL } from '../migrations/skincare-platform-migration';
+import scanCalibrationService from '../services/scan-calibration.service';
 
 const router = Router();
 
@@ -324,7 +325,22 @@ router.get('/dashboard', async (req, res) => {
           )
         },
 
-        // === SECTION 7: System Health ===
+        // === SECTION 7: Calibration Status ===
+        calibration: await (async () => {
+          try {
+            const summary = await scanCalibrationService.getCalibrationSummary();
+            return {
+              lastCalibration: summary.lastCalibration,
+              needsRecalibration: summary.needsRecalibration,
+              recommendation: summary.recommendation,
+              attributeCount: summary.attributes.length
+            };
+          } catch {
+            return { lastCalibration: null, needsRecalibration: true, recommendation: 'Run initial calibration' };
+          }
+        })(),
+
+        // === SECTION 8: System Health ===
         system: {
           memoryUsage: process.memoryUsage(),
           uptime: process.uptime(),
@@ -426,5 +442,159 @@ function getDataHealthStatus(users: number, scans: number, feedback: number) {
   if (feedback < 50) return { status: 'growing', message: 'Building training dataset', color: 'green' };
   return { status: 'mature', message: 'Ready for model improvements', color: 'emerald' };
 }
+
+// =============================================================================
+// SCAN CALIBRATION ROUTES - Auto-learning from scan data
+// =============================================================================
+
+/**
+ * GET /api/maintenance/calibration
+ * Get current calibration status and summary
+ */
+router.get('/calibration', async (req, res) => {
+  try {
+    const summary = await scanCalibrationService.getCalibrationSummary();
+    res.json({
+      success: true,
+      data: summary
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/maintenance/calibration/reset
+ * Reset and recalibrate all benchmarks from current scan data
+ */
+router.post('/calibration/reset', async (req, res) => {
+  try {
+    console.log('[Calibration] Manual reset triggered');
+    const snapshot = await scanCalibrationService.resetBenchmarks();
+
+    res.json({
+      success: true,
+      message: 'Benchmarks reset successfully',
+      data: {
+        id: snapshot.id,
+        createdAt: snapshot.createdAt,
+        totalScans: snapshot.totalScans,
+        attributesCalibrated: snapshot.calibrations.length,
+        calibrations: snapshot.calibrations.map(c => ({
+          attribute: c.attribute,
+          sampleSize: c.sampleSize,
+          mean: c.mean,
+          median: c.median,
+          thresholds: c.thresholds
+        }))
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/maintenance/calibration/distribution
+ * Get grade distribution across all scans (how many in each grade)
+ */
+router.get('/calibration/distribution', async (req, res) => {
+  try {
+    const distribution = await scanCalibrationService.getGradeDistribution();
+    const benchmark = await scanCalibrationService.getLatestBenchmark();
+
+    res.json({
+      success: true,
+      data: {
+        lastCalibration: benchmark?.createdAt,
+        distribution,
+        explanation: {
+          grade_0: 'None (bottom 20%)',
+          grade_1: 'Mild (20-40%)',
+          grade_2: 'Moderate (40-60%)',
+          grade_3: 'Significant (60-80%)',
+          grade_4: 'Severe (top 20%)'
+        }
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/maintenance/calibration/thresholds/:attribute
+ * Get calibrated thresholds for a specific attribute
+ */
+router.get('/calibration/thresholds/:attribute', async (req, res) => {
+  try {
+    const { attribute } = req.params;
+    const thresholds = await scanCalibrationService.getThresholds(attribute);
+
+    if (!thresholds) {
+      return res.status(404).json({
+        success: false,
+        error: `No calibration data for ${attribute}. Run calibration first.`
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        attribute,
+        thresholds,
+        grades: {
+          0: `score <= ${thresholds.none_max}`,
+          1: `${thresholds.none_max} < score <= ${thresholds.mild_max}`,
+          2: `${thresholds.mild_max} < score <= ${thresholds.moderate_max}`,
+          3: `${thresholds.moderate_max} < score <= ${thresholds.significant_max}`,
+          4: `score > ${thresholds.significant_max}`
+        }
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/maintenance/calibration/analyze/:attribute
+ * Analyze distribution for a specific attribute (without saving)
+ */
+router.get('/calibration/analyze/:attribute', async (req, res) => {
+  try {
+    const { attribute } = req.params;
+    const analysis = await scanCalibrationService.analyzeDistribution(attribute);
+
+    if (!analysis) {
+      return res.status(404).json({
+        success: false,
+        error: `Not enough data for ${attribute}. Need at least 10 scans.`
+      });
+    }
+
+    res.json({
+      success: true,
+      data: analysis
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 export default router;
