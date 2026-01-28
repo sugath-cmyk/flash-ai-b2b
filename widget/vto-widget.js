@@ -205,7 +205,7 @@
           </div>
 
           <!-- Step: Sign In (before face scan) -->
-          <div id="flashai-vto-step-signin" class="flashai-vto-step">
+          <div id="flashai-vto-step-signin" class="flashai-vto-step" style="display: none;">
             <div class="flashai-vto-header">
               <h2>Sign In for Best Experience</h2>
               <p>Track your skin journey & see past scans</p>
@@ -283,7 +283,7 @@
           </div>
 
           <!-- Step 1: Body Scanning -->
-          <div id="flashai-vto-step-scanning" class="flashai-vto-step">
+          <div id="flashai-vto-step-scanning" class="flashai-vto-step" style="display: none;">
             <div class="flashai-vto-header">
               <h2>Take a Body Scan</h2>
               <p>We'll need 3-5 photos from different angles to create your 3D model</p>
@@ -416,7 +416,7 @@
           </div>
 
           <!-- Face Scan Step 1: Capture -->
-          <div id="flashai-vto-step-facescan" class="flashai-vto-step">
+          <div id="flashai-vto-step-facescan" class="flashai-vto-step" style="display: none;">
             <div class="flashai-vto-header">
               <h2>Face Scan</h2>
               <p id="flashai-vto-face-angle-instruction">Take 3 photos: Front, Left Profile, Right Profile</p>
@@ -456,7 +456,7 @@
           </div>
 
           <!-- Face Scan Step 2: Processing -->
-          <div id="flashai-vto-step-face-processing" class="flashai-vto-step">
+          <div id="flashai-vto-step-face-processing" class="flashai-vto-step" style="display: none;">
             <div class="flashai-vto-header">
               <h2>Analyzing Your Skin</h2>
               <p>This usually takes 10-15 seconds...</p>
@@ -488,7 +488,7 @@
           </div>
 
           <!-- Face Scan Step 3: Results -->
-          <div id="flashai-vto-step-face-results" class="flashai-vto-step">
+          <div id="flashai-vto-step-face-results" class="flashai-vto-step" style="display: none;">
             <div class="flashai-vto-face-results-content">
               <!-- Tab Navigation -->
               <div class="flashai-vto-tabs">
