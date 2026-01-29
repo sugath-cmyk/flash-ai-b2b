@@ -489,107 +489,78 @@
           <!-- Face Scan Step 1: Capture -->
           <div id="flashai-vto-step-facescan" class="flashai-vto-step">
             <div class="flashai-vto-header">
-              <h2>Face Scan</h2>
-              <p id="flashai-vto-face-angle-instruction">Align your face within the boundary</p>
+              <h2>AI Face Scanner</h2>
+              <p id="flashai-vto-face-angle-instruction">Real-time skin analysis</p>
             </div>
 
-            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
+            <!-- Quality Gate Indicators Bar -->
+            <div class="flashai-vto-mesh-quality-bar" id="flashai-vto-mesh-quality-bar">
+              <div class="flashai-vto-mesh-quality-indicator bad" id="flashai-quality-lighting">
+                <span class="indicator-icon">💡</span>
+                <span class="indicator-label">Lighting</span>
+              </div>
+              <div class="flashai-vto-mesh-quality-indicator bad" id="flashai-quality-position">
+                <span class="indicator-icon">📐</span>
+                <span class="indicator-label">Face Position</span>
+              </div>
+              <div class="flashai-vto-mesh-quality-indicator bad" id="flashai-quality-pose">
+                <span class="indicator-icon">👁️</span>
+                <span class="indicator-label">Look Straight</span>
+              </div>
+            </div>
+
+            <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
               <!-- Loading overlay that hides the black video placeholder -->
-              <div id="flashai-vto-camera-loading" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;background:linear-gradient(135deg,#e8e0ff 0%,#f5f3ff 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
-                <div style="width:50px;height:50px;border:4px solid #e9d5ff;border-top-color:#8b5cf6;border-radius:50%;animation:flashai-spin 1s linear infinite;"></div>
-                <p style="margin-top:16px;color:#6b21a8;font-size:14px;font-weight:500;">Starting camera...</p>
+              <div id="flashai-vto-camera-loading" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
+                <div style="width:50px;height:50px;border:4px solid rgba(255,80,80,0.3);border-top-color:#ff5050;border-radius:50%;animation:flashai-spin 1s linear infinite;"></div>
+                <p style="margin-top:16px;color:#ff5050;font-size:14px;font-weight:500;">Initializing AI Scanner...</p>
               </div>
               <style>@keyframes flashai-spin{to{transform:rotate(360deg)}}</style>
 
-              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;opacity:0;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;-webkit-filter:none !important;"></video>
+              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;opacity:0;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;-webkit-filter:none !important;transform:scaleX(-1);"></video>
 
-              <!-- Face Boundary Guide Overlay - transparent, no backgrounds -->
-              <div id="flashai-vto-face-boundary" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
-                <!-- Animated oval border only - NO inset shadow, just outer glow -->
-                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:60%;height:72%;border:3px dashed #8b5cf6;border-radius:50%;box-shadow:0 0 20px rgba(139,92,246,0.5);animation:flashai-boundary-pulse 2s ease-in-out infinite;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;"></div>
+              <!-- Face Mesh Canvas Overlay -->
+              <canvas id="flashai-vto-mesh-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;transform:scaleX(-1);"></canvas>
 
-                <!-- Corner brackets for alignment -->
-                <div style="position:absolute;top:8%;left:20%;width:35px;height:35px;border-left:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:8px 0 0 0;"></div>
-                <div style="position:absolute;top:8%;right:20%;width:35px;height:35px;border-right:3px solid #8b5cf6;border-top:3px solid #8b5cf6;border-radius:0 8px 0 0;"></div>
-                <div style="position:absolute;bottom:8%;left:20%;width:35px;height:35px;border-left:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 0 8px;"></div>
-                <div style="position:absolute;bottom:8%;right:20%;width:35px;height:35px;border-right:3px solid #8b5cf6;border-bottom:3px solid #8b5cf6;border-radius:0 0 8px 0;"></div>
-
-                <!-- Center crosshair -->
-                <div style="position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:50px;height:50px;">
-                  <div style="position:absolute;top:50%;left:0;width:100%;height:2px;background:rgba(139,92,246,0.6);"></div>
-                  <div style="position:absolute;top:0;left:50%;width:2px;height:100%;background:rgba(139,92,246,0.6);"></div>
-                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;background:rgba(139,92,246,0.8);border-radius:50%;"></div>
-                </div>
-
-                <!-- Guide text at bottom -->
-                <div style="position:absolute;bottom:5%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;padding:10px 24px;border-radius:25px;font-size:14px;font-weight:600;white-space:nowrap;border:2px solid rgba(139,92,246,0.6);box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-                  <span id="flashai-vto-boundary-text">👤 Position your face inside the oval</span>
-                </div>
+              <!-- Face Frame Guide -->
+              <div class="flashai-vto-mesh-face-frame" style="position:absolute;top:12%;left:20%;width:60%;height:76%;pointer-events:none;z-index:11;">
+                <div class="frame-corner tl" style="position:absolute;top:0;left:0;width:40px;height:40px;border-left:3px solid rgba(255,255,255,0.7);border-top:3px solid rgba(255,255,255,0.7);border-radius:12px 0 0 0;"></div>
+                <div class="frame-corner tr" style="position:absolute;top:0;right:0;width:40px;height:40px;border-right:3px solid rgba(255,255,255,0.7);border-top:3px solid rgba(255,255,255,0.7);border-radius:0 12px 0 0;"></div>
+                <div class="frame-corner bl" style="position:absolute;bottom:0;left:0;width:40px;height:40px;border-left:3px solid rgba(255,255,255,0.7);border-bottom:3px solid rgba(255,255,255,0.7);border-radius:0 0 0 12px;"></div>
+                <div class="frame-corner br" style="position:absolute;bottom:0;right:0;width:40px;height:40px;border-right:3px solid rgba(255,255,255,0.7);border-bottom:3px solid rgba(255,255,255,0.7);border-radius:0 0 12px 0;"></div>
               </div>
 
-              <!-- Photo indicator (top) - NO CLASS to avoid external CSS interference -->
-              <div id="flashai-vto-face-angle-indicator" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;z-index:15;border:1px solid rgba(255,255,255,0.2);backdrop-filter:none !important;-webkit-backdrop-filter:none !important;box-shadow:none !important;">
-                📸 Photo <span id="flashai-vto-face-photo-count">1</span> of 3: <span id="flashai-vto-current-angle">Front View</span>
+              <!-- Guide text at bottom -->
+              <div style="position:absolute;bottom:5%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 24px;border-radius:25px;font-size:14px;font-weight:500;white-space:nowrap;z-index:15;">
+                <span id="flashai-vto-mesh-guide-text">Position your face within the frame</span>
               </div>
 
-              <!-- Auto-capture countdown overlay -->
-              <div id="flashai-vto-countdown-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:20;pointer-events:none;">
-                <div style="display:flex;flex-direction:column;align-items:center;">
-                  <div id="flashai-vto-countdown-number" style="width:100px;height:100px;border-radius:50%;background:rgba(139,92,246,0.9);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:800;color:#fff;box-shadow:0 0 40px rgba(139,92,246,0.6);animation:flashai-countdown-pulse 1s ease-in-out infinite;">5</div>
-                  <p id="flashai-vto-countdown-text" style="margin-top:12px;background:rgba(0,0,0,0.8);color:#fff;padding:8px 20px;border-radius:20px;font-size:14px;font-weight:600;">Get ready for front photo</p>
+              <!-- Auto-capture Progress Ring -->
+              <div id="flashai-vto-capture-progress" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none;flex-direction:column;align-items:center;gap:8px;z-index:20;pointer-events:none;">
+                <div class="flashai-progress-ring" style="width:90px;height:90px;border-radius:50%;background:conic-gradient(#22c55e var(--progress, 0deg), rgba(255,255,255,0.2) 0deg);display:flex;align-items:center;justify-content:center;">
+                  <div style="width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;">
+                    <span style="color:#22c55e;font-size:24px;">✓</span>
+                  </div>
                 </div>
-              </div>
-              <style>
-                @keyframes flashai-countdown-pulse {
-                  0%, 100% { transform: scale(1); }
-                  50% { transform: scale(1.1); }
-                }
-                @keyframes flashai-capture-flash {
-                  0% { opacity: 0; }
-                  50% { opacity: 1; }
-                  100% { opacity: 0; }
-                }
-              </style>
-            </div>
-
-            <!-- Lighting Guide -->
-            <div class="flashai-vto-quality-indicators" id="flashai-vto-quality-indicators" style="display:flex;justify-content:center;padding:8px 12px;margin:8px 0;">
-              <div class="flashai-vto-quality-item" id="flashai-vto-quality-lighting" style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:#fef3c7;border:2px solid #f59e0b;transition:all 0.3s;">
-                <span style="font-size:16px;">💡</span>
-                <div>
-                  <span style="font-size:12px;font-weight:600;color:#92400e;">Lighting: </span>
-                  <span id="flashai-vto-quality-lighting-status" style="font-size:12px;font-weight:700;color:#92400e;">Checking...</span>
-                </div>
+                <span style="color:#fff;font-size:13px;font-weight:600;background:rgba(0,0,0,0.7);padding:6px 14px;border-radius:20px;">Hold still...</span>
               </div>
             </div>
 
-            <div class="flashai-vto-face-photos-preview" id="flashai-vto-face-photos"></div>
-
+            <!-- Manual capture fallback -->
             <div class="flashai-vto-actions" style="padding:12px 20px;">
-              <button id="flashai-vto-face-capture" class="flashai-vto-btn-primary" style="background-color: ${this.config.primaryColor}">
+              <button id="flashai-vto-face-capture" class="flashai-vto-btn-primary" style="background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:#fff;display:none;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                Capture Front View
-              </button>
-              <button id="flashai-vto-face-analyze" class="flashai-vto-btn-primary" style="display:none;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;width:100%;padding:16px 24px;font-size:16px;font-weight:700;border-radius:12px;border:none;box-shadow:0 4px 15px rgba(139,92,246,0.4);cursor:pointer;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;vertical-align:middle;">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 6v6l4 2"></path>
-                </svg>
-                Analyze My Skin
+                Capture Now
               </button>
             </div>
 
-            <div class="flashai-vto-instructions">
-              <h4>For best results:</h4>
-              <ul>
-                <li>🎯 Align your face inside the oval boundary</li>
-                <li>💡 Ensure good, even lighting</li>
-                <li>👀 Look directly at the camera for front view</li>
-                <li>↪️ Turn head 45° for profile shots</li>
-              </ul>
+            <div class="flashai-vto-instructions" style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:1px solid #f59e0b;border-radius:12px;padding:12px 16px;margin:8px 16px;">
+              <p style="font-size:13px;color:#92400e;margin:0;text-align:center;">
+                <strong>Auto-capture:</strong> When all indicators turn green, hold still for 2 seconds
+              </p>
             </div>
           </div>
 
@@ -673,7 +644,67 @@
             </div>
           </div>
 
-          <!-- Face Scan Step 3: Results (Accordion with Zoomed Regions) -->
+          <!-- Face Scan Step 3: AI Skincare Consultation -->
+          <div id="flashai-vto-step-face-consultation" class="flashai-vto-step">
+            <div class="flashai-vto-consultation-container">
+              <!-- Header -->
+              <div class="flashai-vto-consultation-header">
+                <div class="flashai-vto-consultation-avatar">
+                  <div class="avatar-glow"></div>
+                  <div class="avatar-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="flashai-vto-consultation-title">
+                  <h2>Skin Expert AI</h2>
+                  <p>Let me understand your skin better</p>
+                </div>
+              </div>
+
+              <!-- Chat Messages Container -->
+              <div class="flashai-vto-chat-container" id="flashai-vto-chat-container">
+                <div class="flashai-vto-chat-messages" id="flashai-vto-chat-messages">
+                  <!-- Messages will be dynamically inserted here -->
+                </div>
+              </div>
+
+              <!-- Chat Input -->
+              <div class="flashai-vto-chat-input-container">
+                <div class="flashai-vto-chat-input-wrapper">
+                  <input
+                    type="text"
+                    id="flashai-vto-chat-input"
+                    class="flashai-vto-chat-input"
+                    placeholder="Type your response..."
+                    autocomplete="off"
+                  />
+                  <button id="flashai-vto-chat-send" class="flashai-vto-chat-send-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                  </button>
+                </div>
+                <!-- Quick Response Options -->
+                <div class="flashai-vto-quick-responses" id="flashai-vto-quick-responses">
+                  <!-- Quick response buttons will be dynamically inserted -->
+                </div>
+              </div>
+
+              <!-- Skip Button -->
+              <div class="flashai-vto-consultation-footer">
+                <button id="flashai-vto-skip-consultation" class="flashai-vto-skip-btn">
+                  Skip to Results
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Face Scan Step 4: Results (Accordion with Zoomed Regions) -->
           <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
 
@@ -4094,6 +4125,7 @@
         tryon: 'flashai-vto-step-tryon',
         facescan: 'flashai-vto-step-facescan',
         'face-processing': 'flashai-vto-step-face-processing',
+        'face-consultation': 'flashai-vto-step-face-consultation',
         'face-results': 'flashai-vto-step-face-results',
         error: 'flashai-vto-step-error',
       };
@@ -4110,6 +4142,8 @@
         this.initializeTryOn();
       } else if (step === 'facescan') {
         this.startFaceCamera();
+      } else if (step === 'face-consultation') {
+        this.initSkincareConsultation();
       }
     }
 
@@ -4344,18 +4378,11 @@
         video.srcObject = stream;
         this.state.faceCameraStream = stream;
 
-        // Reset state for 3-angle capture
+        // Reset state for face mesh capture
         this.state.facePhotos = [];
-        this.state.currentAngleIndex = 0;
-        this.state.faceAngles = ['Front View', 'Left Profile', 'Right Profile'];
         this.state.qualityCheckReady = false;
-
-        const analyzeBtn = document.getElementById('flashai-vto-face-analyze');
-        if (analyzeBtn) analyzeBtn.style.display = 'none';
-
-        // Clear previous photos
-        const photosContainer = document.getElementById('flashai-vto-face-photos');
-        if (photosContainer) photosContainer.innerHTML = '';
+        this.state.faceMeshActive = false;
+        this.state.autoCaptureStartTime = null;
 
         // Forcibly remove any blur/frosted effects from all camera elements
         const removeBlurEffects = () => {
@@ -4389,8 +4416,7 @@
         // Listen for when video actually has frames to display
         video.addEventListener('playing', () => {
           hideLoadingAndShowVideo();
-          // Start auto-capture countdown after camera is ready (1 second delay to let user see themselves)
-          setTimeout(() => this.startAutoCaptureCountdown(), 1000);
+          // Face mesh will handle auto-capture based on quality indicators
         }, { once: true });
 
         // Fallback: if playing event doesn't fire within 2 seconds, show video anyway
@@ -4398,8 +4424,6 @@
           if (loadingOverlay && loadingOverlay.style.display !== 'none') {
             console.log('[Flash AI Widget] Fallback: showing video after timeout');
             hideLoadingAndShowVideo();
-            // Start auto-capture countdown
-            setTimeout(() => this.startAutoCaptureCountdown(), 1000);
           }
         }, 2000);
 
@@ -4416,31 +4440,468 @@
       }
     }
 
-    async initializeFaceDetection() {
+    // ==========================================================================
+    // MediaPipe Face Mesh - Real-time Face Scanner
+    // ==========================================================================
+
+    async loadMediaPipeScripts() {
+      // Check if already loaded
+      if (window.FaceMesh && window.Camera) {
+        console.log('[Face Mesh] MediaPipe already loaded');
+        return Promise.resolve();
+      }
+
+      const scripts = [
+        'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js'
+      ];
+
+      console.log('[Face Mesh] Loading MediaPipe scripts...');
+
+      return new Promise((resolve, reject) => {
+        let loaded = 0;
+        scripts.forEach(src => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = () => {
+            loaded++;
+            console.log(`[Face Mesh] Loaded ${loaded}/${scripts.length} scripts`);
+            if (loaded === scripts.length) {
+              resolve();
+            }
+          };
+          script.onerror = (err) => {
+            console.error('[Face Mesh] Failed to load script:', src);
+            reject(err);
+          };
+          document.head.appendChild(script);
+        });
+      });
+    }
+
+    async initializeFaceMesh() {
+      try {
+        await this.loadMediaPipeScripts();
+
+        const video = document.getElementById('flashai-vto-face-camera');
+        const canvas = document.getElementById('flashai-vto-mesh-canvas');
+        if (!video || !canvas) return;
+
+        // Set canvas size to match video
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        this.meshCtx = canvas.getContext('2d');
+
+        // Initialize Face Mesh
+        this.faceMesh = new FaceMesh({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`
+        });
+
+        this.faceMesh.setOptions({
+          maxNumFaces: 1,
+          refineLandmarks: true,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+
+        this.faceMesh.onResults(this.onFaceMeshResults.bind(this));
+
+        // Use MediaPipe Camera utility for smooth frame processing
+        this.mpCamera = new Camera(video, {
+          onFrame: async () => {
+            if (this.faceMesh && this.state.faceMeshActive) {
+              await this.faceMesh.send({ image: video });
+            }
+          },
+          width: 640,
+          height: 480
+        });
+
+        this.state.faceMeshActive = true;
+        this.state.autoCaptureStartTime = null;
+        this.state.qualityState = { lighting: false, position: false, pose: false, allGood: false };
+
+        await this.mpCamera.start();
+        console.log('[Face Mesh] MediaPipe Face Mesh initialized and running');
+
+      } catch (error) {
+        console.error('[Face Mesh] Initialization error:', error);
+        // Fallback to basic quality check if MediaPipe fails
+        this.initializeFaceDetectionFallback();
+      }
+    }
+
+    initializeFaceDetectionFallback() {
+      console.log('[Face Mesh] Using fallback detection');
       const video = document.getElementById('flashai-vto-face-camera');
       if (!video) return;
-
-      // Check if FaceDetector API is available (Chrome/Edge)
-      if ('FaceDetector' in window) {
-        try {
-          this.faceDetector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-          console.log('[Quality Check] Using FaceDetector API');
-        } catch (e) {
-          console.log('[Quality Check] FaceDetector API not available, using fallback');
-          this.faceDetector = null;
-        }
-      }
 
       // Create canvas for frame analysis
       this.qualityCanvas = document.createElement('canvas');
       this.qualityCtx = this.qualityCanvas.getContext('2d', { willReadFrequently: true });
 
-      // Start quality check loop
+      // Start basic quality check loop
       this.state.qualityCheckReady = true;
-      this.startQualityCheckLoop();
+      this.startBasicQualityCheckLoop();
     }
 
-    startQualityCheckLoop() {
+    async initializeFaceDetection() {
+      const video = document.getElementById('flashai-vto-face-camera');
+      if (!video) return;
+
+      // Try MediaPipe Face Mesh first
+      try {
+        await this.initializeFaceMesh();
+      } catch (error) {
+        console.log('[Face Mesh] MediaPipe not available, using fallback');
+        this.initializeFaceDetectionFallback();
+      }
+    }
+
+    // MediaPipe Face Mesh tessellation indices for drawing the mesh
+    getFaceMeshTessellation() {
+      // Subset of FACEMESH_TESSELATION for performance - key facial structure lines
+      return [
+        // Forehead
+        [10, 338], [338, 297], [297, 332], [332, 284], [284, 251], [251, 389],
+        [10, 109], [109, 67], [67, 103], [103, 54], [54, 21], [21, 162],
+        // Eyes
+        [33, 7], [7, 163], [163, 144], [144, 145], [145, 153], [153, 154], [154, 155], [155, 133],
+        [263, 249], [249, 390], [390, 373], [373, 374], [374, 380], [380, 381], [381, 382], [382, 362],
+        // Eyebrows
+        [70, 63], [63, 105], [105, 66], [66, 107],
+        [336, 296], [296, 334], [334, 293], [293, 300],
+        // Nose
+        [168, 6], [6, 197], [197, 195], [195, 5], [5, 4], [4, 1], [1, 19],
+        [19, 94], [94, 2], [2, 164],
+        // Nose sides
+        [98, 97], [97, 2], [2, 326], [326, 327],
+        // Lips outer
+        [61, 146], [146, 91], [91, 181], [181, 84], [84, 17], [17, 314], [314, 405], [405, 321], [321, 375], [375, 291],
+        [61, 185], [185, 40], [40, 39], [39, 37], [37, 0], [0, 267], [267, 269], [269, 270], [270, 409], [409, 291],
+        // Lips inner
+        [78, 95], [95, 88], [88, 178], [178, 87], [87, 14], [14, 317], [317, 402], [402, 318], [318, 324], [324, 308],
+        [78, 191], [191, 80], [80, 81], [81, 82], [82, 13], [13, 312], [312, 311], [311, 310], [310, 415], [415, 308],
+        // Jaw/chin
+        [172, 58], [58, 132], [132, 93], [93, 234], [234, 127], [127, 162],
+        [397, 288], [288, 361], [361, 323], [323, 454], [454, 356], [356, 389],
+        // Cheeks
+        [116, 123], [123, 147], [147, 213], [213, 192], [192, 214],
+        [345, 352], [352, 376], [376, 433], [433, 416], [416, 434],
+        // Face contour
+        [10, 338], [338, 297], [297, 332], [332, 284], [284, 251], [251, 389], [389, 356], [356, 454],
+        [454, 323], [323, 361], [361, 288], [288, 397], [397, 365], [365, 379], [379, 378], [378, 400],
+        [400, 377], [377, 152], [152, 148], [148, 176], [176, 149], [149, 150], [150, 136], [136, 172],
+        [172, 58], [58, 132], [132, 93], [93, 234], [234, 127], [127, 162], [162, 21], [21, 54],
+        [54, 103], [103, 67], [67, 109], [109, 10]
+      ];
+    }
+
+    onFaceMeshResults(results) {
+      const canvas = document.getElementById('flashai-vto-mesh-canvas');
+      const video = document.getElementById('flashai-vto-face-camera');
+
+      if (!canvas || !video || !this.meshCtx) return;
+
+      // Update canvas size if needed
+      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+      }
+
+      const ctx = this.meshCtx;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0];
+        this.state.currentLandmarks = landmarks;
+
+        // Draw face mesh
+        this.drawFaceMesh(ctx, landmarks, width, height);
+
+        // Check quality indicators
+        this.updateMeshQualityIndicators(landmarks, video, ctx);
+
+        // Check auto-capture
+        this.checkMeshAutoCapture();
+      } else {
+        // No face detected - reset quality indicators
+        this.state.currentLandmarks = null;
+        this.updateQualityIndicator('lighting', false);
+        this.updateQualityIndicator('position', false);
+        this.updateQualityIndicator('pose', false);
+        this.state.autoCaptureStartTime = null;
+        this.hideCaptureProgress();
+      }
+    }
+
+    drawFaceMesh(ctx, landmarks, width, height) {
+      const tessellation = this.getFaceMeshTessellation();
+
+      // Draw mesh lines
+      ctx.strokeStyle = 'rgba(255, 50, 50, 0.5)';
+      ctx.lineWidth = 0.8;
+
+      for (const [start, end] of tessellation) {
+        if (landmarks[start] && landmarks[end]) {
+          ctx.beginPath();
+          ctx.moveTo(landmarks[start].x * width, landmarks[start].y * height);
+          ctx.lineTo(landmarks[end].x * width, landmarks[end].y * height);
+          ctx.stroke();
+        }
+      }
+
+      // Draw key landmark points
+      ctx.fillStyle = 'rgba(255, 80, 80, 0.7)';
+      const keyPoints = [1, 4, 5, 6, 33, 133, 362, 263, 61, 291, 199]; // nose, eyes, mouth key points
+      for (const idx of keyPoints) {
+        if (landmarks[idx]) {
+          ctx.beginPath();
+          ctx.arc(landmarks[idx].x * width, landmarks[idx].y * height, 2, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    }
+
+    updateMeshQualityIndicators(landmarks, video, ctx) {
+      // Check lighting from video frame
+      const lightingResult = this.checkMeshLighting(video, ctx);
+
+      // Check face position
+      const positionResult = this.checkFacePosition(landmarks);
+
+      // Check head pose (looking straight)
+      const poseResult = this.checkHeadPose(landmarks);
+
+      // Update UI indicators
+      this.updateQualityIndicator('lighting', lightingResult.isGood);
+      this.updateQualityIndicator('position', positionResult.isGood);
+      this.updateQualityIndicator('pose', poseResult.isGood);
+
+      // Store quality state
+      const allGood = lightingResult.isGood && positionResult.isGood && poseResult.isGood;
+      this.state.qualityState = {
+        lighting: lightingResult.isGood,
+        position: positionResult.isGood,
+        pose: poseResult.isGood,
+        allGood: allGood
+      };
+
+      // Update guide text based on what needs fixing
+      this.updateGuideText(lightingResult, positionResult, poseResult);
+    }
+
+    checkMeshLighting(video, ctx) {
+      // Sample center region of the frame for brightness
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = video.videoWidth;
+      tempCanvas.height = video.videoHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(video, 0, 0);
+
+      const centerX = Math.floor(video.videoWidth * 0.25);
+      const centerY = Math.floor(video.videoHeight * 0.15);
+      const regionW = Math.floor(video.videoWidth * 0.5);
+      const regionH = Math.floor(video.videoHeight * 0.6);
+
+      const imageData = tempCtx.getImageData(centerX, centerY, regionW, regionH);
+      let totalBrightness = 0;
+      let count = 0;
+
+      // Sample every 64th pixel for performance
+      for (let i = 0; i < imageData.data.length; i += 64) {
+        totalBrightness += 0.299 * imageData.data[i] + 0.587 * imageData.data[i + 1] + 0.114 * imageData.data[i + 2];
+        count++;
+      }
+
+      const avgBrightness = totalBrightness / count;
+      const isGood = avgBrightness >= 60 && avgBrightness <= 210;
+
+      return { isGood, brightness: avgBrightness };
+    }
+
+    checkFacePosition(landmarks) {
+      let minX = 1, maxX = 0, minY = 1, maxY = 0;
+
+      for (const lm of landmarks) {
+        minX = Math.min(minX, lm.x);
+        maxX = Math.max(maxX, lm.x);
+        minY = Math.min(minY, lm.y);
+        maxY = Math.max(maxY, lm.y);
+      }
+
+      const faceWidth = maxX - minX;
+      const faceHeight = maxY - minY;
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      // Check face size (should be 25-65% of frame width)
+      const sizeOk = faceWidth >= 0.25 && faceWidth <= 0.65;
+
+      // Check centering (face center should be near frame center)
+      const centerOk = Math.abs(centerX - 0.5) < 0.18 && Math.abs(centerY - 0.45) < 0.18;
+
+      return { isGood: sizeOk && centerOk, faceWidth, centerX, centerY };
+    }
+
+    checkHeadPose(landmarks) {
+      // Use key landmarks to estimate head pose
+      const noseTip = landmarks[1];      // Nose tip
+      const leftEye = landmarks[33];     // Left eye outer corner
+      const rightEye = landmarks[263];   // Right eye outer corner
+      const leftMouth = landmarks[61];   // Left mouth corner
+      const rightMouth = landmarks[291]; // Right mouth corner
+
+      // Calculate yaw (left-right rotation)
+      const eyeMidX = (leftEye.x + rightEye.x) / 2;
+      const eyeWidth = rightEye.x - leftEye.x;
+      const noseOffset = noseTip.x - eyeMidX;
+      const yaw = Math.atan2(noseOffset, eyeWidth * 0.5) * (180 / Math.PI);
+
+      // Calculate pitch (up-down rotation)
+      const eyeMidY = (leftEye.y + rightEye.y) / 2;
+      const faceHeight = Math.abs(landmarks[152].y - landmarks[10].y); // chin to forehead
+      const noseYOffset = (noseTip.y - eyeMidY) - (faceHeight * 0.15); // expected nose position
+      const pitch = Math.atan2(noseYOffset, faceHeight * 0.3) * (180 / Math.PI);
+
+      // Calculate roll (head tilt)
+      const roll = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * (180 / Math.PI);
+
+      // All angles should be within ±12 degrees for "looking straight"
+      const isGood = Math.abs(yaw) <= 12 && Math.abs(pitch) <= 15 && Math.abs(roll) <= 12;
+
+      return { isGood, yaw, pitch, roll };
+    }
+
+    updateQualityIndicator(type, isGood) {
+      const indicator = document.getElementById(`flashai-quality-${type}`);
+      if (!indicator) return;
+
+      indicator.classList.remove('good', 'bad');
+      indicator.classList.add(isGood ? 'good' : 'bad');
+    }
+
+    updateGuideText(lighting, position, pose) {
+      const guideEl = document.getElementById('flashai-vto-mesh-guide-text');
+      if (!guideEl) return;
+
+      let message = '';
+      if (!lighting.isGood) {
+        message = lighting.brightness < 60 ? 'Move to brighter area' : 'Reduce bright light';
+      } else if (!position.isGood) {
+        if (position.faceWidth < 0.25) {
+          message = 'Move closer to camera';
+        } else if (position.faceWidth > 0.65) {
+          message = 'Move back a little';
+        } else {
+          message = 'Center your face in frame';
+        }
+      } else if (!pose.isGood) {
+        message = 'Look straight at camera';
+      } else {
+        message = 'Perfect! Hold still...';
+      }
+
+      guideEl.textContent = message;
+    }
+
+    checkMeshAutoCapture() {
+      const allGood = this.state.qualityState?.allGood;
+      const progressEl = document.getElementById('flashai-vto-capture-progress');
+
+      if (allGood) {
+        if (!this.state.autoCaptureStartTime) {
+          this.state.autoCaptureStartTime = Date.now();
+          this.showCaptureProgress(true);
+        } else {
+          const elapsed = Date.now() - this.state.autoCaptureStartTime;
+          const progress = Math.min(elapsed / 2000, 1); // 2 second hold
+
+          // Update progress ring
+          if (progressEl) {
+            progressEl.style.setProperty('--progress', `${progress * 360}deg`);
+          }
+
+          if (elapsed >= 2000) {
+            // Auto-capture!
+            this.performMeshAutoCapture();
+          }
+        }
+      } else {
+        this.state.autoCaptureStartTime = null;
+        this.showCaptureProgress(false);
+      }
+    }
+
+    showCaptureProgress(show) {
+      const progressEl = document.getElementById('flashai-vto-capture-progress');
+      if (progressEl) {
+        progressEl.style.display = show ? 'flex' : 'none';
+        if (!show) {
+          progressEl.style.setProperty('--progress', '0deg');
+        }
+      }
+    }
+
+    hideCaptureProgress() {
+      this.showCaptureProgress(false);
+    }
+
+    async performMeshAutoCapture() {
+      console.log('[Face Mesh] Auto-capture triggered!');
+
+      // Stop face mesh processing
+      this.state.faceMeshActive = false;
+      if (this.mpCamera) {
+        this.mpCamera.stop();
+      }
+
+      const video = document.getElementById('flashai-vto-face-camera');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
+      // Convert to base64
+      const imageData = canvas.toDataURL('image/jpeg', 0.92);
+
+      // Store the captured image
+      this.state.facePhotos = [imageData];
+      this.state.faceMeshCapturedImage = imageData;
+
+      // Stop camera
+      this.stopFaceCamera();
+
+      // Show processing step
+      this.showStep('face-processing');
+
+      // Set preview image
+      const previewImg = document.getElementById('flashai-vto-scan-preview');
+      if (previewImg) {
+        previewImg.src = imageData;
+      }
+
+      // Analyze the captured image
+      await this.analyzeFaceScan();
+    }
+
+    stopFaceMesh() {
+      this.state.faceMeshActive = false;
+      if (this.mpCamera) {
+        this.mpCamera.stop();
+        this.mpCamera = null;
+      }
+      if (this.faceMesh) {
+        this.faceMesh.close();
+        this.faceMesh = null;
+      }
+    }
+
+    startBasicQualityCheckLoop() {
       if (this.qualityCheckInterval) {
         clearInterval(this.qualityCheckInterval);
       }
@@ -4538,6 +4999,9 @@
     }
 
     stopFaceCamera() {
+      // Stop face mesh first
+      this.stopFaceMesh();
+
       if (this.state.faceCameraStream) {
         this.state.faceCameraStream.getTracks().forEach(track => track.stop());
         this.state.faceCameraStream = null;
@@ -4941,9 +5405,12 @@
             // Complete all steps
             this.updateFaceScanStep(4, 'complete');
 
-            // Wait a moment for user to see completion
+            // Store scan for later use
+            this.state.pendingFaceScan = scan;
+
+            // Wait a moment for user to see completion, then start AI consultation
             setTimeout(() => {
-              this.displayFaceResults(scan);
+              this.showStep('face-consultation');
             }, 1000);
           } else if (scan.status === 'failed') {
             clearInterval(this.faceScanPollInterval);
@@ -5143,6 +5610,337 @@
 
       // Show results step
       this.showStep('face-results');
+    }
+
+    // ==========================================================================
+    // Skincare AI Consultation Chat
+    // ==========================================================================
+
+    async initSkincareConsultation() {
+      console.log('[Skincare AI] Initializing consultation');
+
+      // Get scan data
+      const scan = this.state.pendingFaceScan || this.state.faceScan;
+      if (!scan) {
+        console.error('[Skincare AI] No scan data available');
+        this.displayFaceResults(this.state.faceScan);
+        return;
+      }
+
+      // Reset consultation state
+      this.state.consultationConversationId = null;
+      this.state.consultationMessages = [];
+
+      // Set up chat UI
+      this.setupConsultationChat();
+
+      // Start conversation with AI
+      try {
+        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+        const response = await fetch(`${faceScanBaseUrl}/conversation/start`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            scanId: scan.id,
+            visitorId: this.config.visitorId
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          this.state.consultationConversationId = data.data.conversationId;
+          this.addChatMessage('assistant', data.data.message);
+          this.showAgeQuickResponses();
+        } else {
+          console.error('[Skincare AI] Failed to start conversation:', data.error);
+          // Skip to results if conversation fails
+          this.skipConsultation();
+        }
+      } catch (error) {
+        console.error('[Skincare AI] Error starting conversation:', error);
+        this.skipConsultation();
+      }
+    }
+
+    setupConsultationChat() {
+      const messagesContainer = document.getElementById('flashai-vto-chat-messages');
+      const chatInput = document.getElementById('flashai-vto-chat-input');
+      const sendBtn = document.getElementById('flashai-vto-chat-send');
+      const skipBtn = document.getElementById('flashai-vto-skip-consultation');
+
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '';
+      }
+
+      // Send message on button click
+      if (sendBtn) {
+        sendBtn.onclick = () => this.sendChatMessage();
+      }
+
+      // Send message on Enter key
+      if (chatInput) {
+        chatInput.value = '';
+        chatInput.onkeypress = (e) => {
+          if (e.key === 'Enter') {
+            this.sendChatMessage();
+          }
+        };
+      }
+
+      // Skip button
+      if (skipBtn) {
+        skipBtn.onclick = () => this.skipConsultation();
+      }
+    }
+
+    addChatMessage(role, content) {
+      const messagesContainer = document.getElementById('flashai-vto-chat-messages');
+      if (!messagesContainer) return;
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `flashai-vto-chat-message ${role}`;
+
+      if (role === 'assistant') {
+        messageDiv.innerHTML = `
+          <div class="message-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="message-content">
+            <div class="message-bubble">${this.formatChatMessage(content)}</div>
+          </div>
+        `;
+      } else {
+        messageDiv.innerHTML = `
+          <div class="message-content">
+            <div class="message-bubble">${this.formatChatMessage(content)}</div>
+          </div>
+        `;
+      }
+
+      messagesContainer.appendChild(messageDiv);
+
+      // Scroll to bottom
+      const chatContainer = document.getElementById('flashai-vto-chat-container');
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      // Store message
+      this.state.consultationMessages.push({ role, content });
+    }
+
+    formatChatMessage(content) {
+      // Basic formatting - escape HTML and convert line breaks
+      return content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
+    }
+
+    async sendChatMessage() {
+      const chatInput = document.getElementById('flashai-vto-chat-input');
+      const quickResponses = document.getElementById('flashai-vto-quick-responses');
+
+      if (!chatInput) return;
+
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      // Clear input and quick responses
+      chatInput.value = '';
+      if (quickResponses) quickResponses.innerHTML = '';
+
+      // Add user message to chat
+      this.addChatMessage('user', message);
+
+      // Show typing indicator
+      this.showTypingIndicator();
+
+      // Send to AI
+      try {
+        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+        const response = await fetch(`${faceScanBaseUrl}/conversation/message`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            conversationId: this.state.consultationConversationId,
+            message: message
+          })
+        });
+
+        const data = await response.json();
+        this.hideTypingIndicator();
+
+        if (data.success) {
+          this.addChatMessage('assistant', data.data.message);
+
+          // Check if conversation is complete or can reveal results
+          if (data.data.isComplete || data.data.canRevealResults) {
+            this.showRevealResultsButton();
+          } else {
+            // Show contextual quick responses based on conversation
+            this.showContextualQuickResponses(data.data.message);
+          }
+        } else {
+          this.addChatMessage('assistant', 'I apologize, I had a brief moment. Could you repeat that?');
+        }
+      } catch (error) {
+        console.error('[Skincare AI] Error sending message:', error);
+        this.hideTypingIndicator();
+        this.addChatMessage('assistant', 'I apologize, there was a connection issue. Let me continue with your analysis.');
+        this.showRevealResultsButton();
+      }
+    }
+
+    showTypingIndicator() {
+      const messagesContainer = document.getElementById('flashai-vto-chat-messages');
+      if (!messagesContainer) return;
+
+      const typingDiv = document.createElement('div');
+      typingDiv.id = 'flashai-vto-typing-indicator';
+      typingDiv.className = 'flashai-vto-chat-message assistant';
+      typingDiv.innerHTML = `
+        <div class="message-avatar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="message-content">
+          <div class="message-bubble typing">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+      `;
+      messagesContainer.appendChild(typingDiv);
+
+      const chatContainer = document.getElementById('flashai-vto-chat-container');
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }
+
+    hideTypingIndicator() {
+      const typingIndicator = document.getElementById('flashai-vto-typing-indicator');
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+    }
+
+    showAgeQuickResponses() {
+      const quickResponses = document.getElementById('flashai-vto-quick-responses');
+      if (!quickResponses) return;
+
+      const ageRanges = ['18-24', '25-30', '31-40', '41-50', '50+'];
+
+      quickResponses.innerHTML = ageRanges.map(age => `
+        <button class="flashai-vto-quick-response-btn" onclick="window.flashAIWidget.selectQuickResponse('${age}')">
+          ${age}
+        </button>
+      `).join('');
+    }
+
+    showContextualQuickResponses(aiMessage) {
+      const quickResponses = document.getElementById('flashai-vto-quick-responses');
+      if (!quickResponses) return;
+
+      // Determine contextual responses based on AI's question
+      const lowerMsg = aiMessage.toLowerCase();
+      let options = [];
+
+      if (lowerMsg.includes('after washing') || lowerMsg.includes('cleansing')) {
+        options = ['Tight and dry', 'Normal', 'Still oily', 'Sometimes varies'];
+      } else if (lowerMsg.includes('breakout') || lowerMsg.includes('acne')) {
+        options = ['Rarely', 'Monthly (hormonal)', 'Frequently', 'Constant'];
+      } else if (lowerMsg.includes('sensitive') || lowerMsg.includes('sting')) {
+        options = ['Yes, very sensitive', 'Sometimes', 'No, not really'];
+      } else if (lowerMsg.includes('sunscreen') || lowerMsg.includes('sun')) {
+        options = ['Daily', 'Only outdoors', 'Rarely', 'Never'];
+      } else if (lowerMsg.includes('sleep')) {
+        options = ['Great (7-8 hrs)', 'Okay (5-6 hrs)', 'Poor', 'Irregular'];
+      } else if (lowerMsg.includes('stress')) {
+        options = ['Low', 'Moderate', 'High', 'Very high lately'];
+      } else if (lowerMsg.includes('retinol') || lowerMsg.includes('active')) {
+        options = ['Yes, regularly', 'Sometimes', 'No, I don\'t', 'Not sure what those are'];
+      } else if (lowerMsg.includes('ready') || lowerMsg.includes('analysis')) {
+        options = ['Yes, show me!', 'I have one more thing to share'];
+      } else {
+        options = ['Yes', 'No', 'Sometimes', 'I\'m not sure'];
+      }
+
+      quickResponses.innerHTML = options.map(opt => `
+        <button class="flashai-vto-quick-response-btn" onclick="window.flashAIWidget.selectQuickResponse('${opt.replace(/'/g, "\\'")}')">
+          ${opt}
+        </button>
+      `).join('');
+    }
+
+    selectQuickResponse(response) {
+      const chatInput = document.getElementById('flashai-vto-chat-input');
+      if (chatInput) {
+        chatInput.value = response;
+        this.sendChatMessage();
+      }
+    }
+
+    showRevealResultsButton() {
+      const quickResponses = document.getElementById('flashai-vto-quick-responses');
+      if (!quickResponses) return;
+
+      quickResponses.innerHTML = `
+        <button class="flashai-vto-reveal-results-btn" onclick="window.flashAIWidget.finishConsultation()">
+          <span>See My Analysis</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      `;
+    }
+
+    async finishConsultation() {
+      // End the conversation
+      if (this.state.consultationConversationId) {
+        try {
+          const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+          await fetch(`${faceScanBaseUrl}/conversation/end`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': this.config.apiKey
+            },
+            body: JSON.stringify({
+              conversationId: this.state.consultationConversationId
+            })
+          });
+        } catch (error) {
+          console.error('[Skincare AI] Error ending conversation:', error);
+        }
+      }
+
+      // Show results
+      const scan = this.state.pendingFaceScan || this.state.faceScan;
+      if (scan) {
+        this.displayFaceResults(scan);
+      }
+    }
+
+    skipConsultation() {
+      console.log('[Skincare AI] Skipping consultation');
+      const scan = this.state.pendingFaceScan || this.state.faceScan;
+      if (scan) {
+        this.displayFaceResults(scan);
+      }
     }
 
     renderViewSwitcher(viewsAnalyzed) {
@@ -8621,6 +9419,8 @@
   // Auto-initialize if config exists
   if (window.FLASHAI_VTO_CONFIG) {
     window.FlashAI_VTO = new FlashAI_VTO_Widget(window.FLASHAI_VTO_CONFIG);
+    // Also expose as flashAIWidget for chat quick response buttons
+    window.flashAIWidget = window.FlashAI_VTO;
   }
 })();
 // Build timestamp: Wed Jan 14 17:42:33 IST 2026

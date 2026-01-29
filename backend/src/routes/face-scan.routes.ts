@@ -257,6 +257,98 @@ router.post('/recommendations', faceScanController.getRecommendations);
 // Track face scan events (analytics)
 router.post('/track', faceScanController.trackEvent);
 
+// ==========================================================================
+// Skincare AI Conversation Endpoints
+// ==========================================================================
+
+import { skincareAIService } from '../services/skincare-ai.service';
+
+// Start a skincare consultation conversation
+router.post('/conversation/start', async (req, res) => {
+  try {
+    const { scanId, visitorId } = req.body;
+
+    // Verify API key
+    const apiKey = req.headers['x-api-key'] as string;
+    if (!apiKey) {
+      return res.status(401).json({ success: false, error: 'API key required' });
+    }
+
+    const widgetService = require('../services/widget.service').default;
+    const { storeId, isValid } = await widgetService.verifyApiKey(apiKey);
+
+    if (!isValid) {
+      return res.status(401).json({ success: false, error: 'Invalid API key' });
+    }
+
+    if (!scanId || !visitorId) {
+      return res.status(400).json({ success: false, error: 'scanId and visitorId are required' });
+    }
+
+    const result = await skincareAIService.startConversation(scanId, visitorId, storeId);
+
+    res.json({
+      success: true,
+      data: {
+        conversationId: result.conversationId,
+        message: result.message,
+      }
+    });
+  } catch (error: any) {
+    console.error('Start conversation error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Continue skincare conversation with user message
+router.post('/conversation/message', async (req, res) => {
+  try {
+    const { conversationId, message } = req.body;
+
+    if (!conversationId || !message) {
+      return res.status(400).json({ success: false, error: 'conversationId and message are required' });
+    }
+
+    const result = await skincareAIService.continueConversation(conversationId, message);
+
+    res.json({
+      success: true,
+      data: {
+        message: result.message,
+        isComplete: result.isComplete,
+        canRevealResults: result.canRevealResults,
+      }
+    });
+  } catch (error: any) {
+    console.error('Continue conversation error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// End skincare conversation and get collected info
+router.post('/conversation/end', async (req, res) => {
+  try {
+    const { conversationId } = req.body;
+
+    if (!conversationId) {
+      return res.status(400).json({ success: false, error: 'conversationId is required' });
+    }
+
+    const collectedInfo = skincareAIService.getCollectedInfo(conversationId);
+    skincareAIService.endConversation(conversationId);
+
+    res.json({
+      success: true,
+      data: {
+        collectedInfo,
+      }
+    });
+  } catch (error: any) {
+    console.error('End conversation error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Get user's scan history (requires auth token)
 router.get('/history', async (req, res) => {
   try {
