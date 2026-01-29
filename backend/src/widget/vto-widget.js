@@ -557,8 +557,17 @@
               </button>
             </div>
 
-            <div class="flashai-vto-instructions" style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:1px solid #f59e0b;border-radius:12px;padding:12px 16px;margin:8px 16px;">
-              <p style="font-size:13px;color:#92400e;margin:0;text-align:center;">
+            <div class="flashai-vto-instructions" style="background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);border:1px solid #7dd3fc;border-radius:12px;padding:12px 16px;margin:8px 16px;">
+              <p style="font-size:12px;color:#0369a1;margin:0 0 8px;font-weight:600;">For best results:</p>
+              <ul style="font-size:11px;color:#0c4a6e;margin:0;padding-left:16px;list-style:disc;">
+                <li style="margin-bottom:4px;">Remove spectacles/glasses</li>
+                <li style="margin-bottom:4px;">Remove makeup if possible</li>
+                <li style="margin-bottom:4px;">Use good lighting (natural light is best)</li>
+                <li>Works best on mobile devices</li>
+              </ul>
+            </div>
+            <div style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:1px solid #f59e0b;border-radius:12px;padding:10px 16px;margin:0 16px 8px;">
+              <p style="font-size:12px;color:#92400e;margin:0;text-align:center;">
                 <strong>Auto-capture:</strong> When all indicators turn green, hold still for 2 seconds
               </p>
             </div>
@@ -4996,6 +5005,12 @@
       this._meshCanvasInitialized = false;
     }
 
+    // Helper to convert base64 data URL to Blob
+    async base64ToBlob(base64) {
+      const response = await fetch(base64);
+      return response.blob();
+    }
+
     startBasicQualityCheckLoop() {
       if (this.qualityCheckInterval) {
         clearInterval(this.qualityCheckInterval);
@@ -5306,8 +5321,13 @@
     }
 
     async analyzeFaceScan() {
-      if (!this.state.facePhotos || this.state.facePhotos.length < 3) {
-        alert('Please capture all 3 photos first');
+      // Support both single photo (mesh capture) and legacy 3-photo capture
+      const photos = this.state.facePhotos || [];
+      const meshImage = this.state.faceMeshCapturedImage;
+
+      if (photos.length === 0 && !meshImage) {
+        console.error('[Face Scan] No photos captured');
+        alert('Please capture a photo first');
         return;
       }
 
@@ -5317,12 +5337,17 @@
       // Show processing step
       this.showStep('face-processing');
 
-      // Set the scan preview image (use front photo)
+      // Set the scan preview image
       const scanPreview = document.getElementById('flashai-vto-scan-preview');
-      if (scanPreview && this.state.facePhotos[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => { scanPreview.src = e.target.result; };
-        reader.readAsDataURL(this.state.facePhotos[0]);
+      const previewImage = meshImage || (typeof photos[0] === 'string' ? photos[0] : null);
+      if (scanPreview && previewImage) {
+        if (typeof previewImage === 'string' && previewImage.startsWith('data:')) {
+          scanPreview.src = previewImage;
+        } else if (previewImage instanceof Blob) {
+          const reader = new FileReader();
+          reader.onload = (e) => { scanPreview.src = e.target.result; };
+          reader.readAsDataURL(previewImage);
+        }
       }
 
       // Initialize timeline steps
@@ -5330,11 +5355,20 @@
       this.updateFaceScanStep(2, 'active');
 
       try {
-        // Upload face scan with all 3 angles
+        // Upload face scan - single photo for mesh capture
         const formData = new FormData();
-        formData.append('images', this.state.facePhotos[0], 'face-front.jpg');
-        formData.append('images', this.state.facePhotos[1], 'face-left.jpg');
-        formData.append('images', this.state.facePhotos[2], 'face-right.jpg');
+
+        if (meshImage) {
+          // Convert base64 to blob for mesh-captured image
+          const blob = await this.base64ToBlob(meshImage);
+          formData.append('images', blob, 'face-front.jpg');
+        } else if (photos.length >= 1) {
+          // Legacy support for multiple photos
+          formData.append('images', photos[0], 'face-front.jpg');
+          if (photos[1]) formData.append('images', photos[1], 'face-left.jpg');
+          if (photos[2]) formData.append('images', photos[2], 'face-right.jpg');
+        }
+
         formData.append('visitorId', this.state.visitorId);
 
         // Face scan uses /api/face-scan instead of /api/vto
