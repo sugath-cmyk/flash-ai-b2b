@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkinChecker Logo Concepts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f8fafc;
+      padding: 40px;
+      color: #1e293b;
+    }
+    h1 { text-align: center; margin-bottom: 40px; font-size: 32px; }
+    h2 { margin: 40px 0 20px; color: #64748b; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; }
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-bottom: 60px;
+    }
+    .logo-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .logo-card.dark {
+      background: #1e293b;
+    }
+    .logo-card h3 {
+      margin-top: 24px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .logo-card.dark h3 {
+      color: #94a3b8;
+    }
+    .variations {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .color-palette {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .color-swatch {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .download-section {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      margin-top: 40px;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>SkinChecker Logo Concepts</h1>
+
+  <h2>Concept 1: Modern Minimal (Recommended)</h2>
+  <div class="logo-grid">
+    <div class="logo-card">
+      <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Icon: Stylized face with checkmark -->
+        <circle cx="35" cy="40" r="28" fill="#7C3AED"/>
+        <circle cx="35" cy="40" r="22" fill="white"/>
+        <circle cx="28" cy="36" r="3" fill="#7C3AED"/>
+        <circle cx="42" cy="36" r="3" fill="#7C3AED"/>
+        <path d="M26 48 Q35 54 44 48" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Checkmark badge -->
+        <circle cx="52" cy="52" r="12" fill="#10B981"/>
+        <path d="M46 52 L50 56 L58 48" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- Text -->
+        <text x="75" y="48" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="28" font-weight="700" fill="#1e293b">Skin<tspan fill="#7C3AED">Checker</tspan></text>
+      </svg>
+      <h3>Primary - Light Background</h3>
+    </div>
+    <div class="logo-card dark">
+      <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="35" cy="40" r="28" fill="#A78BFA"/>
+        <circle cx="35" cy="40" r="22" fill="#1e293b"/>
+        <circle cx="28" cy="36" r="3" fill="#A78BFA"/>
+        <circle cx="42" cy="36" r="3" fill="#A78BFA"/>
+        <path d="M26 48 Q35 54 44 48" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <circle cx="52" cy="52" r="12" fill="#10B981"/>
+        <path d="M46 52 L50 56 L58 48" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <text x="75" y="48" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="28" font-weight="700" fill="white">Skin<tspan fill="#A78BFA">Checker</tspan></text>
+      </svg>
+      <h3>Primary - Dark Background</h3>
+    </div>
+  </div>
+
+  <h2>Concept 2: Gradient Modern</h2>
+  <div class="logo-grid">
+    <div class="logo-card">
+      <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#7C3AED"/>
+            <stop offset="100%" style="stop-color:#EC4899"/>
+          </linearGradient>
+        </defs>
+        <!-- Magnifying glass with skin pattern -->
+        <circle cx="32" cy="36" r="20" stroke="url(#grad1)" stroke-width="4" fill="none"/>
+        <line x1="46" y1="50" x2="58" y2="62" stroke="url(#grad1)" stroke-width="4" stroke-linecap="round"/>
+        <!-- Skin texture dots inside -->
+        <circle cx="26" cy="32" r="2" fill="#EC4899"/>
+        <circle cx="34" cy="28" r="1.5" fill="#7C3AED"/>
+        <circle cx="38" cy="38" r="2.5" fill="#EC4899"/>
+        <circle cx="28" cy="40" r="1.5" fill="#7C3AED"/>
+        <!-- Checkmark -->
+        <circle cx="52" cy="24" r="10" fill="#10B981"/>
+        <path d="M47 24 L50 27 L57 20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- Text -->
+        <text x="72" y="48" font-family="Poppins, sans-serif" font-size="26" font-weight="700" fill="#1e293b">Skin<tspan fill="url(#grad1)">Checker</tspan></text>
+      </svg>
+      <h3>Gradient with Magnifier</h3>
+    </div>
+    <div class="logo-card dark">
+      <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#A78BFA"/>
+            <stop offset="100%" style="stop-color:#F472B6"/>
+          </linearGradient>
+        </defs>
+        <circle cx="32" cy="36" r="20" stroke="url(#grad2)" stroke-width="4" fill="none"/>
+        <line x1="46" y1="50" x2="58" y2="62" stroke="url(#grad2)" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="26" cy="32" r="2" fill="#F472B6"/>
+        <circle cx="34" cy="28" r="1.5" fill="#A78BFA"/>
+        <circle cx="38" cy="38" r="2.5" fill="#F472B6"/>
+        <circle cx="28" cy="40" r="1.5" fill="#A78BFA"/>
+        <circle cx="52" cy="24" r="10" fill="#10B981"/>
+        <path d="M47 24 L50 27 L57 20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <text x="72" y="48" font-family="Poppins, sans-serif" font-size="26" font-weight="700" fill="white">Skin<tspan fill="url(#grad2)">Checker</tspan></text>
+      </svg>
+      <h3>Gradient - Dark Mode</h3>
+    </div>
+  </div>
+
+  <h2>Concept 3: Clean Professional</h2>
+  <div class="logo-grid">
+    <div class="logo-card">
+      <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shield with checkmark -->
+        <path d="M35 12 L55 20 L55 40 Q55 58 35 68 Q15 58 15 40 L15 20 Z" fill="#7C3AED"/>
+        <path d="M35 18 L50 24 L50 40 Q50 54 35 62 Q20 54 20 40 L20 24 Z" fill="white"/>
+        <!-- Face silhouette inside -->
+        <ellipse cx="35" cy="38" rx="10" ry="14" fill="#EDE9FE"/>
+        <circle cx="31" cy="35" r="2" fill="#7C3AED"/>
+        <circle cx="39" cy="35" r="2" fill="#7C3AED"/>
+        <path d="M31 44 Q35 47 39 44" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <!-- Checkmark -->
+        <circle cx="50" cy="55" r="10" fill="#10B981"/>
+        <path d="M45 55 L48 58 L55 51" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- Text -->
+        <text x="70" y="48" font-family="Inter, sans-serif" font-size="26" font-weight="700" fill="#1e293b">Skin<tspan fill="#7C3AED">Checker</tspan></text>
+      </svg>
+      <h3>Shield Trust Design</h3>
+    </div>
+    <div class="logo-card">
+      <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Circular scan effect -->
+        <circle cx="35" cy="40" r="26" stroke="#7C3AED" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+        <circle cx="35" cy="40" r="20" stroke="#7C3AED" stroke-width="3" fill="#EDE9FE"/>
+        <!-- Simplified face -->
+        <circle cx="29" cy="37" r="2.5" fill="#7C3AED"/>
+        <circle cx="41" cy="37" r="2.5" fill="#7C3AED"/>
+        <path d="M29 46 Q35 50 41 46" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <!-- AI scanning line -->
+        <line x1="15" y1="40" x2="55" y2="40" stroke="#10B981" stroke-width="2" stroke-dasharray="2 2">
+          <animate attributeName="y1" values="25;55;25" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="y2" values="25;55;25" dur="2s" repeatCount="indefinite"/>
+        </line>
+        <!-- Checkmark badge -->
+        <circle cx="54" cy="54" r="9" fill="#10B981"/>
+        <path d="M49 54 L52 57 L59 50" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- Text -->
+        <text x="72" y="48" font-family="Inter, sans-serif" font-size="26" font-weight="700" fill="#1e293b">Skin<tspan fill="#7C3AED">Checker</tspan></text>
+      </svg>
+      <h3>AI Scan Animation</h3>
+    </div>
+  </div>
+
+  <h2>Icon Only Versions (For Favicon/App Icon)</h2>
+  <div class="logo-grid">
+    <div class="logo-card">
+      <div class="variations">
+        <!-- 64x64 -->
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" rx="14" fill="#7C3AED"/>
+          <circle cx="32" cy="30" r="16" fill="white"/>
+          <circle cx="26" cy="27" r="2.5" fill="#7C3AED"/>
+          <circle cx="38" cy="27" r="2.5" fill="#7C3AED"/>
+          <path d="M24 35 Q32 41 40 35" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="46" cy="46" r="10" fill="#10B981"/>
+          <path d="M41 46 L44 49 L51 42" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <!-- 48x48 -->
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="10" fill="#7C3AED"/>
+          <circle cx="24" cy="22" r="12" fill="white"/>
+          <circle cx="20" cy="20" r="2" fill="#7C3AED"/>
+          <circle cx="28" cy="20" r="2" fill="#7C3AED"/>
+          <path d="M18 26 Q24 30 30 26" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <circle cx="36" cy="36" r="8" fill="#10B981"/>
+          <path d="M32 36 L35 39 L40 34" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <!-- 32x32 -->
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="7" fill="#7C3AED"/>
+          <circle cx="16" cy="14" r="8" fill="white"/>
+          <circle cx="13" cy="13" r="1.5" fill="#7C3AED"/>
+          <circle cx="19" cy="13" r="1.5" fill="#7C3AED"/>
+          <path d="M12 17 Q16 20 20 17" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <circle cx="24" cy="24" r="6" fill="#10B981"/>
+          <path d="M21 24 L23 26 L27 22" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <!-- 16x16 favicon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="16" height="16" rx="3" fill="#7C3AED"/>
+          <circle cx="8" cy="7" r="4" fill="white"/>
+          <circle cx="12" cy="12" r="3" fill="#10B981"/>
+          <path d="M10.5 12 L11.5 13 L13.5 11" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <h3>App Icons - Multiple Sizes</h3>
+    </div>
+  </div>
+
+  <h2>Text-Only Versions</h2>
+  <div class="logo-grid">
+    <div class="logo-card">
+      <svg width="240" height="50" viewBox="0 0 240 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="38" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="36" font-weight="800" fill="#1e293b">Skin<tspan fill="#7C3AED">Checker</tspan></text>
+      </svg>
+      <h3>Wordmark - Light</h3>
+    </div>
+    <div class="logo-card dark">
+      <svg width="240" height="50" viewBox="0 0 240 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="38" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="36" font-weight="800" fill="white">Skin<tspan fill="#A78BFA">Checker</tspan></text>
+      </svg>
+      <h3>Wordmark - Dark</h3>
+    </div>
+  </div>
+
+  <h2>Brand Colors</h2>
+  <div class="logo-card">
+    <div class="color-palette">
+      <div class="color-swatch" style="background: #7C3AED;">#7C3AED<br>Primary</div>
+      <div class="color-swatch" style="background: #A78BFA;">#A78BFA<br>Light</div>
+      <div class="color-swatch" style="background: #EDE9FE; color: #7C3AED;">#EDE9FE<br>Bg</div>
+      <div class="color-swatch" style="background: #10B981;">#10B981<br>Success</div>
+      <div class="color-swatch" style="background: #1e293b;">#1E293B<br>Dark</div>
+      <div class="color-swatch" style="background: #EC4899;">#EC4899<br>Accent</div>
+    </div>
+    <h3 style="margin-top: 30px;">Font: Plus Jakarta Sans / Inter (Google Fonts)</h3>
+  </div>
+
+  <div class="download-section">
+    <h2 style="margin-top: 0;">Usage Guidelines</h2>
+    <ul style="line-height: 2; color: #64748b;">
+      <li><strong>Primary Logo:</strong> Use Concept 1 for most applications</li>
+      <li><strong>Favicon:</strong> Use the 16x16 or 32x32 icon versions</li>
+      <li><strong>App Icon:</strong> Use the 64x64 version with rounded corners</li>
+      <li><strong>Minimum Size:</strong> Don't use the full logo smaller than 120px wide</li>
+      <li><strong>Clear Space:</strong> Maintain padding equal to the icon height around the logo</li>
+      <li><strong>Dark Backgrounds:</strong> Switch to the light purple (#A78BFA) variant</li>
+    </ul>
+  </div>
+
+</body>
+</html>
