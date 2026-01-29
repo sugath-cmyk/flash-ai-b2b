@@ -575,81 +575,75 @@
 
           <!-- Face Scan Step 2: Processing -->
           <div id="flashai-vto-step-face-processing" class="flashai-vto-step">
-            <div class="flashai-vto-processing-hero">
-              <!-- Photo Preview with Scan Effect -->
-              <div class="flashai-vto-scan-container">
-                <div class="flashai-vto-scan-photo-wrapper">
-                  <img id="flashai-vto-scan-preview" class="flashai-vto-scan-preview" src="" alt="Your photo" />
-                  <div class="flashai-vto-scan-overlay">
-                    <div class="flashai-vto-scan-line"></div>
-                  </div>
-                  <div class="flashai-vto-scan-corners">
-                    <span class="corner tl"></span>
-                    <span class="corner tr"></span>
-                    <span class="corner bl"></span>
-                    <span class="corner br"></span>
-                  </div>
-                </div>
-                <div class="flashai-vto-scan-pulse"></div>
+            <!-- Compact Header with Photo + Progress -->
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border-radius:12px;margin-bottom:12px;">
+              <!-- Small Photo Preview -->
+              <div style="position:relative;width:60px;height:60px;flex-shrink:0;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                <img id="flashai-vto-scan-preview" style="width:100%;height:100%;object-fit:cover;" src="" alt="Your photo" />
+                <div id="flashai-vto-scan-pulse-mini" style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,rgba(139,92,246,0.3) 100%);animation:pulse 2s ease-in-out infinite;"></div>
               </div>
-
-              <!-- Title & Subtitle -->
-              <div class="flashai-vto-processing-header">
-                <h2>Analyzing Your Skin</h2>
-                <p>AI is examining your unique skin characteristics</p>
-              </div>
-            </div>
-
-            <!-- Progress Steps - Vertical Timeline -->
-            <div class="flashai-vto-timeline-steps">
-              <div class="flashai-vto-timeline-step" data-step="1">
-                <div class="flashai-vto-timeline-marker">
-                  <span class="flashai-vto-timeline-icon">📷</span>
-                  <span class="flashai-vto-timeline-check">✓</span>
+              <!-- Progress Info -->
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                  <span id="flashai-vto-analysis-status-icon" style="font-size:16px;">🔬</span>
+                  <span id="flashai-vto-analysis-status-text" style="font-size:13px;font-weight:600;color:#5b21b6;">Analyzing skin...</span>
                 </div>
-                <div class="flashai-vto-timeline-content">
-                  <span class="flashai-vto-timeline-title">Photo Captured</span>
-                  <span class="flashai-vto-timeline-desc">High-quality image received</span>
-                </div>
-              </div>
-              <div class="flashai-vto-timeline-step" data-step="2">
-                <div class="flashai-vto-timeline-marker">
-                  <span class="flashai-vto-timeline-icon">🎨</span>
-                  <span class="flashai-vto-timeline-check">✓</span>
-                </div>
-                <div class="flashai-vto-timeline-content">
-                  <span class="flashai-vto-timeline-title">Skin Tone Analysis</span>
-                  <span class="flashai-vto-timeline-desc">Detecting undertones & texture</span>
-                </div>
-              </div>
-              <div class="flashai-vto-timeline-step" data-step="3">
-                <div class="flashai-vto-timeline-marker">
-                  <span class="flashai-vto-timeline-icon">🔬</span>
-                  <span class="flashai-vto-timeline-check">✓</span>
-                </div>
-                <div class="flashai-vto-timeline-content">
-                  <span class="flashai-vto-timeline-title">Concern Detection</span>
-                  <span class="flashai-vto-timeline-desc">Identifying areas to address</span>
-                </div>
-              </div>
-              <div class="flashai-vto-timeline-step" data-step="4">
-                <div class="flashai-vto-timeline-marker">
-                  <span class="flashai-vto-timeline-icon">✨</span>
-                  <span class="flashai-vto-timeline-check">✓</span>
-                </div>
-                <div class="flashai-vto-timeline-content">
-                  <span class="flashai-vto-timeline-title">Building Your Routine</span>
-                  <span class="flashai-vto-timeline-desc">Curating personalized products</span>
+                <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+                  <div id="flashai-vto-analysis-progress" style="height:100%;width:10%;background:linear-gradient(90deg,#8b5cf6 0%,#7c3aed 100%);border-radius:3px;transition:width 0.5s ease;"></div>
                 </div>
               </div>
             </div>
 
-            <!-- Progress Bar -->
-            <div class="flashai-vto-progress-footer">
-              <div class="flashai-vto-progress-track">
-                <div class="flashai-vto-progress-fill-animated" id="flashai-vto-analysis-progress"></div>
+            <!-- AI Consultation Chat (Embedded) -->
+            <div style="flex:1;display:flex;flex-direction:column;min-height:350px;">
+              <!-- Chat Header -->
+              <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:12px 12px 0 0;border:1px solid #bbf7d0;border-bottom:none;">
+                <div style="width:40px;height:40px;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(34,197,94,0.3);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                    <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <div style="flex:1;">
+                  <h3 style="font-size:14px;font-weight:700;color:#166534;margin:0;">Skin Expert AI</h3>
+                  <p style="font-size:11px;color:#15803d;margin:0;">Let's understand your skin while we analyze</p>
+                </div>
               </div>
-              <p class="flashai-vto-progress-label">Usually takes 10-15 seconds</p>
+
+              <!-- Chat Messages -->
+              <div id="flashai-vto-chat-container" style="flex:1;overflow-y:auto;padding:16px;background:#fff;border:1px solid #e4e4e7;border-top:none;min-height:200px;max-height:280px;">
+                <div id="flashai-vto-chat-messages" style="display:flex;flex-direction:column;gap:12px;">
+                  <!-- Messages will be dynamically inserted here -->
+                </div>
+              </div>
+
+              <!-- Chat Input -->
+              <div style="padding:12px;background:#f9fafb;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 12px 12px;">
+                <div style="display:flex;gap:8px;">
+                  <input
+                    type="text"
+                    id="flashai-vto-chat-input"
+                    placeholder="Type your response..."
+                    style="flex:1;padding:12px 16px;border:2px solid #e4e4e7;border-radius:25px;font-size:14px;outline:none;transition:border-color 0.2s;"
+                    autocomplete="off"
+                  />
+                  <button id="flashai-vto-chat-send" style="width:44px;height:44px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:transform 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                  </button>
+                </div>
+                <!-- Quick Response Options -->
+                <div id="flashai-vto-quick-responses" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+                  <!-- Quick response buttons will be dynamically inserted -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Skip Button -->
+            <div style="text-align:center;margin-top:12px;">
+              <button id="flashai-vto-skip-consultation" style="padding:10px 24px;background:transparent;color:#71717a;border:1px solid #e4e4e7;border-radius:25px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+                Skip to Results →
+              </button>
             </div>
           </div>
 
@@ -4182,7 +4176,11 @@
         this.initializeTryOn();
       } else if (step === 'facescan') {
         this.startFaceCamera();
+      } else if (step === 'face-processing') {
+        // Start AI consultation immediately while analysis runs
+        this.initSkincareConsultation();
       } else if (step === 'face-consultation') {
+        // Legacy - now handled by face-processing
         this.initSkincareConsultation();
       }
     }
@@ -4423,6 +4421,13 @@
         this.state.qualityCheckReady = false;
         this.state.faceMeshActive = false;
         this.state.autoCaptureStartTime = null;
+
+        // Reset analysis and consultation state
+        this.state.analysisComplete = false;
+        this.state.consultationComplete = false;
+        this.state.consultationSkipped = false;
+        this.state.consultationConversationId = null;
+        this.state.consultationMessages = [];
 
         // Forcibly remove any blur/frosted effects from all camera elements
         const removeBlurEffects = () => {
@@ -5562,16 +5567,27 @@
               return;
             }
 
-            // Complete all steps
-            this.updateFaceScanStep(4, 'complete');
-
-            // Store scan for later use
+            // Mark analysis as complete
+            this.state.analysisComplete = true;
             this.state.pendingFaceScan = scan;
 
-            // Wait a moment for user to see completion, then start AI consultation
-            setTimeout(() => {
-              this.showStep('face-consultation');
-            }, 1000);
+            // Update status UI
+            const statusIcon = document.getElementById('flashai-vto-analysis-status-icon');
+            const statusText = document.getElementById('flashai-vto-analysis-status-text');
+            const progressBar = document.getElementById('flashai-vto-analysis-progress');
+            const scanPulse = document.getElementById('flashai-vto-scan-pulse-mini');
+
+            if (statusIcon) statusIcon.textContent = '✅';
+            if (statusText) {
+              statusText.textContent = 'Analysis complete!';
+              statusText.style.color = '#16a34a';
+            }
+            if (progressBar) progressBar.style.width = '100%';
+            if (scanPulse) scanPulse.style.display = 'none';
+
+            // Check if we should auto-proceed to results
+            // (either conversation is done or user skipped)
+            this.checkReadyForResults();
           } else if (scan.status === 'failed') {
             clearInterval(this.faceScanPollInterval);
             this.showError(scan.error_message || 'Face scan failed. Please try again.');
@@ -6058,17 +6074,33 @@
       const quickResponses = document.getElementById('flashai-vto-quick-responses');
       if (!quickResponses) return;
 
+      // Check if analysis is complete
+      const isAnalysisComplete = this.state.analysisComplete;
+      const buttonText = isAnalysisComplete ? 'See My Results' : 'Waiting for analysis...';
+      const isDisabled = !isAnalysisComplete;
+
       quickResponses.innerHTML = `
-        <button class="flashai-vto-reveal-results-btn" onclick="window.flashAIWidget.finishConsultation()">
-          <span>See My Analysis</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
+        <button class="flashai-vto-reveal-results-btn" onclick="window.flashAIWidget.finishConsultation()" ${isDisabled ? 'disabled' : ''} style="width:100%;padding:14px 20px;background:${isDisabled ? '#e4e4e7' : 'linear-gradient(135deg,#22c55e 0%,#16a34a 100%)'};color:${isDisabled ? '#71717a' : '#fff'};border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:${isDisabled ? 'not-allowed' : 'pointer'};display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:${isDisabled ? 'none' : '0 4px 15px rgba(34,197,94,0.3)'};transition:all 0.3s;">
+          <span>${buttonText}</span>
+          ${isAnalysisComplete ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' : '<span style="animation:spin 1s linear infinite;display:inline-block;">⏳</span>'}
         </button>
       `;
+
+      // Hide the skip button since we're showing the reveal button
+      const skipBtn = document.getElementById('flashai-vto-skip-consultation');
+      if (skipBtn) skipBtn.style.display = 'none';
     }
 
     async finishConsultation() {
+      // Check if analysis is complete
+      if (!this.state.analysisComplete) {
+        console.log('[Skincare AI] Waiting for analysis to complete...');
+        return;
+      }
+
+      // Mark consultation as complete
+      this.state.consultationComplete = true;
+
       // End the conversation
       if (this.state.consultationConversationId) {
         try {
@@ -6097,9 +6129,60 @@
 
     skipConsultation() {
       console.log('[Skincare AI] Skipping consultation');
-      const scan = this.state.pendingFaceScan || this.state.faceScan;
-      if (scan) {
-        this.displayFaceResults(scan);
+      this.state.consultationComplete = true;
+      this.state.consultationSkipped = true;
+
+      // Check if analysis is also done
+      if (this.state.analysisComplete) {
+        const scan = this.state.pendingFaceScan || this.state.faceScan;
+        if (scan) {
+          this.displayFaceResults(scan);
+        }
+      } else {
+        // Update button to show waiting for analysis
+        const skipBtn = document.getElementById('flashai-vto-skip-consultation');
+        if (skipBtn) {
+          skipBtn.innerHTML = '⏳ Waiting for analysis...';
+          skipBtn.disabled = true;
+        }
+      }
+    }
+
+    checkReadyForResults() {
+      // Called when analysis completes - check if we should show results
+      console.log('[Face Scan] Checking ready for results:', {
+        analysisComplete: this.state.analysisComplete,
+        consultationComplete: this.state.consultationComplete,
+        consultationSkipped: this.state.consultationSkipped
+      });
+
+      // If consultation was skipped, go directly to results
+      if (this.state.consultationSkipped && this.state.analysisComplete) {
+        const scan = this.state.pendingFaceScan || this.state.faceScan;
+        if (scan) {
+          setTimeout(() => {
+            this.displayFaceResults(scan);
+          }, 500);
+        }
+        return;
+      }
+
+      // Refresh the reveal results button if it's showing
+      const quickResponses = document.getElementById('flashai-vto-quick-responses');
+      if (quickResponses && quickResponses.querySelector('.flashai-vto-reveal-results-btn')) {
+        this.showRevealResultsButton();
+      }
+
+      // Update the skip button to be more prominent
+      const skipBtn = document.getElementById('flashai-vto-skip-consultation');
+      if (skipBtn && skipBtn.style.display !== 'none') {
+        skipBtn.innerHTML = '✨ See My Results →';
+        skipBtn.style.background = 'linear-gradient(135deg,#22c55e 0%,#16a34a 100%)';
+        skipBtn.style.color = '#fff';
+        skipBtn.style.border = 'none';
+        skipBtn.style.padding = '12px 28px';
+        skipBtn.style.fontWeight = '600';
+        skipBtn.style.boxShadow = '0 4px 12px rgba(34,197,94,0.3)';
       }
     }
 
