@@ -1,9 +1,15 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="64" height="64" rx="14" fill="#7C3AED"/>
-  <circle cx="32" cy="30" r="16" fill="white"/>
-  <circle cx="26" cy="27" r="2.5" fill="#7C3AED"/>
-  <circle cx="38" cy="27" r="2.5" fill="#7C3AED"/>
-  <path d="M24 35 Q32 41 40 35" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <circle cx="46" cy="46" r="10" fill="#10B981"/>
-  <path d="M41 46 L44 49 L51 42" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Scan circles -->
+  <circle cx="30" cy="28" r="18" stroke="white" stroke-width="2" stroke-dasharray="3 3" fill="none" opacity="0.5"/>
+  <circle cx="30" cy="28" r="13" stroke="white" stroke-width="2" fill="#EDE9FE"/>
+  <!-- Face -->
+  <circle cx="25" cy="26" r="2" fill="#7C3AED"/>
+  <circle cx="35" cy="26" r="2" fill="#7C3AED"/>
+  <path d="M24 32 Q30 36 36 32" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Scan line -->
+  <line x1="14" y1="28" x2="46" y2="28" stroke="#10B981" stroke-width="2" stroke-dasharray="2 2"/>
+  <!-- Checkmark badge -->
+  <circle cx="48" cy="48" r="10" fill="#10B981"/>
+  <path d="M43 48 L46 51 L53 44" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>
