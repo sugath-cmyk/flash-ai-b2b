@@ -19,8 +19,6 @@ interface FaceScanAnalysis {
   rednessScore?: number;
   darkCirclesScore?: number;
   poreScore?: number;
-  skinConditions?: string[];
-  recommendations?: string[];
 }
 
 interface ConversationMessage {
@@ -35,7 +33,7 @@ interface SkincareConversationContext {
   analysis: FaceScanAnalysis;
   conversationHistory: ConversationMessage[];
   userAge?: number;
-  questionPhase: 'age' | 'foundational' | 'habits' | 'lifestyle' | 'summary';
+  questionPhase: 'age' | 'routine' | 'foundational' | 'habits' | 'lifestyle' | 'summary';
   collectedInfo: Record<string, any>;
 }
 
@@ -113,13 +111,26 @@ Only ask when relevant:
 - Over-exfoliation habits
 - Product switching behavior
 
-### 3. Ingredient & Routine Awareness
-Probe gently:
+### 3. Current Skincare Routine (MANDATORY - ask early after foundational questions)
+This is critical for understanding their current care and ingredient usage:
+- "What does your current skincare routine look like? Walk me through your AM and PM steps."
+- "What products are you using right now? Any specific brands?"
+- Ask about cleansers, serums, moisturizers, SPF separately if needed
+- "How long have you been using these products?"
+
+Example probes:
+- "Are you currently using any serums or treatments?"
+- "What cleanser do you use? How does your skin feel after?"
+- "Do you use sunscreen daily? What brand/SPF?"
+
+### 4. Ingredient & Active Awareness
+Probe gently based on their routine:
 - "Are you using actives like retinol or exfoliating acids?"
 - "How often do you use them?"
 - "Do you layer multiple actives together?"
+- If they mention brands, ask about specific products from that brand
 
-### 4. Lifestyle & Systemic Signals
+### 5. Lifestyle & Systemic Signals
 When patterns suggest it:
 - Stress levels
 - Sleep debt
@@ -178,10 +189,24 @@ You should consider these areas when analyzing:
 ## Conversation Flow
 
 1. Start with mandatory age question
-2. Based on scan data, ask 3-5 targeted questions (one at a time)
-3. Connect observations to potential root causes
-4. When you have enough information (typically after 4-6 exchanges), indicate you're ready to share your analysis
-5. End with: "I now have a good understanding of your skin. Ready to see your personalized analysis?"
+2. Ask about their current skincare routine and products they use (MANDATORY)
+3. Based on scan data and routine, ask 2-3 more targeted questions (one at a time)
+4. Connect observations to potential root causes, referencing their routine
+5. When you have enough information (typically after 5-7 exchanges), indicate you're ready to share your analysis
+6. End with: "I now have a good understanding of your skin and routine. Ready to see your personalized analysis?"
+
+## Information to Collect
+
+Throughout the conversation, aim to understand:
+- Age (mandatory first question)
+- Current AM routine (cleanser, serum, moisturizer, SPF)
+- Current PM routine (cleansing, treatments, moisturizer)
+- Brands they currently use
+- Any actives (retinol, AHAs, BHAs, Vitamin C, etc.)
+- How long they've been using current products
+- Any recent changes to their routine
+- Products that work well for them
+- Products that caused reactions
 
 ## Important
 
@@ -264,7 +289,7 @@ class SkincareAIService {
       const ageMatch = userMessage.match(/\d+/);
       if (ageMatch) {
         context.userAge = parseInt(ageMatch[0], 10);
-        context.questionPhase = 'foundational';
+        context.questionPhase = 'routine'; // Move to routine questions after age
         context.collectedInfo.age = context.userAge;
       }
     }
@@ -309,12 +334,13 @@ class SkincareAIService {
           fa.wrinkle_score,
           fa.pigmentation_score,
           fa.hydration_score,
+          fa.hydration_level,
           fa.texture_score,
           fa.redness_score,
           fa.under_eye_darkness,
-          fa.pore_score,
-          fa.skin_conditions,
-          fa.recommendations
+          fa.pore_size_average,
+          fa.oiliness_score,
+          fa.sensitivity_level
         FROM face_analysis fa
         WHERE fa.face_scan_id = $1`,
         [scanId]
@@ -336,9 +362,7 @@ class SkincareAIService {
         textureScore: row.texture_score,
         rednessScore: row.redness_score,
         darkCirclesScore: row.under_eye_darkness,
-        poreScore: row.pore_score,
-        skinConditions: row.skin_conditions,
-        recommendations: row.recommendations,
+        poreScore: row.pore_size_average ? Math.round(row.pore_size_average * 100) : undefined,
       };
     } catch (error) {
       console.error('Error fetching face scan analysis:', error);
