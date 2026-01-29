@@ -9342,11 +9342,11 @@
       // Get detected issues
       const issues = this.state.detectedIssues || [];
 
-      return \`
+      return `
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Skin Analysis Report - \${date}</title>
+  <title>Skin Analysis Report - ${date}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #18181b; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; }
@@ -9377,15 +9377,15 @@
 <body>
   <div class="header">
     <h1>🔬 Skin Analysis Report</h1>
-    <p>Generated on \${date}</p>
+    <p>Generated on ${date}</p>
   </div>
 
   <div class="score-section">
-    <div class="score-circle">\${skinScore}</div>
+    <div class="score-circle">${skinScore}</div>
     <div class="score-info">
       <h2>Overall Skin Score</h2>
-      <p>Skin Tone: \${skinTone}\${undertone ? ' (' + undertone + ')' : ''}</p>
-      <p>Analysis Confidence: \${Math.round((analysis.analysis_confidence || 0.8) * 100)}%</p>
+      <p>Skin Tone: ${skinTone}${undertone ? ' (' + undertone + ')' : ''}</p>
+      <p>Analysis Confidence: ${Math.round((analysis.analysis_confidence || 0.8) * 100)}%</p>
     </div>
   </div>
 
@@ -9394,45 +9394,45 @@
     <div class="metrics-grid">
       <div class="metric-item">
         <label>Hydration Level</label>
-        <span>\${analysis.hydration_score || '--'}%</span>
+        <span>${analysis.hydration_score || '--'}%</span>
       </div>
       <div class="metric-item">
         <label>Texture Score</label>
-        <span>\${analysis.texture_score || '--'}%</span>
+        <span>${analysis.texture_score || '--'}%</span>
       </div>
       <div class="metric-item">
         <label>Pigmentation</label>
-        <span>\${analysis.pigmentation_score || '--'}%</span>
+        <span>${analysis.pigmentation_score || '--'}%</span>
       </div>
       <div class="metric-item">
         <label>Redness Level</label>
-        <span>\${analysis.redness_score || '--'}%</span>
+        <span>${analysis.redness_score || '--'}%</span>
       </div>
     </div>
   </div>
 
   <div class="section">
     <h3>🎯 Detected Concerns</h3>
-    \${issues.length > 0 ? issues.map(issue => \`
+    ${issues.length > 0 ? issues.map(issue => `
       <div class="concern-item">
         <h4>
-          \${issue.name}
-          <span class="severity-badge severity-\${issue.severity}">\${this.capitalizeFirst(issue.severity)}</span>
+          ${issue.name}
+          <span class="severity-badge severity-${issue.severity}">${this.capitalizeFirst(issue.severity)}</span>
         </h4>
-        <p>\${issue.description || 'Focus area identified in your skin analysis.'}</p>
+        <p>${issue.description || 'Focus area identified in your skin analysis.'}</p>
       </div>
-    \`).join('') : '<p style="color:#71717a;">No major concerns detected. Your skin is looking great!</p>'}
+    `).join('') : '<p style="color:#71717a;">No major concerns detected. Your skin is looking great!</p>'}
   </div>
 
   <div class="section">
     <h3>💡 Recommendations</h3>
     <div class="concern-item">
       <h4>Daily Routine</h4>
-      <p>Based on your analysis, focus on: \${analysis.hydration_score < 50 ? 'hydration, ' : ''}\${analysis.pigmentation_score > 30 ? 'brightening, ' : ''}\${analysis.acne_score > 20 ? 'acne treatment, ' : ''}sun protection.</p>
+      <p>Based on your analysis, focus on: ${analysis.hydration_score < 50 ? 'hydration, ' : ''}${analysis.pigmentation_score > 30 ? 'brightening, ' : ''}${analysis.acne_score > 20 ? 'acne treatment, ' : ''}sun protection.</p>
     </div>
     <div class="concern-item">
       <h4>Key Ingredients to Look For</h4>
-      <p>\${this.getRecommendedIngredients(analysis)}</p>
+      <p>${this.getRecommendedIngredients(analysis)}</p>
     </div>
   </div>
 
@@ -9443,7 +9443,7 @@
   </div>
 </body>
 </html>
-      \`;
+      `;
     }
 
     getRecommendedIngredients(analysis) {
@@ -9466,7 +9466,7 @@
       }
 
       const skinScore = analysis.skin_score || '--';
-      const shareText = \`🔬 My Skin Analysis Results!\n\n📊 Skin Score: \${skinScore}/100\n🎯 Key Focus Areas: \${this.getTopConcerns(analysis)}\n\nGet your free skin analysis at SkinChecker.in\`;
+      const shareText = `🔬 My Skin Analysis Results!\n\n📊 Skin Score: ${skinScore}/100\n🎯 Key Focus Areas: ${this.getTopConcerns(analysis)}\n\nGet your free skin analysis at SkinChecker.in`;
 
       try {
         if (navigator.share) {
