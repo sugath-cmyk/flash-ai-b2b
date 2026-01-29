@@ -63,6 +63,48 @@ router.post('/migrate/face-scan', async (req, res) => {
   }
 });
 
+// Run dark circles columns migration (requires admin secret)
+router.post('/migrate/dark-circles-columns', async (req, res) => {
+  try {
+    // Verify admin secret
+    const adminSecret = req.headers['x-admin-secret'] || req.query.secret;
+    const expectedSecret = process.env.ADMIN_SECRET || 'your-super-secret-key-change-this';
+    if (adminSecret !== expectedSecret) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized - Invalid admin secret'
+      });
+    }
+
+    const { pool } = require('../config/database');
+
+    console.log('Running dark circles columns migration...');
+
+    // Add columns for detailed dark circles analysis
+    await pool.query(`
+      ALTER TABLE face_analysis
+      ADD COLUMN IF NOT EXISTS dark_circles_left_severity FLOAT,
+      ADD COLUMN IF NOT EXISTS dark_circles_right_severity FLOAT,
+      ADD COLUMN IF NOT EXISTS dark_circles_regions JSONB;
+    `);
+
+    console.log('Dark circles columns migration completed');
+
+    res.json({
+      success: true,
+      message: 'Dark circles columns added successfully',
+      columns: ['dark_circles_left_severity', 'dark_circles_right_severity', 'dark_circles_regions']
+    });
+  } catch (error: any) {
+    console.error('Migration error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Migration failed',
+      message: error.message
+    });
+  }
+});
+
 // Run skincare platform migration (requires admin secret)
 router.post('/migrate/skincare-platform', async (req, res) => {
   try {
