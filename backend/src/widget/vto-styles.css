@@ -2268,7 +2268,7 @@
 .flashai-vto-mesh-quality-bar {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   padding: 10px 12px;
   background: linear-gradient(180deg, #ffffff, #f9fafb);
   border-bottom: 1px solid #e5e7eb;
@@ -2276,25 +2276,33 @@
 
 .flashai-vto-mesh-quality-indicator {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 20px;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 12px;
   border: 2px solid #e5e7eb;
   font-size: 12px;
   font-weight: 600;
   transition: all 0.3s ease;
   background: #f3f4f6;
+  min-width: 80px;
+  flex: 1;
+  max-width: 110px;
 }
 
 .flashai-vto-mesh-quality-indicator .indicator-icon {
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .flashai-vto-mesh-quality-indicator .indicator-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: #6b7280;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .flashai-vto-mesh-quality-indicator.good {
@@ -2354,7 +2362,32 @@
   }
 
   .flashai-vto-mesh-quality-indicator {
-    padding: 6px 8px;
+    padding: 6px 6px;
+    min-width: 70px;
+    max-width: 100px;
+    border-radius: 10px;
+  }
+
+  .flashai-vto-mesh-quality-indicator .indicator-icon {
+    font-size: 14px;
+  }
+
+  .flashai-vto-mesh-quality-indicator .indicator-label {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 340px) {
+  .flashai-vto-mesh-quality-bar {
+    gap: 3px;
+    padding: 6px 4px;
+  }
+
+  .flashai-vto-mesh-quality-indicator {
+    padding: 5px 4px;
+    min-width: 60px;
+    max-width: 85px;
+    border-radius: 8px;
   }
 
   .flashai-vto-mesh-quality-indicator .indicator-icon {
@@ -2362,7 +2395,7 @@
   }
 
   .flashai-vto-mesh-quality-indicator .indicator-label {
-    font-size: 10px;
+    font-size: 8px;
   }
 }
 
@@ -2607,12 +2640,13 @@
 .flashai-vto-quick-responses {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
   margin-top: 12px;
 }
 
 .flashai-vto-quick-response-btn {
-  padding: 8px 16px;
+  padding: 10px 16px;
   border: 1px solid #e4e4e7;
   border-radius: 20px;
   background: #fff;
@@ -2621,12 +2655,15 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 60px;
+  text-align: center;
 }
 
 .flashai-vto-quick-response-btn:hover {
   background: #f4f4f5;
   border-color: #8b5cf6;
   color: #7c3aed;
+  transform: translateY(-1px);
 }
 
 /* Reveal Results Button */
