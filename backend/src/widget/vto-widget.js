@@ -531,8 +531,8 @@
               </div>
 
               <!-- Guide text at bottom -->
-              <div style="position:absolute;bottom:5%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 24px;border-radius:25px;font-size:14px;font-weight:500;white-space:nowrap;z-index:15;">
-                <span id="flashai-vto-mesh-guide-text">Position your face within the frame</span>
+              <div style="position:absolute;bottom:5%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 24px;border-radius:25px;font-size:14px;font-weight:600;white-space:nowrap;z-index:15;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+                <span id="flashai-vto-mesh-guide-text">Center your face in the frame</span>
               </div>
 
               <!-- Auto-capture Progress Ring -->
@@ -4413,19 +4413,40 @@
           setTimeout(removeBlurEffects, 100);
         };
 
-        // Listen for when video actually has frames to display
-        video.addEventListener('playing', () => {
-          hideLoadingAndShowVideo();
-          // Face mesh will handle auto-capture based on quality indicators
-        }, { once: true });
+        // Wait for video to have actual frames before showing
+        let videoReady = false;
+        const checkVideoReady = () => {
+          if (video.readyState >= 2 && video.videoWidth > 0) {
+            if (!videoReady) {
+              videoReady = true;
+              console.log('[Flash AI Widget] Video ready with dimensions:', video.videoWidth, 'x', video.videoHeight);
+              hideLoadingAndShowVideo();
+            }
+          }
+        };
 
-        // Fallback: if playing event doesn't fire within 2 seconds, show video anyway
+        // Listen for multiple events to catch video ready state
+        video.addEventListener('playing', checkVideoReady, { once: false });
+        video.addEventListener('canplay', checkVideoReady, { once: false });
+        video.addEventListener('loadeddata', checkVideoReady, { once: false });
+
+        // Also poll for readiness (some browsers don't fire events reliably)
+        const readyCheckInterval = setInterval(() => {
+          if (videoReady || !this.state.faceCameraStream) {
+            clearInterval(readyCheckInterval);
+            return;
+          }
+          checkVideoReady();
+        }, 100);
+
+        // Fallback: if video doesn't show within 3 seconds, show it anyway
         setTimeout(() => {
           if (loadingOverlay && loadingOverlay.style.display !== 'none') {
             console.log('[Flash AI Widget] Fallback: showing video after timeout');
             hideLoadingAndShowVideo();
           }
-        }, 2000);
+          clearInterval(readyCheckInterval);
+        }, 3000);
 
         // Initialize face detection and quality checking
         video.addEventListener('loadedmetadata', () => {
@@ -4603,22 +4624,29 @@
 
       if (!canvas || !video || !this.meshCtx) return;
 
-      // Update canvas size if needed
-      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
+      // Only update canvas size once when video is ready
+      if (!this._meshCanvasInitialized && video.videoWidth > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        this._meshCanvasInitialized = true;
       }
+
+      // Skip processing if video dimensions aren't ready
+      if (video.videoWidth <= 0 || video.videoHeight <= 0) return;
 
       const ctx = this.meshCtx;
       const width = canvas.width;
       const height = canvas.height;
 
-      // Clear canvas
-      ctx.clearRect(0, 0, width, height);
+      // Clear canvas (optimized - only clear if dimensions are valid)
+      if (width > 0 && height > 0) {
+        ctx.clearRect(0, 0, width, height);
+      }
 
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
         this.state.currentLandmarks = landmarks;
+        this._noFaceFrames = 0;
 
         // Draw face mesh
         this.drawFaceMesh(ctx, landmarks, width, height);
@@ -4629,13 +4657,24 @@
         // Check auto-capture
         this.checkMeshAutoCapture();
       } else {
-        // No face detected - reset quality indicators
-        this.state.currentLandmarks = null;
-        this.updateQualityIndicator('lighting', false);
-        this.updateQualityIndicator('position', false);
-        this.updateQualityIndicator('pose', false);
-        this.state.autoCaptureStartTime = null;
-        this.hideCaptureProgress();
+        // No face detected - increment counter to avoid flickering on brief detection loss
+        this._noFaceFrames = (this._noFaceFrames || 0) + 1;
+
+        // Only reset after several frames of no face (prevents flicker)
+        if (this._noFaceFrames > 5) {
+          this.state.currentLandmarks = null;
+          this.updateQualityIndicator('lighting', false);
+          this.updateQualityIndicator('position', false);
+          this.updateQualityIndicator('pose', false);
+          this.state.autoCaptureStartTime = null;
+          this.hideCaptureProgress();
+
+          // Update guide text to help user
+          const guideEl = document.getElementById('flashai-vto-mesh-guide-text');
+          if (guideEl && guideEl.textContent !== 'Position your face in the frame') {
+            guideEl.textContent = 'Position your face in the frame';
+          }
+        }
       }
     }
 
@@ -4696,17 +4735,36 @@
     }
 
     checkMeshLighting(video, ctx) {
-      // Sample center region of the frame for brightness
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = video.videoWidth;
-      tempCanvas.height = video.videoHeight;
-      const tempCtx = tempCanvas.getContext('2d');
-      tempCtx.drawImage(video, 0, 0);
+      // Use cached canvas for brightness sampling (avoid creating new canvas every frame)
+      if (!this._lightingCanvas) {
+        this._lightingCanvas = document.createElement('canvas');
+        this._lightingCtx = this._lightingCanvas.getContext('2d', { willReadFrequently: true });
+      }
+
+      const tempCanvas = this._lightingCanvas;
+      const tempCtx = this._lightingCtx;
+
+      // Only resize if dimensions changed
+      if (tempCanvas.width !== video.videoWidth || tempCanvas.height !== video.videoHeight) {
+        tempCanvas.width = video.videoWidth || 640;
+        tempCanvas.height = video.videoHeight || 480;
+      }
+
+      try {
+        tempCtx.drawImage(video, 0, 0);
+      } catch (e) {
+        // Video might not be ready yet
+        return { isGood: false, brightness: 0 };
+      }
 
       const centerX = Math.floor(video.videoWidth * 0.25);
       const centerY = Math.floor(video.videoHeight * 0.15);
       const regionW = Math.floor(video.videoWidth * 0.5);
       const regionH = Math.floor(video.videoHeight * 0.6);
+
+      if (regionW <= 0 || regionH <= 0) {
+        return { isGood: false, brightness: 0 };
+      }
 
       const imageData = tempCtx.getImageData(centerX, centerY, regionW, regionH);
       let totalBrightness = 0;
@@ -4718,7 +4776,7 @@
         count++;
       }
 
-      const avgBrightness = totalBrightness / count;
+      const avgBrightness = count > 0 ? totalBrightness / count : 0;
       const isGood = avgBrightness >= 60 && avgBrightness <= 210;
 
       return { isGood, brightness: avgBrightness };
@@ -4790,23 +4848,38 @@
       if (!guideEl) return;
 
       let message = '';
+      let priority = 0; // Higher priority = more urgent fix needed
+
+      // Check each quality factor and set message with priority
       if (!lighting.isGood) {
-        message = lighting.brightness < 60 ? 'Move to brighter area' : 'Reduce bright light';
-      } else if (!position.isGood) {
+        priority = 3;
+        message = lighting.brightness < 60 ? 'Find better lighting' : 'Too bright - reduce light';
+      }
+
+      if (!position.isGood && priority < 2) {
+        priority = 2;
         if (position.faceWidth < 0.25) {
-          message = 'Move closer to camera';
+          message = 'Move closer to the screen';
         } else if (position.faceWidth > 0.65) {
-          message = 'Move back a little';
+          message = 'Move back slightly';
         } else {
-          message = 'Center your face in frame';
+          message = 'Center your face in the frame';
         }
-      } else if (!pose.isGood) {
-        message = 'Look straight at camera';
-      } else {
+      }
+
+      if (!pose.isGood && priority < 1) {
+        priority = 1;
+        message = 'Look directly at the camera';
+      }
+
+      if (priority === 0) {
         message = 'Perfect! Hold still...';
       }
 
-      guideEl.textContent = message;
+      // Only update if text changed (prevent DOM thrashing)
+      if (guideEl.textContent !== message) {
+        guideEl.textContent = message;
+      }
     }
 
     checkMeshAutoCapture() {
