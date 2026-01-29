@@ -510,17 +510,17 @@
             </div>
 
             <div class="flashai-vto-camera-container" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
-              <!-- Loading overlay that hides the black video placeholder -->
-              <div id="flashai-vto-camera-loading" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;">
+              <!-- Loading overlay - shown only while camera initializes -->
+              <div id="flashai-vto-camera-loading" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:20;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;">
                 <div style="width:50px;height:50px;border:4px solid rgba(255,80,80,0.3);border-top-color:#ff5050;border-radius:50%;animation:flashai-spin 1s linear infinite;"></div>
-                <p style="margin-top:16px;color:#ff5050;font-size:14px;font-weight:500;">Initializing AI Scanner...</p>
+                <p style="margin-top:16px;color:#ff5050;font-size:14px;font-weight:500;">Starting Camera...</p>
               </div>
               <style>@keyframes flashai-spin{to{transform:rotate(360deg)}}</style>
 
-              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:transparent !important;position:absolute;top:0;left:0;z-index:5;opacity:0;transition:opacity 0.3s ease;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;-webkit-filter:none !important;transform:scaleX(-1);"></video>
+              <video id="flashai-vto-face-camera" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;background:#1a1a2e !important;position:absolute;top:0;left:0;z-index:5;opacity:1;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;-webkit-filter:none !important;transform:scaleX(-1);"></video>
 
               <!-- Face Mesh Canvas Overlay -->
-              <canvas id="flashai-vto-mesh-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;transform:scaleX(-1);"></canvas>
+              <canvas id="flashai-vto-mesh-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;transform:scaleX(-1);background:transparent;"></canvas>
 
               <!-- Face Frame Guide -->
               <div class="flashai-vto-mesh-face-frame" style="position:absolute;top:12%;left:20%;width:60%;height:76%;pointer-events:none;z-index:11;">
@@ -4399,18 +4399,14 @@
           }
         };
 
-        // Hide loading overlay and show video once it's actually playing
+        // Hide loading overlay once video is playing
         const hideLoadingAndShowVideo = () => {
           console.log('[Flash AI Widget] Camera stream started, hiding loading overlay');
           if (loadingOverlay) {
-            loadingOverlay.style.opacity = '0';
-            setTimeout(() => {
-              loadingOverlay.style.display = 'none';
-            }, 300);
+            loadingOverlay.style.display = 'none';
           }
-          video.style.opacity = '1';
           // Remove any blur effects after video is shown
-          setTimeout(removeBlurEffects, 100);
+          setTimeout(removeBlurEffects, 50);
         };
 
         // Wait for video to have actual frames before showing
@@ -4527,22 +4523,35 @@
 
         this.faceMesh.onResults(this.onFaceMeshResults.bind(this));
 
-        // Use MediaPipe Camera utility for smooth frame processing
-        this.mpCamera = new Camera(video, {
-          onFrame: async () => {
-            if (this.faceMesh && this.state.faceMeshActive) {
-              await this.faceMesh.send({ image: video });
-            }
-          },
-          width: 640,
-          height: 480
-        });
-
         this.state.faceMeshActive = true;
         this.state.autoCaptureStartTime = null;
         this.state.qualityState = { lighting: false, position: false, pose: false, allGood: false };
 
-        await this.mpCamera.start();
+        // Use requestAnimationFrame loop instead of MediaPipe Camera to avoid conflicts
+        // This keeps the existing video stream and just processes frames
+        const processFrame = async () => {
+          if (!this.state.faceMeshActive || !this.faceMesh) return;
+
+          try {
+            if (video.readyState >= 2 && video.videoWidth > 0) {
+              await this.faceMesh.send({ image: video });
+            }
+          } catch (e) {
+            console.warn('[Face Mesh] Frame processing error:', e);
+          }
+
+          if (this.state.faceMeshActive) {
+            requestAnimationFrame(processFrame);
+          }
+        };
+
+        // Start processing after a short delay to let video stabilize
+        setTimeout(() => {
+          if (this.state.faceMeshActive) {
+            requestAnimationFrame(processFrame);
+          }
+        }, 500);
+
         console.log('[Face Mesh] MediaPipe Face Mesh initialized and running');
 
       } catch (error) {
@@ -4927,26 +4936,38 @@
     async performMeshAutoCapture() {
       console.log('[Face Mesh] Auto-capture triggered!');
 
-      // Stop face mesh processing
+      // Stop face mesh processing first
       this.state.faceMeshActive = false;
-      if (this.mpCamera) {
-        this.mpCamera.stop();
-      }
 
       const video = document.getElementById('flashai-vto-face-camera');
+      if (!video || video.videoWidth <= 0) {
+        console.error('[Face Mesh] Video not ready for capture');
+        return;
+      }
+
+      // Create canvas and capture the current frame
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
+      const ctx = canvas.getContext('2d');
+
+      // Draw the video frame (note: video is mirrored with CSS, so mirror here too)
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0);
 
       // Convert to base64
       const imageData = canvas.toDataURL('image/jpeg', 0.92);
+      console.log('[Face Mesh] Image captured, size:', imageData.length);
 
       // Store the captured image
       this.state.facePhotos = [imageData];
       this.state.faceMeshCapturedImage = imageData;
 
-      // Stop camera
+      // Close face mesh
+      this.stopFaceMesh();
+
+      // Stop camera stream
       this.stopFaceCamera();
 
       // Show processing step
@@ -4964,14 +4985,15 @@
 
     stopFaceMesh() {
       this.state.faceMeshActive = false;
-      if (this.mpCamera) {
-        this.mpCamera.stop();
-        this.mpCamera = null;
-      }
       if (this.faceMesh) {
-        this.faceMesh.close();
+        try {
+          this.faceMesh.close();
+        } catch (e) {
+          console.warn('[Face Mesh] Error closing:', e);
+        }
         this.faceMesh = null;
       }
+      this._meshCanvasInitialized = false;
     }
 
     startBasicQualityCheckLoop() {
