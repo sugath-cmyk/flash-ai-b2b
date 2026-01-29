@@ -64,7 +64,12 @@ app.get('/debug', (req: Request, res: Response) => {
   });
 });
 
-console.log('✅ Basic endpoints registered (/ping, /health, /debug)');
+// Root redirect for skinchecker.in domain
+app.get('/', (req: Request, res: Response) => {
+  res.redirect('/skinchecker.html');
+});
+
+console.log('✅ Basic endpoints registered (/ping, /health, /debug, /)');
 
 // Middleware
 app.use(helmet({
