@@ -821,6 +821,28 @@
                   </span>
                 </div>
               </div>
+
+              <!-- Download & Share Actions -->
+              <div class="flashai-vto-analysis-actions" style="display:flex;gap:10px;margin-bottom:20px;padding:16px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:12px;border:1px solid #bbf7d0;">
+                <button id="flashai-vto-download-pdf" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 16px;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(34,197,94,0.3);transition:all 0.2s;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download PDF
+                </button>
+                <button id="flashai-vto-share-analysis" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 16px;background:#fff;color:#3f3f46;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                  </svg>
+                  Share Results
+                </button>
+              </div>
               </div><!-- End Tab: Analysis -->
 
               <!-- Tab Content: Progress -->
@@ -1551,6 +1573,15 @@
 
       modal.querySelector('#flashai-vto-auto-goals-btn')?.addEventListener('click', () => {
         this.autoSetGoalsFromScan();
+      });
+
+      // ========== NEW: Download PDF & Share ==========
+      modal.querySelector('#flashai-vto-download-pdf')?.addEventListener('click', () => {
+        this.downloadAnalysisPDF();
+      });
+
+      modal.querySelector('#flashai-vto-share-analysis')?.addEventListener('click', () => {
+        this.shareAnalysis();
       });
 
       // ========== NEW: Prediction Timeframe ==========
@@ -9173,6 +9204,214 @@
       } catch (error) {
         console.error('Share error:', error);
       }
+    }
+
+    // ==========================================================================
+    // Skin Analysis PDF Download & Share
+    // ==========================================================================
+
+    async downloadAnalysisPDF() {
+      const analysis = this.state.currentAnalysis;
+      const scan = this.state.faceScan || this.state.pendingFaceScan;
+
+      if (!analysis) {
+        alert('No analysis data available. Please complete a skin scan first.');
+        return;
+      }
+
+      // Show loading state
+      const btn = document.getElementById('flashai-vto-download-pdf');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⏳</span> Generating...';
+      btn.disabled = true;
+
+      try {
+        // Generate PDF content
+        const pdfContent = this.generatePDFContent(analysis, scan);
+
+        // Create a printable HTML document
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(pdfContent);
+        printWindow.document.close();
+
+        // Wait for content to load then trigger print
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        };
+
+      } catch (error) {
+        console.error('PDF generation error:', error);
+        alert('Failed to generate PDF. Please try again.');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    generatePDFContent(analysis, scan) {
+      const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const skinScore = analysis.skin_score || '--';
+      const skinTone = analysis.skin_tone ? this.capitalizeFirst(analysis.skin_tone) : 'N/A';
+      const undertone = analysis.skin_undertone ? this.capitalizeFirst(analysis.skin_undertone) : '';
+
+      // Get detected issues
+      const issues = this.state.detectedIssues || [];
+
+      return \`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Skin Analysis Report - \${date}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #18181b; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e4e4e7; }
+    .header h1 { font-size: 28px; color: #7c3aed; margin-bottom: 8px; }
+    .header p { color: #71717a; font-size: 14px; }
+    .score-section { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; padding: 24px; background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-radius: 16px; }
+    .score-circle { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 800; }
+    .score-info h2 { font-size: 20px; margin-bottom: 8px; }
+    .score-info p { color: #71717a; font-size: 14px; }
+    .section { margin-bottom: 30px; }
+    .section h3 { font-size: 18px; color: #3f3f46; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e4e4e7; }
+    .concern-item { padding: 16px; background: #f9fafb; border-radius: 12px; margin-bottom: 12px; }
+    .concern-item h4 { font-size: 15px; color: #18181b; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .concern-item p { font-size: 13px; color: #71717a; }
+    .severity-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .severity-high { background: #fee2e2; color: #991b1b; }
+    .severity-medium { background: #fef3c7; color: #92400e; }
+    .severity-low { background: #dcfce7; color: #166534; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .metric-item { padding: 16px; background: #f9fafb; border-radius: 12px; }
+    .metric-item label { font-size: 12px; color: #71717a; display: block; margin-bottom: 4px; }
+    .metric-item span { font-size: 18px; font-weight: 700; color: #18181b; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #e4e4e7; text-align: center; color: #a1a1aa; font-size: 12px; }
+    @media print { body { padding: 20px; } .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔬 Skin Analysis Report</h1>
+    <p>Generated on \${date}</p>
+  </div>
+
+  <div class="score-section">
+    <div class="score-circle">\${skinScore}</div>
+    <div class="score-info">
+      <h2>Overall Skin Score</h2>
+      <p>Skin Tone: \${skinTone}\${undertone ? ' (' + undertone + ')' : ''}</p>
+      <p>Analysis Confidence: \${Math.round((analysis.analysis_confidence || 0.8) * 100)}%</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>📊 Key Metrics</h3>
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <label>Hydration Level</label>
+        <span>\${analysis.hydration_score || '--'}%</span>
+      </div>
+      <div class="metric-item">
+        <label>Texture Score</label>
+        <span>\${analysis.texture_score || '--'}%</span>
+      </div>
+      <div class="metric-item">
+        <label>Pigmentation</label>
+        <span>\${analysis.pigmentation_score || '--'}%</span>
+      </div>
+      <div class="metric-item">
+        <label>Redness Level</label>
+        <span>\${analysis.redness_score || '--'}%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>🎯 Detected Concerns</h3>
+    \${issues.length > 0 ? issues.map(issue => \`
+      <div class="concern-item">
+        <h4>
+          \${issue.name}
+          <span class="severity-badge severity-\${issue.severity}">\${this.capitalizeFirst(issue.severity)}</span>
+        </h4>
+        <p>\${issue.description || 'Focus area identified in your skin analysis.'}</p>
+      </div>
+    \`).join('') : '<p style="color:#71717a;">No major concerns detected. Your skin is looking great!</p>'}
+  </div>
+
+  <div class="section">
+    <h3>💡 Recommendations</h3>
+    <div class="concern-item">
+      <h4>Daily Routine</h4>
+      <p>Based on your analysis, focus on: \${analysis.hydration_score < 50 ? 'hydration, ' : ''}\${analysis.pigmentation_score > 30 ? 'brightening, ' : ''}\${analysis.acne_score > 20 ? 'acne treatment, ' : ''}sun protection.</p>
+    </div>
+    <div class="concern-item">
+      <h4>Key Ingredients to Look For</h4>
+      <p>\${this.getRecommendedIngredients(analysis)}</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>This report is generated by AI analysis and is for informational purposes only.</p>
+    <p>For medical advice, please consult a dermatologist.</p>
+    <p style="margin-top:10px;color:#7c3aed;">Powered by SkinChecker.in</p>
+  </div>
+</body>
+</html>
+      \`;
+    }
+
+    getRecommendedIngredients(analysis) {
+      const ingredients = [];
+      if (analysis.hydration_score < 50) ingredients.push('Hyaluronic Acid', 'Ceramides');
+      if (analysis.pigmentation_score > 30) ingredients.push('Vitamin C', 'Niacinamide', 'Alpha Arbutin');
+      if (analysis.acne_score > 20) ingredients.push('Salicylic Acid', 'Benzoyl Peroxide', 'Tea Tree');
+      if (analysis.wrinkle_score > 30) ingredients.push('Retinol', 'Peptides');
+      if (analysis.redness_score > 30) ingredients.push('Centella Asiatica', 'Aloe Vera');
+      if (ingredients.length === 0) ingredients.push('Hyaluronic Acid', 'Vitamin C', 'SPF 30+');
+      return ingredients.join(', ');
+    }
+
+    async shareAnalysis() {
+      const analysis = this.state.currentAnalysis;
+
+      if (!analysis) {
+        alert('No analysis data available. Please complete a skin scan first.');
+        return;
+      }
+
+      const skinScore = analysis.skin_score || '--';
+      const shareText = \`🔬 My Skin Analysis Results!\n\n📊 Skin Score: \${skinScore}/100\n🎯 Key Focus Areas: \${this.getTopConcerns(analysis)}\n\nGet your free skin analysis at SkinChecker.in\`;
+
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: 'My Skin Analysis Results',
+            text: shareText,
+            url: 'https://skinchecker.in'
+          });
+        } else {
+          // Fallback: copy to clipboard
+          await navigator.clipboard.writeText(shareText + '\n\nhttps://skinchecker.in');
+          alert('Results copied to clipboard! Paste to share.');
+        }
+      } catch (error) {
+        console.error('Share error:', error);
+        // Fallback for browsers that don't support clipboard
+        alert('Share your results:\n\n' + shareText);
+      }
+    }
+
+    getTopConcerns(analysis) {
+      const concerns = [];
+      if (analysis.pigmentation_score > 30) concerns.push('Pigmentation');
+      if (analysis.acne_score > 20) concerns.push('Acne');
+      if (analysis.wrinkle_score > 30) concerns.push('Fine Lines');
+      if (analysis.hydration_score < 50) concerns.push('Hydration');
+      if (analysis.redness_score > 30) concerns.push('Redness');
+      return concerns.length > 0 ? concerns.slice(0, 3).join(', ') : 'Overall Skin Health';
     }
 
     addToCart() {
