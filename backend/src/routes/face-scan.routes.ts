@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import * as faceScanController from '../controllers/face-scan.controller';
+import { skincareAIService } from '../services/skincare-ai.service';
 
 const router = Router();
 
@@ -260,8 +261,6 @@ router.post('/track', faceScanController.trackEvent);
 // ==========================================================================
 // Skincare AI Conversation Endpoints
 // ==========================================================================
-
-import { skincareAIService } from '../services/skincare-ai.service';
 
 // Start a skincare consultation conversation
 router.post('/conversation/start', async (req, res) => {
