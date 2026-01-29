@@ -5795,13 +5795,19 @@
     async initSkincareConsultation() {
       console.log('[Skincare AI] Initializing consultation');
 
-      // Get scan data
+      // Get scan ID - use faceScanId first (set immediately after upload), then try scan objects
       const scan = this.state.pendingFaceScan || this.state.faceScan;
-      if (!scan) {
-        console.error('[Skincare AI] No scan data available');
-        this.displayFaceResults(this.state.faceScan);
+      const scanId = this.state.faceScanId || scan?.id;
+
+      if (!scanId) {
+        console.error('[Skincare AI] No scan ID available');
+        // Still set up chat UI but show waiting message
+        this.setupConsultationChat();
+        this.addChatMessage('assistant', "Waiting for your scan to be processed...");
         return;
       }
+
+      console.log('[Skincare AI] Starting consultation with scanId:', scanId);
 
       // Reset consultation state
       this.state.consultationConversationId = null;
@@ -5820,8 +5826,8 @@
             'X-API-Key': this.config.apiKey
           },
           body: JSON.stringify({
-            scanId: scan.id,
-            visitorId: this.config.visitorId
+            scanId: scanId,
+            visitorId: this.state.visitorId
           })
         });
 
