@@ -1120,9 +1120,9 @@ class FaceScanService:
         whitehead_count = 0
         acne_locations = []
 
-        # ULTRA STRICT: Much higher minimum area to avoid texture/pore false positives
-        min_area = 90  # Increased from 50 - ignore spots that could be normal pores
-        max_area = 400
+        # BALANCED: Moderate minimum area to catch real acne while avoiding pore false positives
+        min_area = 50  # Lowered to catch smaller acne spots
+        max_area = 500  # Increased to catch larger blemishes
         skin_area = max(np.sum(mask > 0), 1)
         area_scale = skin_area / 100000
 
@@ -1155,16 +1155,16 @@ class FaceScanService:
 
             surround_mean = np.mean(surround_pixels)
 
-            # Calculate contrast ratio - ULTRA STRICT thresholds
+            # Calculate contrast ratio - BALANCED thresholds for better detection
             if spot_type == "dark":
                 contrast = surround_mean - spot_mean
-                # Must be VERY SIGNIFICANTLY darker than surroundings (35+ units)
-                # AND much darker than overall skin mean (1.5 std devs)
-                is_valid = contrast > 35 and spot_mean < skin_mean - 1.5 * skin_std
+                # Lowered threshold: 22+ units darker (was 35)
+                # AND darker than skin mean by 1.0 std dev (was 1.5)
+                is_valid = contrast > 22 and spot_mean < skin_mean - 1.0 * skin_std
             else:  # bright
                 contrast = spot_mean - surround_mean
-                # Whiteheads must be much brighter - higher threshold
-                is_valid = contrast > 40 and spot_mean > skin_mean + 2.0 * skin_std
+                # Lowered threshold: 25+ units brighter (was 40)
+                is_valid = contrast > 25 and spot_mean > skin_mean + 1.5 * skin_std
 
             return is_valid, cx / w, cy / h
 
@@ -1178,8 +1178,8 @@ class FaceScanService:
                 perimeter = cv2.arcLength(cnt, True)
                 if perimeter > 0:
                     circularity = 4 * np.pi * area / (perimeter ** 2)
-                    # ULTRA STRICT: Higher circularity required (0.65 = very circular)
-                    if circularity > 0.65:
+                    # BALANCED: Moderate circularity to catch irregular acne (0.45)
+                    if circularity > 0.45:
                         # VERIFY contrast with surroundings
                         is_valid, cx, cy = verify_spot_contrast(cnt, "dark")
                         if is_valid:
@@ -1206,8 +1206,8 @@ class FaceScanService:
                         spot_hsv = hsv[spot_mask > 0]
                         if len(spot_hsv) > 0:
                             avg_saturation = np.mean(spot_hsv[:, 1])
-                            # Must have VERY high saturation to be true inflammation
-                            if avg_saturation > 110:  # Increased from 80
+                            # Moderate saturation threshold for inflammation detection
+                            if avg_saturation > 75:  # Lowered to catch pink/inflamed spots
                                 M = cv2.moments(cnt)
                                 if M["m00"] > 0:
                                     cx = M["m10"] / M["m00"] / w
@@ -1219,8 +1219,8 @@ class FaceScanService:
                                         "size": "small" if area < 120 else "large"
                                     })
 
-        # Detect whiteheads with contrast verification
-        _, thresh_bright = cv2.threshold(blurred, 215, 255, cv2.THRESH_BINARY)
+        # Detect whiteheads with contrast verification - lowered threshold
+        _, thresh_bright = cv2.threshold(blurred, 195, 255, cv2.THRESH_BINARY)
         thresh_bright = cv2.bitwise_and(thresh_bright, mask)
         thresh_bright = cv2.morphologyEx(thresh_bright, cv2.MORPH_OPEN, kernel)
 
@@ -1252,11 +1252,11 @@ class FaceScanService:
         total_blemishes = blackhead_count + whitehead_count + pimple_count * 2
         acne_score = min(100, total_blemishes)  # Direct mapping - no artificial multiplier
 
-        # Inflammation based on verified red pixels - STRICTER thresholds
+        # Inflammation based on verified red pixels - BALANCED thresholds
         red_pixel_ratio = np.sum(red_mask > 0) / skin_area
-        if red_pixel_ratio > 0.25:  # Increased from 0.15 - must be really red
+        if red_pixel_ratio > 0.15:  # Lowered to detect moderate redness
             inflammation = 0.66
-        elif red_pixel_ratio > 0.12:  # Increased from 0.06
+        elif red_pixel_ratio > 0.06:  # Lowered for mild inflammation
             inflammation = 0.33
         else:
             inflammation = 0.0
@@ -2114,23 +2114,31 @@ class FaceScanService:
             print(f"[Dark Circles Debug] Methods - vs_cheek: {left_vs_cheek:.2f}/{right_vs_cheek:.2f}, vs_forehead: {left_vs_forehead:.2f}/{right_vs_forehead:.2f}")
             print(f"[Dark Circles Debug] Absolute: {left_absolute:.2f}/{right_absolute:.2f}, vs_face: {left_vs_face:.2f}/{right_vs_face:.2f}, color: {left_color_score:.2f}/{right_color_score:.2f}")
 
-            # Combine ALL methods - take the MAXIMUM to catch dark circles from any angle
-            left_severity = max(
-                left_vs_cheek,
-                left_vs_forehead,
-                left_absolute,
-                left_vs_face,
-                left_color_score,
-                left_percentile
-            )
-            right_severity = max(
-                right_vs_cheek,
-                right_vs_forehead,
-                right_absolute,
-                right_vs_face,
-                right_color_score,
-                right_percentile
-            )
+            # IMPROVED: Use weighted average of top 2 methods instead of MAX
+            # This prevents a single noisy method from inflating the score
+            def calculate_severity(methods):
+                """Calculate severity using top-2 weighted average with minimum threshold"""
+                # Filter out methods below minimum detection threshold
+                valid_methods = [m for m in methods if m > 0.15]
+
+                if len(valid_methods) == 0:
+                    return 0.0
+                elif len(valid_methods) == 1:
+                    # Single method detected - apply 0.7x discount for uncertainty
+                    return valid_methods[0] * 0.7
+                else:
+                    # Multiple methods agree - take weighted average of top 2
+                    sorted_methods = sorted(valid_methods, reverse=True)
+                    top1 = sorted_methods[0]
+                    top2 = sorted_methods[1]
+                    # Weight: 60% top method, 40% second method
+                    return (top1 * 0.6 + top2 * 0.4)
+
+            left_methods = [left_vs_cheek, left_vs_forehead, left_absolute, left_vs_face, left_color_score, left_percentile]
+            right_methods = [right_vs_cheek, right_vs_forehead, right_absolute, right_vs_face, right_color_score, right_percentile]
+
+            left_severity = calculate_severity(left_methods)
+            right_severity = calculate_severity(right_methods)
 
             # No artificial floor boosts - let actual detection methods determine severity
             # Removed all minimum thresholds that were artificially inflating scores
