@@ -776,9 +776,18 @@
                 </div>
               </div>
 
-              <!-- Issues List (Accordion Style with Inline Expansion) -->
+              <!-- Visual Skin Concerns Grid (Premium Card Design) -->
+              <div class="flashai-vto-concerns-visual" style="margin-bottom:20px;">
+                <h3 style="font-size:16px;font-weight:700;color:#18181b;margin:0 0 4px;text-align:center;">Your Skin Concerns</h3>
+                <p style="font-size:12px;color:#71717a;margin:0 0 16px;text-align:center;">Based on AI analysis of your scan</p>
+                <div id="flashai-vto-concerns-grid" style="display:grid;grid-template-columns:repeat(2, 1fr);gap:12px;">
+                  <!-- Dynamically generated concern cards -->
+                </div>
+              </div>
+
+              <!-- Issues List (Detailed Accordion) -->
               <div class="flashai-vto-issues-section" style="margin-bottom:16px;">
-                <h3 class="flashai-vto-issues-title" style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 8px;">Detected Concerns</h3>
+                <h3 class="flashai-vto-issues-title" style="font-size:14px;font-weight:700;color:#3f3f46;margin:0 0 8px;">Detailed Analysis</h3>
                 <p style="font-size:11px;color:#71717a;margin:0 0 12px;padding:8px 12px;background:#f9fafb;border-radius:8px;border-left:3px solid #8b5cf6;">
                   <strong>Note:</strong> AI analysis provides general guidance. Natural features like freckles may sometimes be detected. Results can vary based on lighting and image quality.
                 </p>
@@ -5779,6 +5788,9 @@
         this.generateDetectedIssues(scan.analysis);
       });
 
+      // Render visual concern cards (premium design)
+      this.renderVisualConcernCards(scan.analysis);
+
       // Render treatment prioritization, timeline, and healthcare notice
       this.renderTreatmentPriority(scan.analysis);
       this.renderSkincareTimeline(scan.analysis);
@@ -6855,6 +6867,233 @@
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // ==========================================================================
+    // Visual Concern Cards (Premium Design)
+    // ==========================================================================
+
+    renderVisualConcernCards(analysis) {
+      const grid = document.getElementById('flashai-vto-concerns-grid');
+      if (!grid || !analysis) return;
+
+      // Define concern card configurations with visual styling
+      const concernConfigs = [
+        {
+          key: 'acne',
+          label: 'Acne & Breakouts',
+          scoreKey: 'acne_score',
+          threshold: 25,
+          gradient: 'linear-gradient(135deg, #fecaca 0%, #fca5a5 50%, #f87171 100%)',
+          icon: '🔴',
+          imageUrl: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'dark_circles',
+          label: 'Dark Circles',
+          scoreKey: 'under_eye_darkness',
+          threshold: 35,
+          gradient: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%)',
+          icon: '👁️',
+          imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'pigmentation',
+          label: 'Hyperpigmentation',
+          scoreKey: 'pigmentation_score',
+          threshold: 30,
+          gradient: 'linear-gradient(135deg, #fed7aa 0%, #fdba74 50%, #fb923c 100%)',
+          icon: '🟤',
+          imageUrl: 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'wrinkles',
+          label: 'Fine Lines & Wrinkles',
+          scoreKey: 'wrinkle_score',
+          threshold: 20,
+          gradient: 'linear-gradient(135deg, #fde68a 0%, #fcd34d 50%, #f59e0b 100%)',
+          icon: '〰️',
+          imageUrl: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'hydration',
+          label: 'Hydration & Moisture',
+          scoreKey: 'hydration_score',
+          threshold: 60,
+          isInverse: true,
+          gradient: 'linear-gradient(135deg, #a5f3fc 0%, #67e8f9 50%, #22d3ee 100%)',
+          icon: '💧',
+          imageUrl: 'https://images.unsplash.com/photo-1596755389555-b8aef8a55e90?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'oiliness',
+          label: 'Oiliness & Shine',
+          scoreKey: 'oiliness_score',
+          threshold: 35,
+          gradient: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 50%, #facc15 100%)',
+          icon: '✨',
+          imageUrl: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'redness',
+          label: 'Redness & Sensitivity',
+          scoreKey: 'redness_score',
+          threshold: 35,
+          gradient: 'linear-gradient(135deg, #fecdd3 0%, #fda4af 50%, #fb7185 100%)',
+          icon: '🩹',
+          imageUrl: 'https://images.unsplash.com/photo-1523263685509-57c1d050d19b?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'texture',
+          label: 'Skin Texture',
+          scoreKey: 'texture_score',
+          threshold: 40,
+          isInverse: true,
+          gradient: 'linear-gradient(135deg, #d9f99d 0%, #bef264 50%, #a3e635 100%)',
+          icon: '🧴',
+          imageUrl: 'https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=200&h=200&fit=crop&crop=faces'
+        },
+        {
+          key: 'pores',
+          label: 'Pore Visibility',
+          scoreKey: 'pore_size_average',
+          threshold: 0.3,
+          multiplier: 100,
+          gradient: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%)',
+          icon: '🔍',
+          imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&h=200&fit=crop&crop=faces'
+        }
+      ];
+
+      // Filter and sort concerns by severity
+      const detectedConcerns = [];
+
+      concernConfigs.forEach(config => {
+        let score = analysis[config.scoreKey];
+        if (score === undefined || score === null) return;
+
+        // Apply multiplier for pore_size_average
+        if (config.multiplier) {
+          score = score * config.multiplier;
+        }
+
+        // Calculate if this is a concern
+        let isConcern = false;
+        let severity = 0;
+        let confidenceLabel = '';
+
+        if (config.isInverse) {
+          // For hydration/texture: LOW score = concern
+          isConcern = score < config.threshold;
+          severity = config.threshold - score;
+          if (score < 30) {
+            confidenceLabel = 'High';
+          } else if (score < 50) {
+            confidenceLabel = 'Moderate';
+          } else {
+            confidenceLabel = 'Low';
+          }
+        } else {
+          // For most concerns: HIGH score = concern
+          isConcern = score >= config.threshold;
+          severity = score - config.threshold;
+          if (score >= 60) {
+            confidenceLabel = 'High';
+          } else if (score >= 40) {
+            confidenceLabel = 'Moderate';
+          } else if (score >= config.threshold) {
+            confidenceLabel = 'Low';
+          }
+        }
+
+        if (isConcern) {
+          detectedConcerns.push({
+            ...config,
+            score,
+            severity,
+            confidenceLabel
+          });
+        }
+      });
+
+      // Sort by severity (highest first)
+      detectedConcerns.sort((a, b) => b.severity - a.severity);
+
+      // Clear grid
+      grid.innerHTML = '';
+
+      if (detectedConcerns.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:30px 20px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:16px;border:2px solid #bbf7d0;">
+            <span style="font-size:48px;display:block;margin-bottom:12px;">🎉</span>
+            <h4 style="font-size:16px;font-weight:700;color:#166534;margin:0 0 8px;">Great News!</h4>
+            <p style="font-size:13px;color:#15803d;margin:0;">Your skin looks healthy! No major concerns detected.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render concern cards
+      detectedConcerns.forEach((concern, index) => {
+        const confidenceColor = concern.confidenceLabel === 'High' ? '#ef4444' :
+                               concern.confidenceLabel === 'Moderate' ? '#f59e0b' : '#22c55e';
+
+        const card = document.createElement('div');
+        card.className = 'flashai-vto-concern-card';
+        card.style.cssText = `
+          background:#fff;
+          border-radius:16px;
+          overflow:hidden;
+          box-shadow:0 4px 15px rgba(0,0,0,0.08);
+          border:1px solid #e5e7eb;
+          transition:all 0.3s ease;
+          cursor:pointer;
+        `;
+
+        card.innerHTML = `
+          <div style="position:relative;width:100%;padding-top:100%;overflow:hidden;">
+            <div style="position:absolute;inset:0;background:${concern.gradient};display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:48px;opacity:0.6;">${concern.icon}</span>
+            </div>
+            <!-- Confidence Badge -->
+            <div style="position:absolute;top:8px;right:8px;padding:4px 10px;background:${confidenceColor};color:#fff;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+              ${concern.confidenceLabel}
+            </div>
+          </div>
+          <div style="padding:12px 10px;text-align:center;background:linear-gradient(180deg,#fafafa 0%,#fff 100%);">
+            <h4 style="font-size:12px;font-weight:700;color:#18181b;margin:0;line-height:1.3;">${concern.label}</h4>
+          </div>
+        `;
+
+        // Add hover effect
+        card.addEventListener('mouseenter', () => {
+          card.style.transform = 'translateY(-4px)';
+          card.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = 'translateY(0)';
+          card.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
+        });
+
+        // Click to scroll to detailed analysis
+        card.addEventListener('click', () => {
+          const issuesList = document.getElementById('flashai-vto-issues-list');
+          if (issuesList) {
+            issuesList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+
+        grid.appendChild(card);
+      });
+
+      // Update the concerns title with count
+      const titleSection = grid.parentElement;
+      if (titleSection) {
+        const title = titleSection.querySelector('h3');
+        if (title) {
+          title.innerHTML = `Your Skin Concerns <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border-radius:50%;font-size:12px;font-weight:700;margin-left:8px;">${detectedConcerns.length}</span>`;
+        }
+      }
     }
 
     generateDetectedIssues(analysis) {
