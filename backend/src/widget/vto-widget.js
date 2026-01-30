@@ -5873,10 +5873,16 @@
         messagesContainer.innerHTML = '';
       }
 
+      // Reset multi-select state
+      this.state.selectedResponses = [];
+
       // Hide results ready section initially
       if (resultsReadyDiv) {
         resultsReadyDiv.style.display = 'none';
       }
+
+      // Show disclaimer notice first
+      this.showDisclaimerNotice();
 
       // Send message on button click
       if (sendBtn) {
@@ -5986,7 +5992,7 @@
         this.addChatMessage('assistant', fallbackResponse.message);
 
         if (fallbackResponse.quickResponses) {
-          this.showCustomQuickResponses(fallbackResponse.quickResponses);
+          this.showCustomQuickResponses(fallbackResponse.quickResponses, fallbackResponse.allowMultiple || false);
         }
         this.checkReadyForResults();
         return;
@@ -6086,6 +6092,29 @@
       `).join('');
     }
 
+    // Show disclaimer notice at start of consultation
+    showDisclaimerNotice() {
+      const messagesContainer = document.getElementById('flashai-vto-chat-messages');
+      if (!messagesContainer) return;
+
+      const disclaimerDiv = document.createElement('div');
+      disclaimerDiv.className = 'flashai-vto-chat-disclaimer';
+      disclaimerDiv.innerHTML = `
+        <div style="background:linear-gradient(135deg,#fef3c7 0%,#fffbeb 100%);border:1px solid #fcd34d;border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
+          <span style="font-size:16px;flex-shrink:0;">⚠️</span>
+          <div>
+            <p style="font-size:11px;font-weight:600;color:#92400e;margin:0 0 4px;">Important Notice</p>
+            <p style="font-size:10px;color:#a16207;margin:0;line-height:1.5;">
+              This is an AI-powered skin assessment tool for informational purposes only.
+              It is <strong>not medical advice</strong> and does not replace consultation with a dermatologist or healthcare professional.
+              Results are based on image analysis and self-reported information.
+            </p>
+          </div>
+        </div>
+      `;
+      messagesContainer.appendChild(disclaimerDiv);
+    }
+
     getFallbackResponse(userMessage) {
       // Provide fallback conversational responses following the 6 mandatory questions
       const messageCount = this.state.consultationMessages?.length || 0;
@@ -6097,10 +6126,11 @@
         if (ageMatch) {
           this.state.collectedInfo.age = parseInt(ageMatch[0], 10);
         }
-        // Move to Question 2: Main concern + duration
+        // Move to Question 2: Main concern + duration (MULTI-SELECT)
         return {
-          message: "Thanks! Now, what exactly is bothering you about your skin — and how long has it been going on? Understanding the duration helps me identify if it's acute, chronic, or hormonal.",
-          quickResponses: ['Acne (recent)', 'Acne (long-term)', 'Pigmentation/dark spots', 'Dryness/sensitivity', 'Aging concerns', 'Multiple issues']
+          message: "Thanks! Now, what exactly is bothering you about your skin — and how long has it been going on? You can select multiple concerns if applicable.",
+          quickResponses: ['Acne (recent)', 'Acne (long-term)', 'Pigmentation/dark spots', 'Dryness/sensitivity', 'Oily skin', 'Aging/wrinkles', 'Dark circles', 'Uneven texture'],
+          allowMultiple: true
         };
       }
 
@@ -6113,30 +6143,33 @@
         };
       }
 
-      // Question 3: Routine response -> Question 4: Medical conditions
+      // Question 3: Routine response -> Question 4: Medical conditions (MULTI-SELECT)
       if (messageCount <= 6) {
         this.state.collectedInfo.routine = userMessage;
         return {
-          message: "Good to know. Do you have any medical conditions like PCOS, thyroid issues, or diabetes? Are you on any medications including birth control or steroids? Internal health directly affects skin.",
-          quickResponses: ['No conditions', 'PCOS', 'Thyroid issues', 'On birth control', 'Other medications', 'Prefer not to say']
+          message: "Good to know. Do you have any medical conditions that might affect your skin? Select all that apply. This helps me understand potential underlying factors.",
+          quickResponses: ['No conditions', 'PCOS', 'Thyroid issues', 'Diabetes', 'On birth control', 'On acne medication', 'Allergies', 'Prefer not to say'],
+          allowMultiple: true
         };
       }
 
-      // Question 4: Medical response -> Question 5: Recent changes
+      // Question 4: Medical response -> Question 5: Recent changes (MULTI-SELECT)
       if (messageCount <= 8) {
         this.state.collectedInfo.medical = userMessage;
         return {
-          message: "Have you recently changed anything? New skincare product, travel, stress spike, diet change, or weather shift? Skin often reacts to transitions.",
-          quickResponses: ['New products', 'High stress lately', 'Diet/lifestyle change', 'Weather/travel', 'Nothing changed', 'Multiple changes']
+          message: "Have you recently changed anything in your life? Select all that apply — skin often reacts to transitions.",
+          quickResponses: ['New skincare products', 'High stress lately', 'Diet change', 'Sleep issues', 'Weather/travel', 'New exercise routine', 'Nothing changed'],
+          allowMultiple: true
         };
       }
 
-      // Question 5: Changes response -> Question 6: Family history
+      // Question 5: Changes response -> Question 6: Family history (MULTI-SELECT)
       if (messageCount <= 10) {
         this.state.collectedInfo.recentChanges = userMessage;
         return {
-          message: "Last question — is there any family history of skin issues like acne scarring, pigmentation (melasma), eczema, or hair thinning? Genetics play a significant role.",
-          quickResponses: ['Yes, acne/scarring', 'Yes, pigmentation', 'Yes, eczema/psoriasis', 'Yes, hair issues', 'No family history', 'Not sure']
+          message: "Last question — is there any family history of skin issues? Genetics can play a significant role. Select all that apply.",
+          quickResponses: ['Acne/scarring', 'Pigmentation/melasma', 'Eczema/psoriasis', 'Rosacea', 'Early aging', 'No family history', 'Not sure'],
+          allowMultiple: true
         };
       }
 
@@ -6144,20 +6177,91 @@
       this.state.collectedInfo.familyHistory = userMessage;
       setTimeout(() => this.showRevealResultsButton(), 100);
       return {
-        message: "Thank you for sharing all of that! I now have a complete picture of your skin health, concerns, routine, and history. Your personalized analysis is ready — click below to see your results.",
+        message: "Thank you for sharing all of that! I now have a complete picture of your skin health, concerns, routine, and history.\n\nRemember: This assessment is for informational purposes only and should not replace professional medical advice.\n\nYour personalized analysis is ready — click below to see your results.",
         quickResponses: null
       };
     }
 
-    showCustomQuickResponses(options) {
+    showCustomQuickResponses(options, allowMultiple = false) {
       const quickResponses = document.getElementById('flashai-vto-quick-responses');
       if (!quickResponses || !options) return;
 
-      quickResponses.innerHTML = options.map(opt => `
-        <button class="flashai-vto-quick-response-btn" onclick="window.flashAIWidget.selectQuickResponse('${opt.replace(/'/g, "\\'")}')">
-          ${opt}
-        </button>
-      `).join('');
+      // Reset selected responses for new question
+      this.state.selectedResponses = [];
+
+      if (allowMultiple) {
+        // Multi-select mode
+        quickResponses.innerHTML = `
+          <div class="flashai-vto-multiselect-hint" style="width:100%;text-align:center;font-size:11px;color:#71717a;margin-bottom:8px;">
+            ✓ Select all that apply
+          </div>
+          <div class="flashai-vto-quick-responses-grid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+            ${options.map(opt => `
+              <button class="flashai-vto-quick-response-btn flashai-vto-multiselect"
+                      data-value="${opt.replace(/"/g, '&quot;')}"
+                      onclick="window.flashAIWidget.toggleMultiSelect(this, '${opt.replace(/'/g, "\\'")}')">
+                ${opt}
+              </button>
+            `).join('')}
+          </div>
+          <button class="flashai-vto-continue-btn" onclick="window.flashAIWidget.submitMultiSelect()"
+                  style="width:100%;margin-top:12px;padding:12px 20px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;opacity:0.5;pointer-events:none;transition:all 0.2s;">
+            Continue →
+          </button>
+        `;
+      } else {
+        // Single select mode (original behavior)
+        quickResponses.innerHTML = options.map(opt => `
+          <button class="flashai-vto-quick-response-btn" onclick="window.flashAIWidget.selectQuickResponse('${opt.replace(/'/g, "\\'")}')">
+            ${opt}
+          </button>
+        `).join('');
+      }
+    }
+
+    toggleMultiSelect(btn, value) {
+      const isSelected = btn.classList.contains('selected');
+
+      if (isSelected) {
+        btn.classList.remove('selected');
+        btn.style.background = '#fff';
+        btn.style.borderColor = '#e4e4e7';
+        btn.style.color = '#3f3f46';
+        this.state.selectedResponses = this.state.selectedResponses.filter(v => v !== value);
+      } else {
+        btn.classList.add('selected');
+        btn.style.background = 'linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%)';
+        btn.style.borderColor = '#8b5cf6';
+        btn.style.color = '#7c3aed';
+        this.state.selectedResponses.push(value);
+      }
+
+      // Update continue button state
+      const continueBtn = document.querySelector('.flashai-vto-continue-btn');
+      if (continueBtn) {
+        const hasSelections = this.state.selectedResponses.length > 0;
+        continueBtn.style.opacity = hasSelections ? '1' : '0.5';
+        continueBtn.style.pointerEvents = hasSelections ? 'auto' : 'none';
+      }
+    }
+
+    submitMultiSelect() {
+      if (!this.state.selectedResponses || this.state.selectedResponses.length === 0) {
+        return;
+      }
+
+      // Join selected responses
+      const combinedResponse = this.state.selectedResponses.join(', ');
+
+      // Put in input and send
+      const chatInput = document.getElementById('flashai-vto-chat-input');
+      if (chatInput) {
+        chatInput.value = combinedResponse;
+        this.sendChatMessage();
+      }
+
+      // Reset
+      this.state.selectedResponses = [];
     }
 
     showContextualQuickResponses(aiMessage) {
