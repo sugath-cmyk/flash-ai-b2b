@@ -4193,8 +4193,9 @@
       } else if (step === 'facescan') {
         this.startFaceCamera();
       } else if (step === 'face-processing') {
-        // Start AI consultation immediately while analysis runs
-        this.initSkincareConsultation();
+        // NOTE: Consultation is started from analyzeFaceScan() AFTER scanId is obtained
+        // Don't start here - it runs before the upload completes
+        console.log('[Skincare AI] Face processing step shown, waiting for scanId...');
       } else if (step === 'face-consultation') {
         // Legacy - now handled by face-processing
         this.initSkincareConsultation();
@@ -5471,6 +5472,10 @@
         }
 
         this.state.faceScanId = scanId;
+
+        // NOW start the AI consultation - we have the scanId
+        console.log('[Skincare AI] ScanId obtained, starting consultation...');
+        this.initSkincareConsultation();
 
         // Start progress animation
         this.animateFaceScanProgress();
@@ -6926,7 +6931,7 @@
       const grid = document.getElementById('flashai-vto-concerns-grid');
       if (!grid || !analysis) return;
 
-      // Define concern card configurations with visual styling
+      // Define concern card configurations with real skin images
       const concernConfigs = [
         {
           key: 'acne',
@@ -6934,8 +6939,8 @@
           scoreKey: 'acne_score',
           threshold: 25,
           gradient: 'linear-gradient(135deg, #fecaca 0%, #fca5a5 50%, #f87171 100%)',
-          icon: '🔴',
-          imageUrl: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=200&h=200&fit=crop&crop=faces'
+          // Real acne skin image
+          imageUrl: 'https://images.pexels.com/photos/5069432/pexels-photo-5069432.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'dark_circles',
@@ -6943,8 +6948,8 @@
           scoreKey: 'under_eye_darkness',
           threshold: 35,
           gradient: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%)',
-          icon: '👁️',
-          imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&h=200&fit=crop&crop=faces'
+          // Under eye area image
+          imageUrl: 'https://images.pexels.com/photos/3762879/pexels-photo-3762879.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'pigmentation',
@@ -6952,8 +6957,8 @@
           scoreKey: 'pigmentation_score',
           threshold: 30,
           gradient: 'linear-gradient(135deg, #fed7aa 0%, #fdba74 50%, #fb923c 100%)',
-          icon: '🟤',
-          imageUrl: 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=200&h=200&fit=crop&crop=faces'
+          // Skin pigmentation image
+          imageUrl: 'https://images.pexels.com/photos/3785147/pexels-photo-3785147.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'wrinkles',
@@ -6961,8 +6966,8 @@
           scoreKey: 'wrinkle_score',
           threshold: 20,
           gradient: 'linear-gradient(135deg, #fde68a 0%, #fcd34d 50%, #f59e0b 100%)',
-          icon: '〰️',
-          imageUrl: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=200&h=200&fit=crop&crop=faces'
+          // Anti-aging skin image
+          imageUrl: 'https://images.pexels.com/photos/3764119/pexels-photo-3764119.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'hydration',
@@ -6971,8 +6976,8 @@
           threshold: 60,
           isInverse: true,
           gradient: 'linear-gradient(135deg, #a5f3fc 0%, #67e8f9 50%, #22d3ee 100%)',
-          icon: '💧',
-          imageUrl: 'https://images.unsplash.com/photo-1596755389555-b8aef8a55e90?w=200&h=200&fit=crop&crop=faces'
+          // Hydration/moisturizing image
+          imageUrl: 'https://images.pexels.com/photos/3997379/pexels-photo-3997379.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'oiliness',
@@ -6980,8 +6985,8 @@
           scoreKey: 'oiliness_score',
           threshold: 35,
           gradient: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 50%, #facc15 100%)',
-          icon: '✨',
-          imageUrl: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&h=200&fit=crop&crop=faces'
+          // Oily skin image
+          imageUrl: 'https://images.pexels.com/photos/3764132/pexels-photo-3764132.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'redness',
@@ -6989,8 +6994,8 @@
           scoreKey: 'redness_score',
           threshold: 35,
           gradient: 'linear-gradient(135deg, #fecdd3 0%, #fda4af 50%, #fb7185 100%)',
-          icon: '🩹',
-          imageUrl: 'https://images.unsplash.com/photo-1523263685509-57c1d050d19b?w=200&h=200&fit=crop&crop=faces'
+          // Sensitive/redness skin image
+          imageUrl: 'https://images.pexels.com/photos/3762940/pexels-photo-3762940.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'texture',
@@ -6999,8 +7004,8 @@
           threshold: 40,
           isInverse: true,
           gradient: 'linear-gradient(135deg, #d9f99d 0%, #bef264 50%, #a3e635 100%)',
-          icon: '🧴',
-          imageUrl: 'https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=200&h=200&fit=crop&crop=faces'
+          // Skin texture close-up image
+          imageUrl: 'https://images.pexels.com/photos/3764533/pexels-photo-3764533.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         },
         {
           key: 'pores',
@@ -7009,8 +7014,8 @@
           threshold: 0.3,
           multiplier: 100,
           gradient: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%)',
-          icon: '🔍',
-          imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&h=200&fit=crop&crop=faces'
+          // Pores/skin detail image
+          imageUrl: 'https://images.pexels.com/photos/3762943/pexels-photo-3762943.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
         }
       ];
 
@@ -7100,17 +7105,19 @@
         `;
 
         card.innerHTML = `
-          <div style="position:relative;width:100%;padding-top:100%;overflow:hidden;">
-            <div style="position:absolute;inset:0;background:${concern.gradient};display:flex;align-items:center;justify-content:center;">
-              <span style="font-size:48px;opacity:0.6;">${concern.icon}</span>
+          <div style="position:relative;width:100%;padding-top:100%;overflow:hidden;border-radius:50%;margin:12px auto 0;width:calc(100% - 24px);">
+            <!-- Real Image with Gradient Overlay -->
+            <div style="position:absolute;inset:0;border-radius:50%;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.15);border:3px solid #fff;">
+              <img src="${concern.imageUrl}" alt="${concern.label}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.style.background='${concern.gradient}';" />
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.3) 100%);"></div>
             </div>
             <!-- Confidence Badge -->
-            <div style="position:absolute;top:8px;right:8px;padding:4px 10px;background:${confidenceColor};color:#fff;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+            <div style="position:absolute;top:4px;right:4px;padding:5px 12px;background:${confidenceColor};color:#fff;border-radius:14px;font-size:11px;font-weight:700;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,0.25);z-index:10;">
               ${concern.confidenceLabel}
             </div>
           </div>
-          <div style="padding:12px 10px;text-align:center;background:linear-gradient(180deg,#fafafa 0%,#fff 100%);">
-            <h4 style="font-size:12px;font-weight:700;color:#18181b;margin:0;line-height:1.3;">${concern.label}</h4>
+          <div style="padding:14px 10px 16px;text-align:center;">
+            <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;line-height:1.3;">${concern.label}</h4>
           </div>
         `;
 
