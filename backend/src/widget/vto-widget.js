@@ -6938,8 +6938,12 @@
 
       console.log('[Concern Cards] User face image available:', !!userFaceImage);
 
-      // Define concern configs with face regions for cropping/highlighting
-      // faceRegion is in percentage (0-100) of the image dimensions
+      // Define concern configs with ANATOMICALLY CORRECT face regions
+      // Percentages are based on standard face proportions:
+      // - Face typically occupies ~20-80% horizontally, ~15-85% vertically in a selfie
+      // - Eyes at ~30-35% from top
+      // - Nose at ~35-55% from top
+      // - Cheeks at ~35-65% from top, sides
       const concernConfigs = [
         {
           key: 'acne',
@@ -6948,7 +6952,7 @@
           threshold: 25,
           highlightColor: 'rgba(239, 68, 68, 0.35)',
           borderColor: '#ef4444',
-          faceRegion: { x: 15, y: 45, w: 70, h: 40 } // Cheeks & Chin
+          faceRegion: { x: 15, y: 45, w: 70, h: 35 } // Cheeks, jawline & chin area
         },
         {
           key: 'dark_circles',
@@ -6957,7 +6961,7 @@
           threshold: 35,
           highlightColor: 'rgba(139, 92, 246, 0.35)',
           borderColor: '#8b5cf6',
-          faceRegion: { x: 15, y: 25, w: 70, h: 25 } // Under eyes
+          faceRegion: { x: 20, y: 32, w: 60, h: 12 } // UNDER EYES - narrow horizontal band below eye level
         },
         {
           key: 'pigmentation',
@@ -6966,7 +6970,7 @@
           threshold: 30,
           highlightColor: 'rgba(251, 146, 60, 0.35)',
           borderColor: '#fb923c',
-          faceRegion: { x: 10, y: 20, w: 80, h: 50 } // Cheeks & Forehead
+          faceRegion: { x: 15, y: 35, w: 70, h: 30 } // Cheeks & upper face
         },
         {
           key: 'wrinkles',
@@ -6975,7 +6979,7 @@
           threshold: 20,
           highlightColor: 'rgba(245, 158, 11, 0.35)',
           borderColor: '#f59e0b',
-          faceRegion: { x: 10, y: 5, w: 80, h: 35 } // Forehead & Eyes
+          faceRegion: { x: 20, y: 18, w: 60, h: 20 } // Forehead & crow's feet area
         },
         {
           key: 'hydration',
@@ -6985,7 +6989,7 @@
           isInverse: true,
           highlightColor: 'rgba(34, 211, 238, 0.35)',
           borderColor: '#22d3ee',
-          faceRegion: { x: 5, y: 5, w: 90, h: 90 } // Full face
+          faceRegion: { x: 15, y: 25, w: 70, h: 55 } // Full face area
         },
         {
           key: 'oiliness',
@@ -6994,7 +6998,7 @@
           threshold: 35,
           highlightColor: 'rgba(250, 204, 21, 0.35)',
           borderColor: '#facc15',
-          faceRegion: { x: 25, y: 10, w: 50, h: 55 } // T-Zone
+          faceRegion: { x: 30, y: 18, w: 40, h: 45 } // T-Zone: forehead down through nose
         },
         {
           key: 'redness',
@@ -7003,7 +7007,7 @@
           threshold: 35,
           highlightColor: 'rgba(251, 113, 133, 0.35)',
           borderColor: '#fb7185',
-          faceRegion: { x: 10, y: 35, w: 80, h: 35 } // Cheeks
+          faceRegion: { x: 15, y: 40, w: 70, h: 25 } // Cheeks area
         },
         {
           key: 'texture',
@@ -7013,7 +7017,7 @@
           isInverse: true,
           highlightColor: 'rgba(163, 230, 53, 0.35)',
           borderColor: '#a3e635',
-          faceRegion: { x: 10, y: 15, w: 80, h: 70 } // Overall skin
+          faceRegion: { x: 20, y: 30, w: 60, h: 40 } // Central face area
         },
         {
           key: 'pores',
@@ -7023,7 +7027,7 @@
           multiplier: 100,
           highlightColor: 'rgba(165, 180, 252, 0.35)',
           borderColor: '#a5b4fc',
-          faceRegion: { x: 30, y: 35, w: 40, h: 35 } // Nose area
+          faceRegion: { x: 35, y: 40, w: 30, h: 25 } // Nose & immediate surrounding area
         }
       ];
 
@@ -7095,18 +7099,13 @@
         return;
       }
 
-      // Render concern cards using USER'S ACTUAL FACE
+      // Render concern cards - show FULL FACE with HIGHLIGHT BOX on affected area
       detectedConcerns.forEach((concern, index) => {
         const confidenceColor = concern.confidenceLabel === 'High' ? '#ef4444' :
                                concern.confidenceLabel === 'Moderate' ? '#f59e0b' : '#22c55e';
 
-        // Calculate crop position to show the affected region of user's face
-        // faceRegion is in percentage, we use it for object-position
-        const region = concern.faceRegion || { x: 50, y: 50, w: 100, h: 100 };
-        const cropX = region.x + (region.w / 2); // Center of region
-        const cropY = region.y + (region.h / 2);
-        // Zoom factor - smaller regions get more zoom
-        const zoomFactor = Math.max(150, 300 - (region.w + region.h));
+        // Region where the concern is located (percentage of image)
+        const region = concern.faceRegion || { x: 10, y: 10, w: 80, h: 80 };
 
         const card = document.createElement('div');
         card.className = 'flashai-vto-concern-card';
@@ -7120,28 +7119,30 @@
           cursor:pointer;
         `;
 
-        // Use user's actual face image with cropping to show the affected region
+        // Show full face image with a highlight box on the affected region
         const imageHTML = userFaceImage ?
-          `<img src="${userFaceImage}" alt="Your skin - ${concern.label}"
-                style="width:${zoomFactor}%;height:${zoomFactor}%;object-fit:cover;object-position:${cropX}% ${cropY}%;transform:translate(-${(zoomFactor-100)/2}%,-${(zoomFactor-100)/2}%);" />` :
+          `<img src="${userFaceImage}" alt="Your skin - ${concern.label}" style="width:100%;height:100%;object-fit:cover;" />` :
           `<div style="width:100%;height:100%;background:#f4f4f5;display:flex;align-items:center;justify-content:center;color:#a1a1aa;font-size:11px;">No image</div>`;
 
         card.innerHTML = `
-          <div style="position:relative;width:calc(100% - 20px);padding-top:calc(100% - 20px);overflow:hidden;border-radius:16px;margin:10px auto 0;">
-            <!-- User's Face Image (cropped to affected region) -->
-            <div style="position:absolute;inset:0;border-radius:16px;overflow:hidden;box-shadow:inset 0 0 20px ${concern.highlightColor || 'rgba(0,0,0,0.1)'};">
+          <div style="position:relative;width:calc(100% - 16px);padding-top:calc(100% - 16px);overflow:hidden;border-radius:12px;margin:8px auto 0;">
+            <!-- User's FULL Face Image -->
+            <div style="position:absolute;inset:0;border-radius:12px;overflow:hidden;">
               ${imageHTML}
-              <!-- Highlight overlay showing the concern area -->
-              <div style="position:absolute;inset:0;background:${concern.highlightColor || 'rgba(139,92,246,0.2)'};mix-blend-mode:multiply;"></div>
-              <div style="position:absolute;inset:0;border:3px solid ${concern.borderColor || '#8b5cf6'};border-radius:16px;"></div>
+              <!-- Semi-transparent overlay to dim areas outside the concern region -->
+              <div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);"></div>
+              <!-- Cutout highlight showing the affected region clearly -->
+              <div style="position:absolute;left:${region.x}%;top:${region.y}%;width:${region.w}%;height:${region.h}%;
+                          background:transparent;border:3px solid ${concern.borderColor || '#8b5cf6'};border-radius:8px;
+                          box-shadow:0 0 0 1000px rgba(0,0,0,0.35);z-index:5;"></div>
             </div>
             <!-- Confidence Badge -->
             <div style="position:absolute;top:6px;right:6px;padding:5px 12px;background:${confidenceColor};color:#fff;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,0.3);z-index:10;">
               ${concern.confidenceLabel}
             </div>
           </div>
-          <div style="padding:12px 10px 14px;text-align:center;">
-            <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;line-height:1.3;">${concern.label}</h4>
+          <div style="padding:10px 8px 12px;text-align:center;">
+            <h4 style="font-size:12px;font-weight:700;color:#18181b;margin:0;line-height:1.3;">${concern.label}</h4>
           </div>
         `;
 
