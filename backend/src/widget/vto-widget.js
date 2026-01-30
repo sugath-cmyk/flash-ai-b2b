@@ -6087,43 +6087,64 @@
     }
 
     getFallbackResponse(userMessage) {
-      // Provide fallback conversational responses when AI isn't available
+      // Provide fallback conversational responses following the 6 mandatory questions
       const messageCount = this.state.consultationMessages?.length || 0;
-      const lowerMsg = userMessage.toLowerCase();
+      this.state.collectedInfo = this.state.collectedInfo || {};
 
-      // Check for age response (first question)
+      // Question 1: Age (first response after age question)
       if (messageCount <= 2) {
         const ageMatch = userMessage.match(/\d+/);
         if (ageMatch) {
-          this.state.collectedInfo = this.state.collectedInfo || {};
           this.state.collectedInfo.age = parseInt(ageMatch[0], 10);
         }
+        // Move to Question 2: Main concern + duration
         return {
-          message: "Thanks for sharing! Now, tell me about your current skincare routine. What products do you use in the morning and evening?",
-          quickResponses: ['Basic (cleanser + moisturizer)', 'Multi-step routine', 'Minimal / none', 'Varies a lot']
+          message: "Thanks! Now, what exactly is bothering you about your skin — and how long has it been going on? Understanding the duration helps me identify if it's acute, chronic, or hormonal.",
+          quickResponses: ['Acne (recent)', 'Acne (long-term)', 'Pigmentation/dark spots', 'Dryness/sensitivity', 'Aging concerns', 'Multiple issues']
         };
       }
 
-      // Routine question
+      // Question 2: Main concern response -> Question 3: Current routine
       if (messageCount <= 4) {
+        this.state.collectedInfo.mainConcern = userMessage;
         return {
-          message: "Got it! How does your skin typically feel after cleansing? This helps me understand your skin type better.",
-          quickResponses: ['Tight and dry', 'Normal and balanced', 'Still oily', 'Combination (varies)']
+          message: "I understand. Walk me through your current skincare routine — both morning and night. What cleanser, actives (like retinol or acids), moisturizer, and sunscreen do you use?",
+          quickResponses: ['Basic (cleanser + moisturizer)', 'Full routine with actives', 'Minimal/no routine', 'Inconsistent routine']
         };
       }
 
-      // Skin feel question
+      // Question 3: Routine response -> Question 4: Medical conditions
       if (messageCount <= 6) {
+        this.state.collectedInfo.routine = userMessage;
         return {
-          message: "I understand. Do you use sunscreen daily? Sun protection is crucial for skin health.",
-          quickResponses: ['Yes, daily', 'Only outdoors', 'Sometimes', 'Rarely or never']
+          message: "Good to know. Do you have any medical conditions like PCOS, thyroid issues, or diabetes? Are you on any medications including birth control or steroids? Internal health directly affects skin.",
+          quickResponses: ['No conditions', 'PCOS', 'Thyroid issues', 'On birth control', 'Other medications', 'Prefer not to say']
         };
       }
 
-      // Ready for results - show the reveal button
+      // Question 4: Medical response -> Question 5: Recent changes
+      if (messageCount <= 8) {
+        this.state.collectedInfo.medical = userMessage;
+        return {
+          message: "Have you recently changed anything? New skincare product, travel, stress spike, diet change, or weather shift? Skin often reacts to transitions.",
+          quickResponses: ['New products', 'High stress lately', 'Diet/lifestyle change', 'Weather/travel', 'Nothing changed', 'Multiple changes']
+        };
+      }
+
+      // Question 5: Changes response -> Question 6: Family history
+      if (messageCount <= 10) {
+        this.state.collectedInfo.recentChanges = userMessage;
+        return {
+          message: "Last question — is there any family history of skin issues like acne scarring, pigmentation (melasma), eczema, or hair thinning? Genetics play a significant role.",
+          quickResponses: ['Yes, acne/scarring', 'Yes, pigmentation', 'Yes, eczema/psoriasis', 'Yes, hair issues', 'No family history', 'Not sure']
+        };
+      }
+
+      // Question 6 answered - Ready for results
+      this.state.collectedInfo.familyHistory = userMessage;
       setTimeout(() => this.showRevealResultsButton(), 100);
       return {
-        message: "Thank you for sharing all of that! I now have a good understanding of your skin. Your personalized analysis is ready - click below to see your results.",
+        message: "Thank you for sharing all of that! I now have a complete picture of your skin health, concerns, routine, and history. Your personalized analysis is ready — click below to see your results.",
         quickResponses: null
       };
     }
@@ -6291,20 +6312,20 @@
 
       // Show "See Results" button when both conditions are met:
       // 1. Analysis is complete
-      // 2. User has had at least 3 exchanges (meaningful conversation)
+      // 2. User has answered all 6 mandatory questions (12+ messages)
       const messageCount = this.state.consultationMessages?.length || 0;
       const resultsReadyDiv = document.getElementById('flashai-vto-results-ready');
 
-      if (this.state.analysisComplete && messageCount >= 6) {
-        // Show the "See Results" button
+      if (this.state.analysisComplete && messageCount >= 12) {
+        // Show the "See Results" button - all 6 questions answered
         if (resultsReadyDiv) {
           resultsReadyDiv.style.display = 'block';
         }
 
         // Mark consultation as complete
         this.state.consultationComplete = true;
-      } else if (this.state.analysisComplete && messageCount >= 4) {
-        // After minimum conversation, show a subtle hint
+      } else if (this.state.analysisComplete && messageCount >= 8) {
+        // After 4+ questions, show a subtle hint (user can proceed early if they want)
         if (resultsReadyDiv) {
           resultsReadyDiv.style.display = 'block';
           resultsReadyDiv.style.opacity = '0.8';
