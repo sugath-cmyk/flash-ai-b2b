@@ -67,12 +67,38 @@ Your goal is to gather information about the user's skin concerns, habits, and h
 - Facial scan data with skin surface signals: tone, redness, texture, pore visibility, pigmentation patterns, hydration, and various scores
 - User responses during conversation
 
+## USING ML ANALYSIS DATA - IMPORTANT
+
+You will receive the ML scan analysis as "Current Face Scan Data". USE THIS INTELLIGENTLY:
+
+### Validating User Concerns
+- When user mentions a concern, CHECK if the ML data supports it
+- If ML shows "Moderate concern" or worse for acne, and user mentions acne → VALIDATE: "I can see from your scan that there are some visible signs of that"
+- If user mentions a concern but ML shows "Good" or "Excellent" → DON'T contradict, but note: "Your scan looks relatively good in that area, but let's explore what you're experiencing"
+
+### Probing Unmentioned Issues
+- If ML shows "Notable concern" or "Significant concern" for something user DIDN'T mention, GENTLY ask:
+  - "I noticed your scan shows some [hydration/texture/etc] patterns - is that something you've been aware of?"
+  - "Your scan picked up some [issue] - would you like to include that in your assessment?"
+
+### Correlation Examples
+- ML shows high acne score + user says "acne for years" → ACKNOWLEDGE: "Yes, I can see signs of that in your scan"
+- ML shows low hydration + user mentions "dry skin" → VALIDATE: "That matches what I see - hydration appears to be an area to focus on"
+- ML shows high pigmentation + user only mentions "acne" → PROBE: "I also notice some uneven tone in your scan - is pigmentation a concern too?"
+
+### Key Phrases to Use
+- "Your scan suggests..." (not "you have")
+- "I notice some patterns that might indicate..."
+- "This aligns with what I see in your analysis"
+- "Your scan shows relatively good results in that area"
+
 ## Primary Objective
 
-1. Analyze the facial scan to detect visible patterns and anomalies.
-2. Ask the 6 MANDATORY questions to uncover invisible root causes.
-3. Build a probabilistic understanding of the user's skin, not absolute conclusions.
-4. Only after gathering all information, indicate readiness to show analysis.
+1. Use the facial scan data to VALIDATE and CORRELATE with user responses
+2. Ask the 6 MANDATORY questions while referencing scan findings where relevant
+3. Gently probe if ML detected issues the user didn't mention
+4. Build a complete picture combining ML data + user input
+5. Only after gathering all information, indicate readiness to show analysis
 
 ## THE 6 MANDATORY QUESTIONS (Ask in Order)
 
@@ -114,41 +140,41 @@ Probe for:
 
 Common issues: over-exfoliation, ingredient clashes, no sunscreen
 
-### Question 4: Medical Conditions & Medications
-"Do you have any medical conditions or are you currently on any medications?"
+### Question 4: ADAPTIVE - Based on ML Findings (Medical/Lifestyle)
+IMPORTANT: Tailor this question based on what the scan detected:
 
-Especially important:
-- PCOS
-- Thyroid issues
-- Diabetes
-- Steroids (topical or oral)
-- Birth control
-- Isotretinoin history
+IF scan shows ACNE concerns:
+"Since I see some acne patterns in your scan, I'd like to understand potential triggers. Is your acne hormonal (cycle-related), stress-related, or do you notice diet triggers?"
 
-Internal health directly affects skin.
+IF scan shows PIGMENTATION concerns:
+"Your scan shows some uneven tone. Sun exposure often plays a role. Do you use sunscreen daily? Any history of sunburns or tanning?"
 
-### Question 5: Recent Changes
-"Have you recently changed anything in your life or routine?"
+IF scan shows HYDRATION/DRYNESS concerns:
+"Your scan suggests hydration needs attention. How much water do you drink daily? Do you moisturize consistently?"
 
-Ask about:
-- New skincare product
-- Travel or weather change
-- Stress spike
-- Diet change
-- New workout routine
-- Moving to new location
+IF scan shows REDNESS concerns:
+"I notice some redness patterns. Does your skin react easily to products? Any history of sensitivity, rosacea, or eczema?"
 
-Skin often reacts to transitions.
+IF scan shows AGING/WRINKLE concerns:
+"Your scan shows some fine line patterns. How's your sleep been? Do you use sun protection regularly?"
 
-### Question 6: Family History
-"Is there any family history of skin issues like acne scarring, pigmentation, eczema, or hair thinning?"
+### Question 5: Recent Changes - CONTEXTUAL
+Tailor based on user's concerns AND scan findings:
 
-Genetic factors:
-- Acne scarring tendency
-- Melasma
-- Eczema
-- Psoriasis
-- Hair thinning patterns
+For ACNE: "Have you changed products, started/stopped birth control, or been under more stress?"
+For DRYNESS: "Has the weather changed? Started a new cleanser? AC or heating exposure?"
+For PIGMENTATION: "More sun exposure lately? Any hormonal changes?"
+For REDNESS: "New products? Increased stress? Dietary changes?"
+
+### Question 6: Family History - RELEVANT ONLY
+Only ask about family history relevant to detected concerns:
+
+For ACNE: "Does acne or scarring run in your family?"
+For PIGMENTATION: "Any family history of melasma or hyperpigmentation?"
+For REDNESS: "Family history of rosacea, eczema, or sensitive skin?"
+For AGING: "How did your parents' skin age?"
+
+Skip asking about conditions the scan shows NO concern for.
 
 ## Conversation Flow
 
@@ -419,6 +445,8 @@ class SkincareAIService {
 
   private buildScanContext(analysis: FaceScanAnalysis): string {
     const lines: string[] = [];
+    const concerns: string[] = [];
+    const strengths: string[] = [];
 
     if (analysis.skinTone) {
       lines.push(`Skin Tone: ${analysis.skinTone}`);
@@ -426,35 +454,47 @@ class SkincareAIService {
     if (analysis.skinUndertone) {
       lines.push(`Undertone: ${analysis.skinUndertone}`);
     }
-    if (analysis.skinScore !== undefined) {
-      lines.push(`Overall Skin Health: ${this.scoreToDescription(analysis.skinScore)}`);
-    }
-    if (analysis.acneScore !== undefined) {
-      lines.push(`Acne Presence: ${this.scoreToDescription(analysis.acneScore, true)}`);
-    }
-    if (analysis.wrinkleScore !== undefined) {
-      lines.push(`Fine Lines/Wrinkles: ${this.scoreToDescription(analysis.wrinkleScore, true)}`);
-    }
-    if (analysis.pigmentationScore !== undefined) {
-      lines.push(`Pigmentation Irregularity: ${this.scoreToDescription(analysis.pigmentationScore, true)}`);
-    }
-    if (analysis.hydrationScore !== undefined) {
-      lines.push(`Hydration Level: ${this.scoreToDescription(analysis.hydrationScore)}`);
-    }
-    if (analysis.textureScore !== undefined) {
-      lines.push(`Skin Texture: ${this.scoreToDescription(analysis.textureScore)}`);
-    }
-    if (analysis.rednessScore !== undefined) {
-      lines.push(`Redness/Inflammation: ${this.scoreToDescription(analysis.rednessScore, true)}`);
-    }
-    if (analysis.darkCirclesScore !== undefined) {
-      lines.push(`Under-eye Darkness: ${this.scoreToDescription(analysis.darkCirclesScore, true)}`);
-    }
-    if (analysis.poreScore !== undefined) {
-      lines.push(`Pore Visibility: ${this.scoreToDescription(analysis.poreScore, true)}`);
+
+    // Track scores and categorize as concerns or strengths
+    const metrics: { name: string; score: number | undefined; inverse: boolean }[] = [
+      { name: 'Overall Skin Health', score: analysis.skinScore, inverse: false },
+      { name: 'Acne', score: analysis.acneScore, inverse: true },
+      { name: 'Fine Lines/Wrinkles', score: analysis.wrinkleScore, inverse: true },
+      { name: 'Pigmentation/Uneven Tone', score: analysis.pigmentationScore, inverse: true },
+      { name: 'Hydration', score: analysis.hydrationScore, inverse: false },
+      { name: 'Skin Texture', score: analysis.textureScore, inverse: false },
+      { name: 'Redness/Inflammation', score: analysis.rednessScore, inverse: true },
+      { name: 'Dark Circles', score: analysis.darkCirclesScore, inverse: true },
+      { name: 'Pore Visibility', score: analysis.poreScore, inverse: true },
+    ];
+
+    for (const metric of metrics) {
+      if (metric.score === undefined) continue;
+
+      const description = this.scoreToDescription(metric.score, metric.inverse);
+      lines.push(`${metric.name}: ${description} (raw: ${metric.score})`);
+
+      // Categorize based on normalized score
+      const normalizedScore = metric.inverse ? 100 - metric.score : metric.score;
+      if (normalizedScore < 40) {
+        concerns.push(`${metric.name} (${description})`);
+      } else if (normalizedScore >= 70) {
+        strengths.push(metric.name);
+      }
     }
 
-    return lines.join('\n');
+    // Add summary sections for AI to reference easily
+    let summary = lines.join('\n');
+
+    if (concerns.length > 0) {
+      summary += `\n\n### ML-DETECTED CONCERNS (mention these if user doesn't):\n- ${concerns.join('\n- ')}`;
+    }
+
+    if (strengths.length > 0) {
+      summary += `\n\n### AREAS LOOKING GOOD:\n- ${strengths.join('\n- ')}`;
+    }
+
+    return summary;
   }
 
   private scoreToDescription(score: number, inverseScale: boolean = false): string {

@@ -6115,10 +6115,59 @@
       messagesContainer.appendChild(disclaimerDiv);
     }
 
+    // Helper to extract ML-detected concerns from analysis
+    getMLDetectedConcerns() {
+      const scan = this.state.pendingFaceScan || this.state.faceScan;
+      const analysis = scan?.analysis;
+      if (!analysis) return { concerns: [], strengths: [] };
+
+      const concerns = [];
+      const strengths = [];
+
+      // Check each metric - lower scores (for inverse metrics) or higher scores mean concerns
+      const metrics = [
+        { key: 'acne_score', name: 'acne', threshold: 30, inverse: true },
+        { key: 'wrinkle_score', name: 'fine lines', threshold: 30, inverse: true },
+        { key: 'pigmentation_score', name: 'uneven skin tone', threshold: 30, inverse: true },
+        { key: 'hydration_score', name: 'hydration', threshold: 40, inverse: false },
+        { key: 'texture_score', name: 'skin texture', threshold: 40, inverse: false },
+        { key: 'redness_score', name: 'redness', threshold: 30, inverse: true },
+        { key: 'under_eye_darkness', name: 'dark circles', threshold: 30, inverse: true },
+        { key: 'pore_size_average', name: 'visible pores', threshold: 0.4, inverse: true },
+        { key: 'oiliness_score', name: 'oiliness', threshold: 60, inverse: true },
+      ];
+
+      for (const metric of metrics) {
+        const value = analysis[metric.key];
+        if (value === undefined || value === null) continue;
+
+        if (metric.inverse) {
+          // Higher value = worse (acne, wrinkles, etc.)
+          if (value > (100 - metric.threshold)) {
+            concerns.push(metric.name);
+          } else if (value < 30) {
+            strengths.push(metric.name);
+          }
+        } else {
+          // Lower value = worse (hydration, texture)
+          if (value < metric.threshold) {
+            concerns.push(metric.name);
+          } else if (value > 70) {
+            strengths.push(metric.name);
+          }
+        }
+      }
+
+      return { concerns, strengths };
+    }
+
     getFallbackResponse(userMessage) {
       // Provide fallback conversational responses following the 6 mandatory questions
       const messageCount = this.state.consultationMessages?.length || 0;
       this.state.collectedInfo = this.state.collectedInfo || {};
+
+      // Get ML-detected concerns to make conversation smarter
+      const mlData = this.getMLDetectedConcerns();
 
       // Question 1: Age (first response after age question)
       if (messageCount <= 2) {
@@ -6126,9 +6175,16 @@
         if (ageMatch) {
           this.state.collectedInfo.age = parseInt(ageMatch[0], 10);
         }
-        // Move to Question 2: Main concern + duration (MULTI-SELECT)
+
+        // Build question with ML context if available
+        let message = "Thanks! Now, what exactly is bothering you about your skin — and how long has it been going on?";
+        if (mlData.concerns.length > 0) {
+          message += `\n\nI can see from your scan there might be some patterns around ${mlData.concerns.slice(0, 2).join(' and ')} — is that something you've noticed?`;
+        }
+        message += " You can select multiple concerns.";
+
         return {
-          message: "Thanks! Now, what exactly is bothering you about your skin — and how long has it been going on? You can select multiple concerns if applicable.",
+          message,
           quickResponses: ['Acne (recent)', 'Acne (long-term)', 'Pigmentation/dark spots', 'Dryness/sensitivity', 'Oily skin', 'Aging/wrinkles', 'Dark circles', 'Uneven texture'],
           allowMultiple: true
         };
@@ -6137,47 +6193,146 @@
       // Question 2: Main concern response -> Question 3: Current routine
       if (messageCount <= 4) {
         this.state.collectedInfo.mainConcern = userMessage;
+
+        // Validate user concerns against ML findings
+        let message = "";
+        const userConcerns = userMessage.toLowerCase();
+        const mlConcerns = mlData.concerns.map(c => c.toLowerCase());
+
+        // Check if user mentioned concerns that ML also detected
+        const matchedConcerns = mlConcerns.filter(mc =>
+          userConcerns.includes(mc.split(' ')[0]) // Match first word
+        );
+
+        if (matchedConcerns.length > 0) {
+          message = `I can see that aligns with what your scan shows. `;
+        }
+
+        // Check if ML found concerns user didn't mention
+        const unmatchedMLConcerns = mlData.concerns.filter(mc =>
+          !userConcerns.includes(mc.split(' ')[0].toLowerCase())
+        );
+        if (unmatchedMLConcerns.length > 0 && unmatchedMLConcerns.length <= 2) {
+          message += `Your scan also picked up some ${unmatchedMLConcerns.join(' and ')} patterns — we'll factor that in. `;
+        }
+
+        message += "Walk me through your current skincare routine — both morning and night. What products do you use?";
+
         return {
-          message: "I understand. Walk me through your current skincare routine — both morning and night. What cleanser, actives (like retinol or acids), moisturizer, and sunscreen do you use?",
+          message,
           quickResponses: ['Basic (cleanser + moisturizer)', 'Full routine with actives', 'Minimal/no routine', 'Inconsistent routine']
         };
       }
 
-      // Question 3: Routine response -> Question 4: Medical conditions (MULTI-SELECT)
+      // Question 3: Routine response -> Question 4: Medical/Lifestyle (ADAPTIVE based on ML)
       if (messageCount <= 6) {
         this.state.collectedInfo.routine = userMessage;
-        return {
-          message: "Good to know. Do you have any medical conditions that might affect your skin? Select all that apply. This helps me understand potential underlying factors.",
-          quickResponses: ['No conditions', 'PCOS', 'Thyroid issues', 'Diabetes', 'On birth control', 'On acne medication', 'Allergies', 'Prefer not to say'],
-          allowMultiple: true
-        };
+
+        // Build ADAPTIVE question based on ML findings
+        let message = "";
+        let quickResponses = [];
+
+        // If acne detected, ask about hormonal factors
+        if (mlData.concerns.some(c => c.includes('acne'))) {
+          message = "Since your scan shows some acne patterns, I'd like to understand potential triggers. Are any of these factors relevant to you?";
+          quickResponses = ['Hormonal (cycle-related)', 'PCOS', 'On birth control', 'Stress-related breakouts', 'Diet triggers', 'None of these'];
+        }
+        // If pigmentation detected, ask about sun exposure
+        else if (mlData.concerns.some(c => c.includes('uneven') || c.includes('pigment'))) {
+          message = "Your scan shows some pigmentation patterns. Sun exposure and hormones often play a role. Which of these apply to you?";
+          quickResponses = ['Frequent sun exposure', 'Rarely use sunscreen', 'History of sunburns', 'Melasma/pregnancy-related', 'Post-acne marks', 'None of these'];
+        }
+        // If hydration issues, ask about water/moisturizing
+        else if (mlData.concerns.some(c => c.includes('hydration') || c.includes('dry'))) {
+          message = "Your scan suggests hydration might need attention. Let me understand your habits — which apply to you?";
+          quickResponses = ['Drink less than 6 glasses water/day', 'Skip moisturizer often', 'Use harsh cleansers', 'Dry/cold climate', 'Air conditioning frequently', 'None of these'];
+        }
+        // If redness detected, ask about sensitivity
+        else if (mlData.concerns.some(c => c.includes('redness'))) {
+          message = "I notice some redness patterns in your scan. This could be related to sensitivity or inflammation. Do any of these apply?";
+          quickResponses = ['Skin reacts to products easily', 'Flushing with heat/alcohol', 'Known eczema/rosacea', 'Allergies', 'Over-exfoliating', 'None of these'];
+        }
+        // Default medical question
+        else {
+          message = "Do you have any medical conditions that might affect your skin? Select all that apply.";
+          quickResponses = ['No conditions', 'PCOS', 'Thyroid issues', 'Diabetes', 'On birth control', 'Allergies', 'Prefer not to say'];
+        }
+
+        return { message, quickResponses, allowMultiple: true };
       }
 
-      // Question 4: Medical response -> Question 5: Recent changes (MULTI-SELECT)
+      // Question 4: Response -> Question 5: Recent changes (ADAPTIVE)
       if (messageCount <= 8) {
-        this.state.collectedInfo.medical = userMessage;
-        return {
-          message: "Have you recently changed anything in your life? Select all that apply — skin often reacts to transitions.",
-          quickResponses: ['New skincare products', 'High stress lately', 'Diet change', 'Sleep issues', 'Weather/travel', 'New exercise routine', 'Nothing changed'],
-          allowMultiple: true
-        };
+        this.state.collectedInfo.contextualFactors = userMessage;
+
+        // Build adaptive question based on user's reported concerns
+        let message = "Have you recently changed anything that might explain what you're experiencing?";
+        let quickResponses = [];
+
+        const userConcerns = (this.state.collectedInfo.mainConcern || '').toLowerCase();
+
+        // Tailor based on concerns
+        if (userConcerns.includes('acne') || mlData.concerns.some(c => c.includes('acne'))) {
+          message = "Breakouts often have triggers. Have any of these changed recently?";
+          quickResponses = ['New skincare/makeup products', 'Higher stress levels', 'Diet changes (dairy/sugar)', 'Started/stopped birth control', 'Touching face more', 'Nothing changed'];
+        } else if (userConcerns.includes('dry') || mlData.concerns.some(c => c.includes('hydration'))) {
+          message = "Dryness can be triggered by changes. Has anything shifted recently?";
+          quickResponses = ['Weather/season change', 'New heating/AC system', 'Changed cleanser', 'Less water intake', 'Travel', 'Nothing changed'];
+        } else if (userConcerns.includes('aging') || userConcerns.includes('wrinkle')) {
+          message = "Fine lines can be influenced by lifestyle. Any recent changes?";
+          quickResponses = ['Less sleep lately', 'Higher stress', 'More sun exposure', 'Diet changes', 'Less skincare routine', 'Nothing changed'];
+        } else {
+          quickResponses = ['New skincare products', 'High stress lately', 'Diet change', 'Sleep issues', 'Weather/travel', 'Nothing changed'];
+        }
+
+        return { message, quickResponses, allowMultiple: true };
       }
 
-      // Question 5: Changes response -> Question 6: Family history (MULTI-SELECT)
+      // Question 5: Changes response -> Question 6: Family history (ADAPTIVE)
       if (messageCount <= 10) {
         this.state.collectedInfo.recentChanges = userMessage;
-        return {
-          message: "Last question — is there any family history of skin issues? Genetics can play a significant role. Select all that apply.",
-          quickResponses: ['Acne/scarring', 'Pigmentation/melasma', 'Eczema/psoriasis', 'Rosacea', 'Early aging', 'No family history', 'Not sure'],
-          allowMultiple: true
-        };
+
+        // Only ask relevant family history based on detected concerns
+        let message = "Last question — is there any family history that might be relevant?";
+        let quickResponses = ['No family history', 'Not sure'];
+
+        // Add relevant options based on ML concerns
+        if (mlData.concerns.some(c => c.includes('acne'))) {
+          quickResponses.unshift('Family history of acne');
+        }
+        if (mlData.concerns.some(c => c.includes('pigment') || c.includes('uneven'))) {
+          quickResponses.unshift('Family history of pigmentation/melasma');
+        }
+        if (mlData.concerns.some(c => c.includes('redness'))) {
+          quickResponses.unshift('Family history of rosacea/eczema');
+        }
+        if (this.state.collectedInfo.age > 35 || mlData.concerns.some(c => c.includes('wrinkle') || c.includes('aging'))) {
+          quickResponses.unshift('Family shows early aging');
+        }
+
+        return { message, quickResponses, allowMultiple: true };
       }
 
       // Question 6 answered - Ready for results
       this.state.collectedInfo.familyHistory = userMessage;
       setTimeout(() => this.showRevealResultsButton(), 100);
+
+      // Build summary with ML findings
+      let summaryMessage = "Thank you for sharing all of that! I now have a complete picture combining:\n\n";
+      summaryMessage += "✓ Your reported concerns and history\n";
+      summaryMessage += "✓ Your skincare routine and lifestyle factors\n";
+
+      if (mlData.concerns.length > 0) {
+        summaryMessage += `✓ ML scan findings: ${mlData.concerns.slice(0, 3).join(', ')}\n`;
+      }
+      if (mlData.strengths.length > 0) {
+        summaryMessage += `✓ Positive areas: ${mlData.strengths.slice(0, 2).join(', ')}\n`;
+      }
+
+      summaryMessage += "\nRemember: This assessment is for informational purposes only and should not replace professional medical advice.\n\nYour personalized analysis is ready — click below to see your results.";
+
       return {
-        message: "Thank you for sharing all of that! I now have a complete picture of your skin health, concerns, routine, and history.\n\nRemember: This assessment is for informational purposes only and should not replace professional medical advice.\n\nYour personalized analysis is ready — click below to see your results.",
+        message: summaryMessage,
         quickResponses: null
       };
     }
