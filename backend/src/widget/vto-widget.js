@@ -594,55 +594,62 @@
               </div>
             </div>
 
-            <!-- AI Consultation Chat (Embedded) -->
-            <div style="flex:1;display:flex;flex-direction:column;min-height:350px;">
-              <!-- Chat Header -->
-              <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:12px 12px 0 0;border:1px solid #bbf7d0;border-bottom:none;">
-                <div style="width:40px;height:40px;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(34,197,94,0.3);">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+            <!-- AI Consultation Chat (Embedded & Primary) -->
+            <div style="flex:1;display:flex;flex-direction:column;min-height:380px;">
+              <!-- Chat Header - More Prominent -->
+              <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:12px 12px 0 0;box-shadow:0 4px 15px rgba(139,92,246,0.3);">
+                <div style="width:48px;height:48px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                     <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                   </svg>
                 </div>
                 <div style="flex:1;">
-                  <h3 style="font-size:14px;font-weight:700;color:#166534;margin:0;">Skin Expert AI</h3>
-                  <p style="font-size:11px;color:#15803d;margin:0;">Let's understand your skin while we analyze</p>
+                  <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0;">Skin Expert AI</h3>
+                  <p style="font-size:12px;color:rgba(255,255,255,0.85);margin:0;">Let me understand your skin to personalize your results</p>
                 </div>
+                <div style="width:10px;height:10px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite;"></div>
               </div>
 
-              <!-- Chat Messages -->
-              <div id="flashai-vto-chat-container" style="flex:1;overflow-y:auto;padding:16px;background:#fff;border:1px solid #e4e4e7;border-top:none;min-height:200px;max-height:280px;">
-                <div id="flashai-vto-chat-messages" style="display:flex;flex-direction:column;gap:12px;">
-                  <!-- Messages will be dynamically inserted here -->
-                </div>
+              <!-- Chat Messages - More Spacious -->
+              <div id="flashai-vto-chat-messages" style="flex:1;overflow-y:auto;padding:16px;background:linear-gradient(180deg,#fafafa 0%,#fff 100%);border:1px solid #e4e4e7;border-top:none;min-height:220px;max-height:300px;display:flex;flex-direction:column;gap:12px;">
+                <!-- Messages will be dynamically inserted here -->
               </div>
 
-              <!-- Chat Input -->
-              <div style="padding:12px;background:#f9fafb;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 12px 12px;">
-                <div style="display:flex;gap:8px;">
+              <!-- Chat Input - More Prominent -->
+              <div style="padding:14px;background:#fff;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 12px 12px;box-shadow:0 -4px 20px rgba(0,0,0,0.05);">
+                <div style="display:flex;gap:10px;">
                   <input
                     type="text"
                     id="flashai-vto-chat-input"
-                    placeholder="Type your response..."
-                    style="flex:1;padding:12px 16px;border:2px solid #e4e4e7;border-radius:25px;font-size:14px;outline:none;transition:border-color 0.2s;"
+                    placeholder="Type your answer..."
+                    style="flex:1;padding:14px 18px;border:2px solid #8b5cf6;border-radius:25px;font-size:15px;outline:none;transition:all 0.2s;background:#faf5ff;"
                     autocomplete="off"
                   />
-                  <button id="flashai-vto-chat-send" style="width:44px;height:44px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:transform 0.2s;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+                  <button id="flashai-vto-chat-send" style="width:48px;height:48px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(139,92,246,0.4);transition:all 0.2s;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
                       <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                     </svg>
                   </button>
                 </div>
                 <!-- Quick Response Options -->
-                <div id="flashai-vto-quick-responses" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+                <div id="flashai-vto-quick-responses" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
                   <!-- Quick response buttons will be dynamically inserted -->
                 </div>
               </div>
             </div>
 
-            <!-- Skip Button -->
-            <div style="text-align:center;margin-top:12px;">
-              <button id="flashai-vto-skip-consultation" style="padding:10px 24px;background:transparent;color:#71717a;border:1px solid #e4e4e7;border-radius:25px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
-                Skip to Results →
+            <!-- See Results Button - Only Shows After Conversation -->
+            <div id="flashai-vto-results-ready" style="display:none;text-align:center;margin-top:16px;padding:16px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:12px;border:2px solid #22c55e;">
+              <p style="font-size:13px;color:#166534;margin:0 0 12px;font-weight:600;">✨ Your personalized analysis is ready!</p>
+              <button id="flashai-vto-see-results" style="padding:14px 32px;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);color:#fff;border:none;border-radius:25px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(34,197,94,0.4);transition:all 0.2s;">
+                See My Results →
+              </button>
+            </div>
+
+            <!-- Skip Button - Less Prominent -->
+            <div style="text-align:center;margin-top:10px;">
+              <button id="flashai-vto-skip-consultation" style="padding:8px 20px;background:transparent;color:#a1a1aa;border:none;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;text-decoration:underline;">
+                Skip conversation
               </button>
             </div>
           </div>
@@ -5847,6 +5854,13 @@
 
         if (data.success) {
           this.state.consultationConversationId = data.data.conversationId;
+
+          // Track the initial assistant message
+          if (!this.state.consultationMessages) {
+            this.state.consultationMessages = [];
+          }
+          this.state.consultationMessages.push({ role: 'assistant', content: data.data.message });
+
           this.addChatMessage('assistant', data.data.message);
           this.showAgeQuickResponses();
         } else {
@@ -5865,9 +5879,16 @@
       const chatInput = document.getElementById('flashai-vto-chat-input');
       const sendBtn = document.getElementById('flashai-vto-chat-send');
       const skipBtn = document.getElementById('flashai-vto-skip-consultation');
+      const seeResultsBtn = document.getElementById('flashai-vto-see-results');
+      const resultsReadyDiv = document.getElementById('flashai-vto-results-ready');
 
       if (messagesContainer) {
         messagesContainer.innerHTML = '';
+      }
+
+      // Hide results ready section initially
+      if (resultsReadyDiv) {
+        resultsReadyDiv.style.display = 'none';
       }
 
       // Send message on button click
@@ -5888,6 +5909,11 @@
       // Skip button
       if (skipBtn) {
         skipBtn.onclick = () => this.skipConsultation();
+      }
+
+      // See Results button
+      if (seeResultsBtn) {
+        seeResultsBtn.onclick = () => this.finishConsultation();
       }
     }
 
@@ -5951,6 +5977,12 @@
       chatInput.value = '';
       if (quickResponses) quickResponses.innerHTML = '';
 
+      // Track user message
+      if (!this.state.consultationMessages) {
+        this.state.consultationMessages = [];
+      }
+      this.state.consultationMessages.push({ role: 'user', content: message });
+
       // Add user message to chat
       this.addChatMessage('user', message);
 
@@ -5976,7 +6008,13 @@
         this.hideTypingIndicator();
 
         if (data.success) {
+          // Track assistant message
+          this.state.consultationMessages.push({ role: 'assistant', content: data.data.message });
+
           this.addChatMessage('assistant', data.data.message);
+
+          // Check if we should show results button
+          this.checkReadyForResults();
 
           // Check if conversation is complete or can reveal results
           if (data.data.isComplete || data.data.canRevealResults) {
@@ -6167,11 +6205,12 @@
     }
 
     checkReadyForResults() {
-      // Called when analysis completes - check if we should show results
+      // Called when analysis completes or conversation progresses
       console.log('[Face Scan] Checking ready for results:', {
         analysisComplete: this.state.analysisComplete,
         consultationComplete: this.state.consultationComplete,
-        consultationSkipped: this.state.consultationSkipped
+        consultationSkipped: this.state.consultationSkipped,
+        messageCount: this.state.consultationMessages?.length || 0
       });
 
       // If consultation was skipped, go directly to results
@@ -6185,22 +6224,32 @@
         return;
       }
 
+      // Show "See Results" button when both conditions are met:
+      // 1. Analysis is complete
+      // 2. User has had at least 3 exchanges (meaningful conversation)
+      const messageCount = this.state.consultationMessages?.length || 0;
+      const resultsReadyDiv = document.getElementById('flashai-vto-results-ready');
+
+      if (this.state.analysisComplete && messageCount >= 6) {
+        // Show the "See Results" button
+        if (resultsReadyDiv) {
+          resultsReadyDiv.style.display = 'block';
+        }
+
+        // Mark consultation as complete
+        this.state.consultationComplete = true;
+      } else if (this.state.analysisComplete && messageCount >= 4) {
+        // After minimum conversation, show a subtle hint
+        if (resultsReadyDiv) {
+          resultsReadyDiv.style.display = 'block';
+          resultsReadyDiv.style.opacity = '0.8';
+        }
+      }
+
       // Refresh the reveal results button if it's showing
       const quickResponses = document.getElementById('flashai-vto-quick-responses');
       if (quickResponses && quickResponses.querySelector('.flashai-vto-reveal-results-btn')) {
         this.showRevealResultsButton();
-      }
-
-      // Update the skip button to be more prominent
-      const skipBtn = document.getElementById('flashai-vto-skip-consultation');
-      if (skipBtn && skipBtn.style.display !== 'none') {
-        skipBtn.innerHTML = '✨ See My Results →';
-        skipBtn.style.background = 'linear-gradient(135deg,#22c55e 0%,#16a34a 100%)';
-        skipBtn.style.color = '#fff';
-        skipBtn.style.border = 'none';
-        skipBtn.style.padding = '12px 28px';
-        skipBtn.style.fontWeight = '600';
-        skipBtn.style.boxShadow = '0 4px 12px rgba(34,197,94,0.3)';
       }
     }
 
