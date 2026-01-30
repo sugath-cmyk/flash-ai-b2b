@@ -654,67 +654,9 @@
             </div>
           </div>
 
-          <!-- Face Scan Step 3: AI Skincare Consultation -->
-          <div id="flashai-vto-step-face-consultation" class="flashai-vto-step">
-            <div class="flashai-vto-consultation-container">
-              <!-- Header -->
-              <div class="flashai-vto-consultation-header">
-                <div class="flashai-vto-consultation-avatar">
-                  <div class="avatar-glow"></div>
-                  <div class="avatar-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                  </div>
-                </div>
-                <div class="flashai-vto-consultation-title">
-                  <h2>Skin Expert AI</h2>
-                  <p>Let me understand your skin better</p>
-                </div>
-              </div>
+          <!-- NOTE: face-consultation step removed - chat is now embedded in face-processing -->
 
-              <!-- Chat Messages Container -->
-              <div class="flashai-vto-chat-container" id="flashai-vto-chat-container">
-                <div class="flashai-vto-chat-messages" id="flashai-vto-chat-messages">
-                  <!-- Messages will be dynamically inserted here -->
-                </div>
-              </div>
-
-              <!-- Chat Input -->
-              <div class="flashai-vto-chat-input-container">
-                <div class="flashai-vto-chat-input-wrapper">
-                  <input
-                    type="text"
-                    id="flashai-vto-chat-input"
-                    class="flashai-vto-chat-input"
-                    placeholder="Type your response..."
-                    autocomplete="off"
-                  />
-                  <button id="flashai-vto-chat-send" class="flashai-vto-chat-send-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                    </svg>
-                  </button>
-                </div>
-                <!-- Quick Response Options -->
-                <div class="flashai-vto-quick-responses" id="flashai-vto-quick-responses">
-                  <!-- Quick response buttons will be dynamically inserted -->
-                </div>
-              </div>
-
-              <!-- Skip Button -->
-              <div class="flashai-vto-consultation-footer">
-                <button id="flashai-vto-skip-consultation" class="flashai-vto-skip-btn">
-                  Skip to Results
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Face Scan Step 4: Results (Accordion with Zoomed Regions) -->
+          <!-- Face Scan Step 3: Results (Accordion with Zoomed Regions) -->
           <div id="flashai-vto-step-face-results" class="flashai-vto-step">
             <div class="flashai-vto-face-results-content">
 
@@ -4175,7 +4117,6 @@
         tryon: 'flashai-vto-step-tryon',
         facescan: 'flashai-vto-step-facescan',
         'face-processing': 'flashai-vto-step-face-processing',
-        'face-consultation': 'flashai-vto-step-face-consultation',
         'face-results': 'flashai-vto-step-face-results',
         error: 'flashai-vto-step-error',
       };
@@ -4196,9 +4137,6 @@
         // NOTE: Consultation is started from analyzeFaceScan() AFTER scanId is obtained
         // Don't start here - it runs before the upload completes
         console.log('[Skincare AI] Face processing step shown, waiting for scanId...');
-      } else if (step === 'face-consultation') {
-        // Legacy - now handled by face-processing
-        this.initSkincareConsultation();
       }
     }
 
