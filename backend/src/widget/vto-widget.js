@@ -6931,43 +6931,51 @@
       const grid = document.getElementById('flashai-vto-concerns-grid');
       if (!grid || !analysis) return;
 
-      // Define concern card configurations with real skin images
+      // Get the USER'S captured face image - this is their actual photo
+      const userFaceImage = this.state.faceMeshCapturedImage ||
+                           (this.state.faceImagesByView && this.state.faceImagesByView.front) ||
+                           this.state.faceImageData;
+
+      console.log('[Concern Cards] User face image available:', !!userFaceImage);
+
+      // Define concern configs with face regions for cropping/highlighting
+      // faceRegion is in percentage (0-100) of the image dimensions
       const concernConfigs = [
         {
           key: 'acne',
           label: 'Acne & Breakouts',
           scoreKey: 'acne_score',
           threshold: 25,
-          gradient: 'linear-gradient(135deg, #fecaca 0%, #fca5a5 50%, #f87171 100%)',
-          // Real acne skin image
-          imageUrl: 'https://images.pexels.com/photos/5069432/pexels-photo-5069432.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(239, 68, 68, 0.35)',
+          borderColor: '#ef4444',
+          faceRegion: { x: 15, y: 45, w: 70, h: 40 } // Cheeks & Chin
         },
         {
           key: 'dark_circles',
           label: 'Dark Circles',
           scoreKey: 'under_eye_darkness',
           threshold: 35,
-          gradient: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%)',
-          // Under eye area image
-          imageUrl: 'https://images.pexels.com/photos/3762879/pexels-photo-3762879.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(139, 92, 246, 0.35)',
+          borderColor: '#8b5cf6',
+          faceRegion: { x: 15, y: 25, w: 70, h: 25 } // Under eyes
         },
         {
           key: 'pigmentation',
           label: 'Hyperpigmentation',
           scoreKey: 'pigmentation_score',
           threshold: 30,
-          gradient: 'linear-gradient(135deg, #fed7aa 0%, #fdba74 50%, #fb923c 100%)',
-          // Skin pigmentation image
-          imageUrl: 'https://images.pexels.com/photos/3785147/pexels-photo-3785147.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(251, 146, 60, 0.35)',
+          borderColor: '#fb923c',
+          faceRegion: { x: 10, y: 20, w: 80, h: 50 } // Cheeks & Forehead
         },
         {
           key: 'wrinkles',
           label: 'Fine Lines & Wrinkles',
           scoreKey: 'wrinkle_score',
           threshold: 20,
-          gradient: 'linear-gradient(135deg, #fde68a 0%, #fcd34d 50%, #f59e0b 100%)',
-          // Anti-aging skin image
-          imageUrl: 'https://images.pexels.com/photos/3764119/pexels-photo-3764119.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(245, 158, 11, 0.35)',
+          borderColor: '#f59e0b',
+          faceRegion: { x: 10, y: 5, w: 80, h: 35 } // Forehead & Eyes
         },
         {
           key: 'hydration',
@@ -6975,27 +6983,27 @@
           scoreKey: 'hydration_score',
           threshold: 60,
           isInverse: true,
-          gradient: 'linear-gradient(135deg, #a5f3fc 0%, #67e8f9 50%, #22d3ee 100%)',
-          // Hydration/moisturizing image
-          imageUrl: 'https://images.pexels.com/photos/3997379/pexels-photo-3997379.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(34, 211, 238, 0.35)',
+          borderColor: '#22d3ee',
+          faceRegion: { x: 5, y: 5, w: 90, h: 90 } // Full face
         },
         {
           key: 'oiliness',
           label: 'Oiliness & Shine',
           scoreKey: 'oiliness_score',
           threshold: 35,
-          gradient: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 50%, #facc15 100%)',
-          // Oily skin image
-          imageUrl: 'https://images.pexels.com/photos/3764132/pexels-photo-3764132.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(250, 204, 21, 0.35)',
+          borderColor: '#facc15',
+          faceRegion: { x: 25, y: 10, w: 50, h: 55 } // T-Zone
         },
         {
           key: 'redness',
           label: 'Redness & Sensitivity',
           scoreKey: 'redness_score',
           threshold: 35,
-          gradient: 'linear-gradient(135deg, #fecdd3 0%, #fda4af 50%, #fb7185 100%)',
-          // Sensitive/redness skin image
-          imageUrl: 'https://images.pexels.com/photos/3762940/pexels-photo-3762940.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(251, 113, 133, 0.35)',
+          borderColor: '#fb7185',
+          faceRegion: { x: 10, y: 35, w: 80, h: 35 } // Cheeks
         },
         {
           key: 'texture',
@@ -7003,9 +7011,9 @@
           scoreKey: 'texture_score',
           threshold: 40,
           isInverse: true,
-          gradient: 'linear-gradient(135deg, #d9f99d 0%, #bef264 50%, #a3e635 100%)',
-          // Skin texture close-up image
-          imageUrl: 'https://images.pexels.com/photos/3764533/pexels-photo-3764533.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(163, 230, 53, 0.35)',
+          borderColor: '#a3e635',
+          faceRegion: { x: 10, y: 15, w: 80, h: 70 } // Overall skin
         },
         {
           key: 'pores',
@@ -7013,9 +7021,9 @@
           scoreKey: 'pore_size_average',
           threshold: 0.3,
           multiplier: 100,
-          gradient: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%)',
-          // Pores/skin detail image
-          imageUrl: 'https://images.pexels.com/photos/3762943/pexels-photo-3762943.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop'
+          highlightColor: 'rgba(165, 180, 252, 0.35)',
+          borderColor: '#a5b4fc',
+          faceRegion: { x: 30, y: 35, w: 40, h: 35 } // Nose area
         }
       ];
 
@@ -7087,10 +7095,18 @@
         return;
       }
 
-      // Render concern cards
+      // Render concern cards using USER'S ACTUAL FACE
       detectedConcerns.forEach((concern, index) => {
         const confidenceColor = concern.confidenceLabel === 'High' ? '#ef4444' :
                                concern.confidenceLabel === 'Moderate' ? '#f59e0b' : '#22c55e';
+
+        // Calculate crop position to show the affected region of user's face
+        // faceRegion is in percentage, we use it for object-position
+        const region = concern.faceRegion || { x: 50, y: 50, w: 100, h: 100 };
+        const cropX = region.x + (region.w / 2); // Center of region
+        const cropY = region.y + (region.h / 2);
+        // Zoom factor - smaller regions get more zoom
+        const zoomFactor = Math.max(150, 300 - (region.w + region.h));
 
         const card = document.createElement('div');
         card.className = 'flashai-vto-concern-card';
@@ -7099,24 +7115,32 @@
           border-radius:16px;
           overflow:hidden;
           box-shadow:0 4px 15px rgba(0,0,0,0.08);
-          border:1px solid #e5e7eb;
+          border:2px solid ${concern.borderColor || '#e5e7eb'};
           transition:all 0.3s ease;
           cursor:pointer;
         `;
 
+        // Use user's actual face image with cropping to show the affected region
+        const imageHTML = userFaceImage ?
+          `<img src="${userFaceImage}" alt="Your skin - ${concern.label}"
+                style="width:${zoomFactor}%;height:${zoomFactor}%;object-fit:cover;object-position:${cropX}% ${cropY}%;transform:translate(-${(zoomFactor-100)/2}%,-${(zoomFactor-100)/2}%);" />` :
+          `<div style="width:100%;height:100%;background:#f4f4f5;display:flex;align-items:center;justify-content:center;color:#a1a1aa;font-size:11px;">No image</div>`;
+
         card.innerHTML = `
-          <div style="position:relative;width:100%;padding-top:100%;overflow:hidden;border-radius:50%;margin:12px auto 0;width:calc(100% - 24px);">
-            <!-- Real Image with Gradient Overlay -->
-            <div style="position:absolute;inset:0;border-radius:50%;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.15);border:3px solid #fff;">
-              <img src="${concern.imageUrl}" alt="${concern.label}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.style.background='${concern.gradient}';" />
-              <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.3) 100%);"></div>
+          <div style="position:relative;width:calc(100% - 20px);padding-top:calc(100% - 20px);overflow:hidden;border-radius:16px;margin:10px auto 0;">
+            <!-- User's Face Image (cropped to affected region) -->
+            <div style="position:absolute;inset:0;border-radius:16px;overflow:hidden;box-shadow:inset 0 0 20px ${concern.highlightColor || 'rgba(0,0,0,0.1)'};">
+              ${imageHTML}
+              <!-- Highlight overlay showing the concern area -->
+              <div style="position:absolute;inset:0;background:${concern.highlightColor || 'rgba(139,92,246,0.2)'};mix-blend-mode:multiply;"></div>
+              <div style="position:absolute;inset:0;border:3px solid ${concern.borderColor || '#8b5cf6'};border-radius:16px;"></div>
             </div>
             <!-- Confidence Badge -->
-            <div style="position:absolute;top:4px;right:4px;padding:5px 12px;background:${confidenceColor};color:#fff;border-radius:14px;font-size:11px;font-weight:700;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,0.25);z-index:10;">
+            <div style="position:absolute;top:6px;right:6px;padding:5px 12px;background:${confidenceColor};color:#fff;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,0.3);z-index:10;">
               ${concern.confidenceLabel}
             </div>
           </div>
-          <div style="padding:14px 10px 16px;text-align:center;">
+          <div style="padding:12px 10px 14px;text-align:center;">
             <h4 style="font-size:13px;font-weight:700;color:#18181b;margin:0;line-height:1.3;">${concern.label}</h4>
           </div>
         `;
