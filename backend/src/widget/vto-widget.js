@@ -24,7 +24,7 @@
       this.config = {
         storeId: config.storeId,
         apiKey: config.apiKey,
-        apiBaseUrl: config.apiBaseUrl || 'https://flash-ai-backend.onrender.com/api/vto',
+        apiBaseUrl: config.apiBaseUrl || 'https://flash-ai-backend-rld7.onrender.com/api/vto',
         mode: config.mode || 'floating', // 'floating' | 'inline' | 'both'
         buttonPosition: config.buttonPosition || 'bottom-right',
         buttonText: config.buttonText || 'Try On',
