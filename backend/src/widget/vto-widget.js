@@ -5808,12 +5808,56 @@
           this.showAgeQuickResponses();
         } else {
           console.error('[Skincare AI] Failed to start conversation:', data.error);
-          // Skip to results if conversation fails
-          this.skipConsultation();
+          // Analysis not ready yet - show opening message and retry later
+          if (data.error && data.error.includes('not found')) {
+            this.addChatMessage('assistant', "I'm analyzing your skin scan. While that processes, let me get to know you better.\n\nHow old are you?");
+            this.showAgeQuickResponses();
+            // Retry starting conversation after analysis completes
+            this.state.pendingConversationStart = true;
+          } else {
+            // Other error - still try to have conversation with fallback
+            this.addChatMessage('assistant', "Before I analyze your skin in detail, I need to understand you a bit. Let's start simple — how old are you?");
+            this.showAgeQuickResponses();
+          }
         }
       } catch (error) {
         console.error('[Skincare AI] Error starting conversation:', error);
-        this.skipConsultation();
+        // Network or other error - still show opening question
+        this.addChatMessage('assistant', "Before I analyze your skin in detail, I need to understand you a bit. Let's start simple — how old are you?");
+        this.showAgeQuickResponses();
+      }
+    }
+
+    async retryConversationStart() {
+      // Retry starting conversation after analysis is ready
+      const scanId = this.state.faceScanId;
+      if (!scanId) return;
+
+      console.log('[Skincare AI] Retrying conversation start with scanId:', scanId);
+
+      try {
+        const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
+        const response = await fetch(`${faceScanBaseUrl}/conversation/start`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            scanId: scanId,
+            visitorId: this.state.visitorId
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          this.state.consultationConversationId = data.data.conversationId;
+          console.log('[Skincare AI] Conversation started on retry:', data.data.conversationId);
+          // Don't add another message - user has already seen the opening question
+        }
+      } catch (error) {
+        console.error('[Skincare AI] Retry conversation start failed:', error);
       }
     }
 
@@ -5932,6 +5976,22 @@
       // Show typing indicator
       this.showTypingIndicator();
 
+      // If no conversation ID yet, use fallback conversation
+      if (!this.state.consultationConversationId) {
+        console.log('[Skincare AI] No conversationId yet, using fallback response');
+        this.hideTypingIndicator();
+        // Provide fallback response based on message content
+        const fallbackResponse = this.getFallbackResponse(message);
+        this.state.consultationMessages.push({ role: 'assistant', content: fallbackResponse.message });
+        this.addChatMessage('assistant', fallbackResponse.message);
+
+        if (fallbackResponse.quickResponses) {
+          this.showCustomQuickResponses(fallbackResponse.quickResponses);
+        }
+        this.checkReadyForResults();
+        return;
+      }
+
       // Send to AI
       try {
         const faceScanBaseUrl = this.config.apiBaseUrl.replace('/api/vto', '/api/face-scan');
@@ -6022,6 +6082,59 @@
       quickResponses.innerHTML = ageRanges.map(age => `
         <button class="flashai-vto-quick-response-btn" onclick="window.flashAIWidget.selectQuickResponse('${age}')">
           ${age}
+        </button>
+      `).join('');
+    }
+
+    getFallbackResponse(userMessage) {
+      // Provide fallback conversational responses when AI isn't available
+      const messageCount = this.state.consultationMessages?.length || 0;
+      const lowerMsg = userMessage.toLowerCase();
+
+      // Check for age response (first question)
+      if (messageCount <= 2) {
+        const ageMatch = userMessage.match(/\d+/);
+        if (ageMatch) {
+          this.state.collectedInfo = this.state.collectedInfo || {};
+          this.state.collectedInfo.age = parseInt(ageMatch[0], 10);
+        }
+        return {
+          message: "Thanks for sharing! Now, tell me about your current skincare routine. What products do you use in the morning and evening?",
+          quickResponses: ['Basic (cleanser + moisturizer)', 'Multi-step routine', 'Minimal / none', 'Varies a lot']
+        };
+      }
+
+      // Routine question
+      if (messageCount <= 4) {
+        return {
+          message: "Got it! How does your skin typically feel after cleansing? This helps me understand your skin type better.",
+          quickResponses: ['Tight and dry', 'Normal and balanced', 'Still oily', 'Combination (varies)']
+        };
+      }
+
+      // Skin feel question
+      if (messageCount <= 6) {
+        return {
+          message: "I understand. Do you use sunscreen daily? Sun protection is crucial for skin health.",
+          quickResponses: ['Yes, daily', 'Only outdoors', 'Sometimes', 'Rarely or never']
+        };
+      }
+
+      // Ready for results - show the reveal button
+      setTimeout(() => this.showRevealResultsButton(), 100);
+      return {
+        message: "Thank you for sharing all of that! I now have a good understanding of your skin. Your personalized analysis is ready - click below to see your results.",
+        quickResponses: null
+      };
+    }
+
+    showCustomQuickResponses(options) {
+      const quickResponses = document.getElementById('flashai-vto-quick-responses');
+      if (!quickResponses || !options) return;
+
+      quickResponses.innerHTML = options.map(opt => `
+        <button class="flashai-vto-quick-response-btn" onclick="window.flashAIWidget.selectQuickResponse('${opt.replace(/'/g, "\\'")}')">
+          ${opt}
         </button>
       `).join('');
     }
@@ -6153,8 +6266,17 @@
         analysisComplete: this.state.analysisComplete,
         consultationComplete: this.state.consultationComplete,
         consultationSkipped: this.state.consultationSkipped,
-        messageCount: this.state.consultationMessages?.length || 0
+        messageCount: this.state.consultationMessages?.length || 0,
+        pendingConversationStart: this.state.pendingConversationStart
       });
+
+      // If analysis just completed and we have a pending conversation start, retry it
+      if (this.state.analysisComplete && this.state.pendingConversationStart && !this.state.consultationConversationId) {
+        this.state.pendingConversationStart = false;
+        console.log('[Skincare AI] Analysis complete, retrying conversation start...');
+        this.retryConversationStart();
+        return;
+      }
 
       // If consultation was skipped, go directly to results
       if (this.state.consultationSkipped && this.state.analysisComplete) {
