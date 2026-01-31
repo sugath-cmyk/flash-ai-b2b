@@ -390,11 +390,8 @@ class SkincareAIService {
     }
 
     if (!this.anthropic) {
-      // Fallback if no API key - return a default message
-      if (userMessage === null) {
-        return "Before I analyze your skin in detail, I need to understand you a bit. Let's start simple — how old are you?";
-      }
-      return "Thank you for sharing. Based on your skin scan, I can see some interesting patterns. Ready to see your personalized analysis?";
+      // Fallback if no API key - follow the 6-question flow manually
+      return this.generateFallbackResponse(context, userMessage);
     }
 
     // Build context message with scan data
@@ -507,6 +504,81 @@ class SkincareAIService {
     if (normalizedScore >= 40) return 'Moderate concern';
     if (normalizedScore >= 20) return 'Notable concern';
     return 'Significant concern';
+  }
+
+  /**
+   * Generate fallback response when Anthropic API is not available
+   * Follows the 6 mandatory questions flow
+   */
+  private generateFallbackResponse(
+    context: SkincareConversationContext,
+    userMessage: string | null
+  ): string {
+    const messageCount = context.conversationHistory.length;
+
+    // Opening message (no user message yet)
+    if (userMessage === null || messageCount === 0) {
+      const response = "Before I analyze your skin in detail, I need to understand you a bit. Let's start simple — how old are you?";
+      context.conversationHistory.push({ role: 'assistant', content: response });
+      context.questionPhase = 'age';
+      return response;
+    }
+
+    // Add user message to history
+    context.conversationHistory.push({ role: 'user', content: userMessage });
+
+    // Determine which question phase we're in based on message count
+    // Each exchange = 2 messages (user + assistant)
+    const exchangeNumber = Math.floor(messageCount / 2) + 1;
+
+    let response = '';
+
+    switch (exchangeNumber) {
+      case 1:
+        // After age answer -> Ask about main concerns
+        const ageMatch = userMessage.match(/\d+/);
+        if (ageMatch) {
+          context.userAge = parseInt(ageMatch[0], 10);
+          context.collectedInfo.age = context.userAge;
+        }
+        response = "Thanks! Now, what exactly is bothering you about your skin — and how long has it been going on? This helps me understand if it's a recent issue or something more persistent.";
+        context.questionPhase = 'routine';
+        break;
+
+      case 2:
+        // After concerns -> Ask about routine
+        context.collectedInfo.concerns = userMessage;
+        response = "I understand. Walk me through your current skincare routine — both morning and night. What cleanser, moisturizer, and other products do you use?";
+        break;
+
+      case 3:
+        // After routine -> Ask about medical conditions
+        context.collectedInfo.routine = userMessage;
+        response = "Good to know. Do you have any medical conditions that might affect your skin, like PCOS, thyroid issues, or are you on any medications including birth control?";
+        break;
+
+      case 4:
+        // After medical -> Ask about recent changes
+        context.collectedInfo.medical = userMessage;
+        response = "Have you recently changed anything in your life? New skincare products, travel, increased stress, diet changes, or weather shifts? Skin often reacts to transitions.";
+        break;
+
+      case 5:
+        // After changes -> Ask about family history
+        context.collectedInfo.recentChanges = userMessage;
+        response = "Last question — is there any family history of skin issues like acne scarring, pigmentation, eczema, or sensitive skin? Genetics can play a significant role.";
+        break;
+
+      default:
+        // After family history or beyond -> Ready for results
+        context.collectedInfo.familyHistory = userMessage;
+        response = "Thank you for sharing all of that! I now have a complete picture combining your reported concerns, skincare habits, and our scan analysis.\n\nRemember: This assessment is for informational purposes only.\n\nYour personalized analysis is ready — click below to see your results.";
+        context.questionPhase = 'summary';
+        break;
+    }
+
+    context.conversationHistory.push({ role: 'assistant', content: response });
+    return response;
   }
 
   private shouldEndConversation(context: SkincareConversationContext): boolean {

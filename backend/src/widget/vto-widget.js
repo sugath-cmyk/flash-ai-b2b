@@ -610,8 +610,8 @@
                 <div style="width:10px;height:10px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite;"></div>
               </div>
 
-              <!-- Chat Messages - More Spacious -->
-              <div id="flashai-vto-chat-messages" style="flex:1;overflow-y:auto;padding:16px;background:linear-gradient(180deg,#fafafa 0%,#fff 100%);border:1px solid #e4e4e7;border-top:none;min-height:220px;max-height:300px;display:flex;flex-direction:column;gap:12px;">
+              <!-- Chat Messages - Premium Design -->
+              <div id="flashai-vto-chat-messages" style="flex:1;overflow-y:auto;padding:20px;background:linear-gradient(180deg,#f8f7ff 0%,#f5f3ff 50%,#faf5ff 100%);border-left:1px solid #e9d5ff;border-right:1px solid #e9d5ff;min-height:250px;max-height:320px;">
                 <!-- Messages will be dynamically inserted here -->
               </div>
 
@@ -5915,23 +5915,28 @@
       if (!messagesContainer) return;
 
       const messageDiv = document.createElement('div');
-      messageDiv.className = `flashai-vto-chat-message ${role}`;
 
       if (role === 'assistant') {
+        messageDiv.style.cssText = 'display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;animation:slideIn 0.3s ease-out;';
         messageDiv.innerHTML = `
-          <div class="message-avatar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <div style="width:36px;height:36px;min-width:36px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(139,92,246,0.3);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
               <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
           </div>
-          <div class="message-content">
-            <div class="message-bubble">${this.formatChatMessage(content)}</div>
+          <div style="flex:1;max-width:85%;">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:0 16px 16px 16px;padding:14px 16px;font-size:14px;line-height:1.6;color:#1f2937;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+              ${this.formatChatMessage(content)}
+            </div>
           </div>
         `;
       } else {
+        messageDiv.style.cssText = 'display:flex;justify-content:flex-end;margin-bottom:16px;animation:slideIn 0.3s ease-out;';
         messageDiv.innerHTML = `
-          <div class="message-content">
-            <div class="message-bubble">${this.formatChatMessage(content)}</div>
+          <div style="max-width:80%;">
+            <div style="background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:16px 16px 0 16px;padding:12px 16px;font-size:14px;line-height:1.5;color:#fff;box-shadow:0 2px 8px rgba(139,92,246,0.3);">
+              ${this.formatChatMessage(content)}
+            </div>
           </div>
         `;
       }
@@ -5939,13 +5944,12 @@
       messagesContainer.appendChild(messageDiv);
 
       // Scroll to bottom
-      const chatContainer = document.getElementById('flashai-vto-chat-container');
-      if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-      // Store message
-      this.state.consultationMessages.push({ role, content });
+      // Store message (only if not already stored)
+      if (!this.state.consultationMessages) {
+        this.state.consultationMessages = [];
+      }
     }
 
     formatChatMessage(content) {
@@ -6049,27 +6053,32 @@
 
       const typingDiv = document.createElement('div');
       typingDiv.id = 'flashai-vto-typing-indicator';
-      typingDiv.className = 'flashai-vto-chat-message assistant';
+      typingDiv.style.cssText = 'display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;';
       typingDiv.innerHTML = `
-        <div class="message-avatar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <div style="width:36px;height:36px;min-width:36px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(139,92,246,0.3);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
             <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
           </svg>
         </div>
-        <div class="message-content">
-          <div class="message-bubble typing">
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:0 16px 16px 16px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span style="width:8px;height:8px;background:#8b5cf6;border-radius:50%;animation:typingBounce 1.4s ease-in-out infinite;"></span>
+            <span style="width:8px;height:8px;background:#8b5cf6;border-radius:50%;animation:typingBounce 1.4s ease-in-out 0.2s infinite;"></span>
+            <span style="width:8px;height:8px;background:#8b5cf6;border-radius:50%;animation:typingBounce 1.4s ease-in-out 0.4s infinite;"></span>
           </div>
         </div>
       `;
-      messagesContainer.appendChild(typingDiv);
 
-      const chatContainer = document.getElementById('flashai-vto-chat-container');
-      if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+      // Add animation keyframes if not already added
+      if (!document.getElementById('flashai-typing-keyframes')) {
+        const style = document.createElement('style');
+        style.id = 'flashai-typing-keyframes';
+        style.textContent = '@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}';
+        document.head.appendChild(style);
       }
+
+      messagesContainer.appendChild(typingDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     hideTypingIndicator() {
@@ -6098,16 +6107,15 @@
       if (!messagesContainer) return;
 
       const disclaimerDiv = document.createElement('div');
-      disclaimerDiv.className = 'flashai-vto-chat-disclaimer';
+      disclaimerDiv.style.cssText = 'margin-bottom:20px;';
       disclaimerDiv.innerHTML = `
-        <div style="background:linear-gradient(135deg,#fef3c7 0%,#fffbeb 100%);border:1px solid #fcd34d;border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
-          <span style="font-size:16px;flex-shrink:0;">⚠️</span>
+        <div style="background:linear-gradient(135deg,#fef3c7 0%,#fffbeb 100%);border:1px solid #fcd34d;border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;flex-shrink:0;line-height:1;">⚠️</span>
           <div>
-            <p style="font-size:11px;font-weight:600;color:#92400e;margin:0 0 4px;">Important Notice</p>
-            <p style="font-size:10px;color:#a16207;margin:0;line-height:1.5;">
-              This is an AI-powered skin assessment tool for informational purposes only.
-              It is <strong>not medical advice</strong> and does not replace consultation with a dermatologist or healthcare professional.
-              Results are based on image analysis and self-reported information.
+            <p style="font-size:13px;font-weight:700;color:#92400e;margin:0 0 6px;">Important Notice</p>
+            <p style="font-size:12px;color:#a16207;margin:0;line-height:1.6;">
+              This is an AI-powered skin assessment for <strong>informational purposes only</strong>.
+              It is not medical advice and does not replace consultation with a dermatologist.
             </p>
           </div>
         </div>
