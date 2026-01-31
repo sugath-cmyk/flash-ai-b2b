@@ -269,3 +269,4 @@ export default app;
 // Force redeploy: Thu Jan 30 13:50:00 IST 2026
 // Redeploy with face region fix: Thu Jan 30 15:50:00 IST 2026
 // Chatbot duplicate ID fix: Thu Jan 30 19:40:00 IST 2026
+// Chat UI + 6-question fallback fix: Fri Jan 31 14:00:00 IST 2026
