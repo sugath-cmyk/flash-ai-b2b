@@ -4989,6 +4989,9 @@
       // Store the captured image
       this.state.facePhotos = [imageData];
       this.state.faceMeshCapturedImage = imageData;
+      this.state.faceImageData = imageData; // Set for display in results
+      this.state.faceImagesByView = { front: imageData }; // For view switching
+      this.state.currentFaceView = 'front';
 
       // Close face mesh
       this.stopFaceMesh();
