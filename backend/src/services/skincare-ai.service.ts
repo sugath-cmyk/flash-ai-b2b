@@ -524,12 +524,12 @@ class SkincareAIService {
       return response;
     }
 
-    // Add user message to history
-    context.conversationHistory.push({ role: 'user', content: userMessage });
+    // NOTE: User message is already added by continueConversation(), don't add again
 
     // Determine which question phase we're in based on message count
-    // Each exchange = 2 messages (user + assistant)
-    const exchangeNumber = Math.floor(messageCount / 2) + 1;
+    // messageCount includes: opening assistant msg + user responses + assistant responses
+    // After age question: [assistant_age_q, user_age] = 2 messages → exchangeNumber = 1
+    const exchangeNumber = Math.floor((messageCount - 1) / 2) + 1;
 
     let response = '';
 
