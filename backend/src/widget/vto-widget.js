@@ -688,8 +688,8 @@
               </div>
 
               <!-- Floating Bottom Navigation -->
-              <div class="flashai-vto-floating-nav" style="position:sticky;bottom:0;left:0;right:0;z-index:100;padding:12px 8px 16px;background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.95) 20%,#fff 100%);margin:0 -20px -20px;pointer-events:none;">
-                <div style="display:flex;justify-content:center;gap:4px;background:rgba(255,255,255,0.98);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;padding:6px 8px;box-shadow:0 -4px 20px rgba(0,0,0,0.08),0 4px 20px rgba(0,0,0,0.12);border:1px solid rgba(139,92,246,0.15);pointer-events:auto;">
+              <div class="flashai-vto-floating-nav" style="position:sticky;bottom:0;left:0;right:0;z-index:100;padding:12px 8px 16px;background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.95) 20%,#fff 100%);margin:0 -20px -20px;">
+                <div style="display:flex;justify-content:center;gap:4px;background:rgba(255,255,255,0.98);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;padding:6px 8px;box-shadow:0 -4px 20px rgba(0,0,0,0.08),0 4px 20px rgba(0,0,0,0.12);border:1px solid rgba(139,92,246,0.15);">
                   <button class="flashai-vto-tab active" data-tab="analysis" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border:none;border-radius:12px;color:#fff;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;box-shadow:0 2px 8px rgba(139,92,246,0.4);">
                     <span style="font-size:16px;line-height:1;">📊</span>
                     <span>Analysis</span>
@@ -1456,9 +1456,13 @@
       });
 
       // ========== NEW: Tab Navigation ==========
-      modal.querySelectorAll('.flashai-vto-tab').forEach(tab => {
+      const tabs = modal.querySelectorAll('.flashai-vto-tab');
+      console.log('[Events] Found', tabs.length, 'tab buttons');
+      tabs.forEach((tab, index) => {
+        const tabName = tab.dataset.tab;
+        console.log('[Events] Attaching listener to tab:', tabName);
         tab.addEventListener('click', (e) => {
-          const tabName = e.currentTarget.dataset.tab;
+          console.log('[Tab Click] Tab clicked:', tabName);
           this.switchTab(tabName);
         });
       });
@@ -1528,13 +1532,23 @@
       });
 
       // ========== NEW: Download PDF & Share ==========
-      modal.querySelector('#flashai-vto-download-pdf')?.addEventListener('click', () => {
-        this.downloadAnalysisPDF();
-      });
+      const downloadBtn = modal.querySelector('#flashai-vto-download-pdf');
+      const shareBtn = modal.querySelector('#flashai-vto-share-analysis');
+      console.log('[Events] Download button found:', !!downloadBtn, 'Share button found:', !!shareBtn);
 
-      modal.querySelector('#flashai-vto-share-analysis')?.addEventListener('click', () => {
-        this.shareAnalysis();
-      });
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+          console.log('[Download] Button clicked');
+          this.downloadAnalysisPDF();
+        });
+      }
+
+      if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+          console.log('[Share] Button clicked');
+          this.shareAnalysis();
+        });
+      }
 
       // ========== NEW: Prediction Timeframe ==========
       modal.querySelectorAll('.flashai-vto-timeframe').forEach(btn => {
@@ -9980,10 +9994,15 @@
     // ==========================================================================
 
     async downloadAnalysisPDF() {
+      console.log('[Download] downloadAnalysisPDF called');
+      console.log('[Download] currentAnalysis:', this.state.currentAnalysis);
+      console.log('[Download] faceScan:', this.state.faceScan);
+
       const analysis = this.state.currentAnalysis;
       const scan = this.state.faceScan || this.state.pendingFaceScan;
 
       if (!analysis) {
+        console.error('[Download] No analysis data!');
         alert('No analysis data available. Please complete a skin scan first.');
         return;
       }
