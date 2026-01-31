@@ -1553,7 +1553,13 @@
     // ==========================================================================
 
     switchTab(tabName) {
+      console.log('[switchTab] Switching to tab:', tabName);
       const modal = this.elements.modal;
+
+      if (!modal) {
+        console.error('[switchTab] Modal not found!');
+        return;
+      }
 
       // Update tab buttons (floating nav style)
       modal.querySelectorAll('.flashai-vto-tab').forEach(tab => {
@@ -1571,13 +1577,19 @@
       });
 
       // Show/hide tab content
-      modal.querySelectorAll('.flashai-vto-tab-content').forEach(content => {
+      const allTabContents = modal.querySelectorAll('.flashai-vto-tab-content');
+      console.log('[switchTab] Found', allTabContents.length, 'tab content elements');
+      allTabContents.forEach(content => {
         content.style.display = 'none';
       });
 
       const tabContent = document.getElementById(`flashai-vto-tab-${tabName}`);
+      console.log('[switchTab] Looking for element: flashai-vto-tab-' + tabName, '- Found:', !!tabContent);
       if (tabContent) {
         tabContent.style.display = 'block';
+        console.log('[switchTab] Tab content now visible');
+      } else {
+        console.error('[switchTab] Tab content NOT FOUND for:', tabName);
       }
 
       // Load data for authenticated tabs
