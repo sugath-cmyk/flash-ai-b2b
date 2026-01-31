@@ -418,7 +418,7 @@ class SkincareAIService {
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 300,
         system: `${SKINCARE_EXPERT_SYSTEM_PROMPT}\n\n## Current Face Scan Data\n${scanContext}\n\n## Conversation Progress\nQuestions asked: ${context.conversationHistory.length}\nUser age: ${context.userAge || 'Not yet collected'}\nPhase: ${context.questionPhase}`,
         messages,
@@ -435,8 +435,8 @@ class SkincareAIService {
       return aiMessage;
     } catch (error) {
       console.error('Error generating AI response:', error);
-      // Fallback response
-      return "Thank you for that information. I'm building a picture of your skin. Ready to see your personalized analysis?";
+      // Use proper fallback flow when API fails
+      return this.generateFallbackResponse(context, userMessage);
     }
   }
 
