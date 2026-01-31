@@ -920,6 +920,12 @@
       font-size: 14px;
     }
 
+    /* Spin animation for loading */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     /* Widget Modal */
     .widget-modal {
       display: none;
@@ -1351,7 +1357,27 @@
         // Open widget directly to face scan
         window.FlashAI_VTO.open('facescan');
       } else {
-        alert('Widget is loading, please try again in a moment.');
+        // Show loading and poll for widget
+        const originalText = launchBtn.innerHTML;
+        launchBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="30 70"/></svg>Loading...</span>';
+        launchBtn.style.pointerEvents = 'none';
+
+        let attempts = 0;
+        const maxAttempts = 30;
+        const checkWidget = setInterval(() => {
+          attempts++;
+          if (window.FlashAI_VTO) {
+            clearInterval(checkWidget);
+            launchBtn.innerHTML = originalText;
+            launchBtn.style.pointerEvents = '';
+            window.FlashAI_VTO.open('facescan');
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkWidget);
+            launchBtn.innerHTML = originalText;
+            launchBtn.style.pointerEvents = '';
+            alert('Widget is taking longer to load. Please refresh the page and try again.');
+          }
+        }, 100);
       }
     });
 
@@ -1359,11 +1385,35 @@
     document.querySelectorAll('a[href="#try-it"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+
+        // Try to open widget immediately
         if (window.FlashAI_VTO) {
           window.FlashAI_VTO.open('facescan');
-        } else {
-          document.getElementById('try-it').scrollIntoView({ behavior: 'smooth' });
+          return;
         }
+
+        // Widget not ready - show loading and poll until ready
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="30 70"/></svg>Loading...</span>';
+        btn.style.pointerEvents = 'none';
+
+        // Poll for widget to be ready (check every 100ms, max 3 seconds)
+        let attempts = 0;
+        const maxAttempts = 30;
+        const checkWidget = setInterval(() => {
+          attempts++;
+          if (window.FlashAI_VTO) {
+            clearInterval(checkWidget);
+            btn.innerHTML = originalText;
+            btn.style.pointerEvents = '';
+            window.FlashAI_VTO.open('facescan');
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkWidget);
+            btn.innerHTML = originalText;
+            btn.style.pointerEvents = '';
+            alert('Widget is taking longer to load. Please refresh the page and try again.');
+          }
+        }, 100);
       });
     });
 
