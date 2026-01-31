@@ -678,7 +678,7 @@
                   </p>
                 </div>
                 <!-- User Account Button -->
-                <button id="flashai-vto-account-btn" style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(139,92,246,0.3);">
+                <button id="flashai-vto-account-btn" onclick="window.FlashAI_VTO.handleAccountClick()" style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(139,92,246,0.3);">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
@@ -890,7 +890,7 @@
                     </div>
                     <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Your Personalized Routine</h3>
                     <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Sign in to get a custom AM/PM skincare routine based on your goals</p>
-                    <button id="flashai-vto-routine-signin" style="padding:12px 32px;background:linear-gradient(135deg,#db2777 0%,#be185d 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(219,39,119,0.3);transition:all 0.2s;">
+                    <button id="flashai-vto-routine-signin" onclick="window.FlashAI_VTO.showAuthModal()" style="padding:12px 32px;background:linear-gradient(135deg,#db2777 0%,#be185d 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(219,39,119,0.3);transition:all 0.2s;">
                       Sign In for Routine
                     </button>
                   </div>
@@ -1618,6 +1618,15 @@
     // ==========================================================================
     // NEW: Authentication
     // ==========================================================================
+
+    handleAccountClick() {
+      console.log('[Account] Click handler, authToken:', !!this.state.authToken);
+      if (this.state.authToken) {
+        this.showAccountMenu();
+      } else {
+        this.showAuthModal();
+      }
+    }
 
     showAuthModal() {
       const authModal = document.getElementById('flashai-vto-auth-modal');
