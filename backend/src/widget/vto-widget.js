@@ -690,23 +690,23 @@
               <!-- Floating Bottom Navigation -->
               <div class="flashai-vto-floating-nav" style="position:sticky;bottom:0;left:0;right:0;z-index:100;padding:12px 8px 16px;background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.95) 20%,#fff 100%);margin:0 -20px -20px;">
                 <div style="display:flex;justify-content:center;gap:4px;background:rgba(255,255,255,0.98);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;padding:6px 8px;box-shadow:0 -4px 20px rgba(0,0,0,0.08),0 4px 20px rgba(0,0,0,0.12);border:1px solid rgba(139,92,246,0.15);">
-                  <button class="flashai-vto-tab active" data-tab="analysis" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border:none;border-radius:12px;color:#fff;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;box-shadow:0 2px 8px rgba(139,92,246,0.4);">
+                  <button class="flashai-vto-tab active" data-tab="analysis" onclick="window.FlashAI_VTO.switchTab('analysis')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);border:none;border-radius:12px;color:#fff;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;box-shadow:0 2px 8px rgba(139,92,246,0.4);">
                     <span style="font-size:16px;line-height:1;">📊</span>
                     <span>Analysis</span>
                   </button>
-                  <button class="flashai-vto-tab" data-tab="routine" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
+                  <button class="flashai-vto-tab" data-tab="routine" onclick="window.FlashAI_VTO.switchTab('routine')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
                     <span style="font-size:16px;line-height:1;">✨</span>
                     <span>Routine</span>
                   </button>
-                  <button class="flashai-vto-tab" data-tab="goals" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
+                  <button class="flashai-vto-tab" data-tab="goals" onclick="window.FlashAI_VTO.switchTab('goals')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
                     <span style="font-size:16px;line-height:1;">🎯</span>
                     <span>Goals</span>
                   </button>
-                  <button class="flashai-vto-tab" data-tab="progress" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
+                  <button class="flashai-vto-tab" data-tab="progress" onclick="window.FlashAI_VTO.switchTab('progress')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
                     <span style="font-size:16px;line-height:1;">📈</span>
                     <span>Progress</span>
                   </button>
-                  <button class="flashai-vto-tab" data-tab="predictions" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
+                  <button class="flashai-vto-tab" data-tab="predictions" onclick="window.FlashAI_VTO.switchTab('predictions')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
                     <span style="font-size:16px;line-height:1;">🔮</span>
                     <span>Predict</span>
                   </button>
@@ -776,7 +776,7 @@
 
               <!-- Download & Share Actions -->
               <div class="flashai-vto-analysis-actions" style="display:flex;gap:10px;margin-bottom:20px;padding:16px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:12px;border:1px solid #bbf7d0;">
-                <button id="flashai-vto-download-pdf" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 16px;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(34,197,94,0.3);transition:all 0.2s;">
+                <button id="flashai-vto-download-pdf" onclick="window.FlashAI_VTO.downloadAnalysisPDF()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 16px;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(34,197,94,0.3);transition:all 0.2s;">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -784,7 +784,7 @@
                   </svg>
                   Download PDF
                 </button>
-                <button id="flashai-vto-share-analysis" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 16px;background:#fff;color:#3f3f46;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                <button id="flashai-vto-share-analysis" onclick="window.FlashAI_VTO.shareAnalysis()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 16px;background:#fff;color:#3f3f46;border:2px solid #e4e4e7;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="18" cy="5" r="3"></circle>
                     <circle cx="6" cy="12" r="3"></circle>
