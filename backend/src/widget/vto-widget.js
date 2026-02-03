@@ -1249,12 +1249,12 @@
           <!-- Auth Modal -->
           <div id="flashai-vto-auth-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10001;align-items:center;justify-content:center;">
             <div style="position:relative;background:#fff;border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
-              <button id="flashai-vto-auth-close" style="position:absolute;top:12px;right:12px;width:32px;height:32px;background:#f4f4f5;border:none;border-radius:50%;font-size:20px;color:#71717a;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
+              <button id="flashai-vto-auth-close" onclick="window.FlashAI_VTO.hideAuthModal()" style="position:absolute;top:12px;right:12px;width:32px;height:32px;background:#f4f4f5;border:none;border-radius:50%;font-size:20px;color:#71717a;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
 
               <!-- Auth Tabs -->
               <div style="display:flex;gap:0;margin-bottom:24px;background:#f4f4f5;border-radius:25px;padding:4px;">
-                <button id="flashai-vto-auth-signin-tab" class="active" style="flex:1;padding:10px;background:#fff;border:none;border-radius:22px;font-size:13px;font-weight:600;color:#18181b;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);">Sign In</button>
-                <button id="flashai-vto-auth-signup-tab" style="flex:1;padding:10px;background:transparent;border:none;border-radius:22px;font-size:13px;font-weight:600;color:#71717a;cursor:pointer;">Sign Up</button>
+                <button id="flashai-vto-auth-signin-tab" onclick="window.FlashAI_VTO.showSignInForm()" class="active" style="flex:1;padding:10px;background:#fff;border:none;border-radius:22px;font-size:13px;font-weight:600;color:#18181b;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);">Sign In</button>
+                <button id="flashai-vto-auth-signup-tab" onclick="window.FlashAI_VTO.showSignUpForm()" style="flex:1;padding:10px;background:transparent;border:none;border-radius:22px;font-size:13px;font-weight:600;color:#71717a;cursor:pointer;">Sign Up</button>
               </div>
 
               <!-- Sign In Form -->
@@ -1267,7 +1267,7 @@
                   <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Password</label>
                   <input id="flashai-vto-signin-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
                 </div>
-                <button id="flashai-vto-signin-submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                <button id="flashai-vto-signin-submit" onclick="window.FlashAI_VTO.handleSignIn()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
                   Sign In
                 </button>
                 <div id="flashai-vto-signin-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
@@ -1287,7 +1287,7 @@
                   <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Password</label>
                   <input id="flashai-vto-signup-password" type="password" placeholder="At least 6 characters" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
                 </div>
-                <button id="flashai-vto-signup-submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                <button id="flashai-vto-signup-submit" onclick="window.FlashAI_VTO.handleSignUp()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
                   Create Account
                 </button>
                 <div id="flashai-vto-signup-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
