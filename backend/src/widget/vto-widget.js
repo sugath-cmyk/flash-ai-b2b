@@ -7747,7 +7747,7 @@
           threshold: 35,
           highlightColor: 'rgba(139, 92, 246, 0.35)',
           borderColor: '#8b5cf6',
-          faceRegion: { x: 20, y: 32, w: 60, h: 12 } // UNDER EYES - narrow horizontal band below eye level
+          faceRegion: { x: 20, y: 38, w: 60, h: 12 } // UNDER EYES - below eye level (y:38 = below eyes)
         },
         {
           key: 'pigmentation',
@@ -7990,9 +7990,9 @@
         {
           key: 'dark_circles',
           threshold: 45, // Only flag as concern if notable (45+). Backend defaults to 30-40 moderate for all.
-          facePosition: { x: 50, y: 35 }, // FACE-RELATIVE: center-ish, upper-mid (under eyes)
+          facePosition: { x: 50, y: 42 }, // FACE-RELATIVE: center, below eyes (under-eye area)
           region: 'Under Eyes',
-          faceHighlight: { x: 20, y: 28, w: 60, h: 15 }
+          faceHighlight: { x: 20, y: 38, w: 60, h: 12 } // Below eye level
         },
         {
           key: 'wrinkles',
