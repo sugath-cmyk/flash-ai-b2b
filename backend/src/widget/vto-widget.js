@@ -6270,6 +6270,12 @@
       // Reset multi-select state
       this.state.selectedResponses = [];
 
+      // Clear quick responses initially (will be shown after 6 messages)
+      const quickResponses = document.getElementById('flashai-vto-quick-responses');
+      if (quickResponses) {
+        quickResponses.innerHTML = '';
+      }
+
       // Hide results ready section initially
       if (resultsReadyDiv) {
         resultsReadyDiv.style.display = 'none';
@@ -6293,8 +6299,9 @@
         };
       }
 
-      // Skip button
+      // Skip button - hidden initially, shown after 6 messages
       if (skipBtn) {
+        skipBtn.style.display = 'none'; // Hide initially
         skipBtn.onclick = () => this.skipConsultation();
       }
 
@@ -6482,9 +6489,30 @@
       }
     }
 
+    // Check if quick responses should be shown (only after 6 messages)
+    shouldShowQuickResponses() {
+      const messageCount = this.state.consultationMessages?.length || 0;
+      return messageCount >= 6;
+    }
+
+    // Update skip button visibility based on message count
+    updateSkipButtonVisibility() {
+      const skipBtn = document.getElementById('flashai-vto-skip-consultation');
+      if (skipBtn) {
+        skipBtn.style.display = this.shouldShowQuickResponses() ? 'inline-block' : 'none';
+      }
+    }
+
     showAgeQuickResponses() {
       const quickResponses = document.getElementById('flashai-vto-quick-responses');
       if (!quickResponses) return;
+
+      // Hide quick responses for first 6 messages - let users type naturally
+      if (!this.shouldShowQuickResponses()) {
+        quickResponses.innerHTML = '';
+        this.updateSkipButtonVisibility();
+        return;
+      }
 
       const ageRanges = ['18-24', '25-30', '31-40', '41-50', '50+'];
 
@@ -6493,6 +6521,8 @@
           ${age}
         </button>
       `).join('');
+
+      this.updateSkipButtonVisibility();
     }
 
     // Show disclaimer notice at start of consultation
@@ -6743,6 +6773,13 @@
       const quickResponses = document.getElementById('flashai-vto-quick-responses');
       if (!quickResponses || !options) return;
 
+      // Hide quick responses for first 6 messages - let users type naturally
+      if (!this.shouldShowQuickResponses()) {
+        quickResponses.innerHTML = '';
+        this.updateSkipButtonVisibility();
+        return;
+      }
+
       // Reset selected responses for new question
       this.state.selectedResponses = [];
 
@@ -6774,6 +6811,8 @@
           </button>
         `).join('');
       }
+
+      this.updateSkipButtonVisibility();
     }
 
     toggleMultiSelect(btn, value) {
@@ -6825,6 +6864,13 @@
       const quickResponses = document.getElementById('flashai-vto-quick-responses');
       if (!quickResponses) return;
 
+      // Hide quick responses for first 6 messages - let users type naturally
+      if (!this.shouldShowQuickResponses()) {
+        quickResponses.innerHTML = '';
+        this.updateSkipButtonVisibility();
+        return;
+      }
+
       // Determine contextual responses based on AI's question
       const lowerMsg = aiMessage.toLowerCase();
       let options = [];
@@ -6854,6 +6900,8 @@
           ${opt}
         </button>
       `).join('');
+
+      this.updateSkipButtonVisibility();
     }
 
     selectQuickResponse(response) {
