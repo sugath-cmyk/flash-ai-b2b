@@ -694,13 +694,13 @@
                     <span style="font-size:16px;line-height:1;">📊</span>
                     <span>Analysis</span>
                   </button>
-                  <button class="flashai-vto-tab" data-tab="routine" onclick="window.FlashAI_VTO.switchTab('routine')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
-                    <span style="font-size:16px;line-height:1;">✨</span>
-                    <span>Routine</span>
-                  </button>
                   <button class="flashai-vto-tab" data-tab="goals" onclick="window.FlashAI_VTO.switchTab('goals')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
                     <span style="font-size:16px;line-height:1;">🎯</span>
                     <span>Goals</span>
+                  </button>
+                  <button class="flashai-vto-tab" data-tab="routine" onclick="window.FlashAI_VTO.switchTab('routine')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
+                    <span style="font-size:16px;line-height:1;">✨</span>
+                    <span>Routine</span>
                   </button>
                   <button class="flashai-vto-tab" data-tab="progress" onclick="window.FlashAI_VTO.switchTab('progress')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;background:transparent;border:none;border-radius:12px;color:#71717a;font-size:9px;font-weight:600;cursor:pointer;transition:all 0.3s ease;flex:1;min-width:0;">
                     <span style="font-size:16px;line-height:1;">📈</span>
@@ -880,8 +880,8 @@
               <!-- Tab Content: Routine (Phased System with Calendar) -->
               <div id="flashai-vto-tab-routine" class="flashai-vto-tab-content" style="display:none;">
                 <div class="flashai-vto-routine-container" style="padding:0;">
-                  <!-- Login Prompt -->
-                  <div id="flashai-vto-routine-login-prompt" style="text-align:center;padding:40px 20px;">
+                  <!-- Login Prompt (hidden - login removed for now) -->
+                  <div id="flashai-vto-routine-login-prompt" style="display:none;text-align:center;padding:40px 20px;">
                     <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -1682,12 +1682,16 @@
         console.error('[switchTab] Tab content NOT FOUND for:', tabName);
       }
 
-      // Load data for authenticated tabs
-      if (this.state.authToken) {
-        if (tabName === 'progress') this.loadProgressData();
-        else if (tabName === 'goals') this.loadGoalsData();
-        else if (tabName === 'routine') this.loadRoutineData();
-        else if (tabName === 'predictions') this.loadPredictions(8);
+      // Load data for tabs (login removed for now - all tabs accessible)
+      if (tabName === 'goals') {
+        // Goals don't need auth - use analysis data
+        this.loadGoalsData();
+      } else if (tabName === 'progress') {
+        this.loadProgressData();
+      } else if (tabName === 'routine') {
+        this.loadRoutineData();
+      } else if (tabName === 'predictions') {
+        this.loadPredictions(8);
       }
     }
 
@@ -2175,36 +2179,27 @@
       const accountBtn = document.getElementById('flashai-vto-account-btn');
       const accountText = document.getElementById('flashai-vto-account-text');
 
+      // Update account button text based on login state
       if (this.state.authToken && this.state.user) {
         if (accountText) {
           accountText.textContent = this.state.user.firstName || 'Account';
         }
-
-        // Show content, hide login prompts (except routine - handled separately)
-        ['progress', 'goals', 'predictions'].forEach(tab => {
-          const loginPrompt = document.getElementById(`flashai-vto-${tab}-login-prompt`);
-          const content = document.getElementById(`flashai-vto-${tab}-content`);
-          if (loginPrompt) loginPrompt.style.display = 'none';
-          if (content) content.style.display = 'block';
-        });
-
-        // For routine tab, check if questionnaire is completed first
-        this.checkAndShowRoutineContent();
       } else {
         if (accountText) {
           accountText.textContent = 'Sign In';
         }
-
-        // Show login prompts, hide content
-        ['progress', 'goals', 'routine', 'predictions'].forEach(tab => {
-          const loginPrompt = document.getElementById(`flashai-vto-${tab}-login-prompt`);
-          const content = document.getElementById(`flashai-vto-${tab}-content`);
-          const questionnaire = document.getElementById(`flashai-vto-${tab}-questionnaire`);
-          if (loginPrompt) loginPrompt.style.display = 'block';
-          if (content) content.style.display = 'none';
-          if (questionnaire) questionnaire.style.display = 'none';
-        });
       }
+
+      // Always show content, hide login prompts (login removed for now)
+      ['progress', 'goals', 'predictions'].forEach(tab => {
+        const loginPrompt = document.getElementById(`flashai-vto-${tab}-login-prompt`);
+        const content = document.getElementById(`flashai-vto-${tab}-content`);
+        if (loginPrompt) loginPrompt.style.display = 'none';
+        if (content) content.style.display = 'block';
+      });
+
+      // For routine tab, check if questionnaire is completed first
+      this.checkAndShowRoutineContent();
     }
 
     /**
@@ -2215,34 +2210,35 @@
       const questionnaire = document.getElementById('flashai-vto-routine-questionnaire');
       const content = document.getElementById('flashai-vto-routine-content');
 
+      // Always hide login prompt (login removed for now)
       if (loginPrompt) loginPrompt.style.display = 'none';
 
-      // Check if user has a phase (questionnaire completed)
-      try {
-        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}/phase`, {
-          headers: { 'Authorization': `Bearer ${this.state.authToken}` }
-        });
+      // If logged in, check phase from backend
+      if (this.state.authToken) {
+        try {
+          const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/routines')}/phase`, {
+            headers: { 'Authorization': `Bearer ${this.state.authToken}` }
+          });
 
-        const data = await response.json();
+          const data = await response.json();
 
-        if (data.success && data.data.phase && data.data.phase.phaseNumber) {
-          // User has a phase - show routine content
-          this.state.currentPhase = data.data.phase;
-          if (questionnaire) questionnaire.style.display = 'none';
-          if (content) content.style.display = 'block';
-          // Load and render routines
-          this.loadAndRenderRoutines();
-        } else {
-          // No phase - show questionnaire first
-          if (questionnaire) questionnaire.style.display = 'block';
-          if (content) content.style.display = 'none';
+          if (data.success && data.data.phase && data.data.phase.phaseNumber) {
+            // User has a phase - show routine content
+            this.state.currentPhase = data.data.phase;
+            if (questionnaire) questionnaire.style.display = 'none';
+            if (content) content.style.display = 'block';
+            // Load and render routines
+            this.loadAndRenderRoutines();
+            return;
+          }
+        } catch (error) {
+          console.error('[Routine] Error checking phase:', error);
         }
-      } catch (error) {
-        console.error('[Routine] Error checking phase:', error);
-        // On error, show questionnaire to be safe
-        if (questionnaire) questionnaire.style.display = 'block';
-        if (content) content.style.display = 'none';
       }
+
+      // Not logged in or no phase - show questionnaire
+      if (questionnaire) questionnaire.style.display = 'block';
+      if (content) content.style.display = 'none';
     }
 
     /**
