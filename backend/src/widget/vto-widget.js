@@ -1263,9 +1263,12 @@
                   <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Email</label>
                   <input id="flashai-vto-signin-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
                 </div>
-                <div style="margin-bottom:20px;">
+                <div style="margin-bottom:12px;">
                   <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Password</label>
                   <input id="flashai-vto-signin-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div style="text-align:right;margin-bottom:16px;">
+                  <a href="#" onclick="window.FlashAI_VTO.showForgotPasswordForm();return false;" style="font-size:12px;color:#7c3aed;text-decoration:none;">Forgot password?</a>
                 </div>
                 <button id="flashai-vto-signin-submit" onclick="window.FlashAI_VTO.handleSignIn()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
                   Sign In
@@ -1293,7 +1296,80 @@
                 <div id="flashai-vto-signup-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
               </div>
 
-              <p style="margin-top:20px;font-size:11px;color:#a1a1aa;text-align:center;line-height:1.5;">
+              <!-- Forgot Password Form - Step 1: Enter Email -->
+              <div id="flashai-vto-forgot-form" style="display:none;">
+                <div style="text-align:center;margin-bottom:20px;">
+                  <div style="font-size:40px;margin-bottom:12px;">🔐</div>
+                  <h3 style="margin:0 0 8px;font-size:18px;color:#18181b;">Forgot Password?</h3>
+                  <p style="margin:0;font-size:13px;color:#71717a;">Enter your email and we'll send you a reset code</p>
+                </div>
+                <div style="margin-bottom:20px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Email</label>
+                  <input id="flashai-vto-forgot-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <button id="flashai-vto-forgot-submit" onclick="window.FlashAI_VTO.handleForgotPassword()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                  Send Reset Code
+                </button>
+                <div id="flashai-vto-forgot-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
+                <div style="text-align:center;margin-top:16px;">
+                  <a href="#" onclick="window.FlashAI_VTO.showSignInForm();return false;" style="font-size:13px;color:#7c3aed;text-decoration:none;">← Back to Sign In</a>
+                </div>
+              </div>
+
+              <!-- Forgot Password Form - Step 2: Enter OTP -->
+              <div id="flashai-vto-reset-otp-form" style="display:none;">
+                <div style="text-align:center;margin-bottom:20px;">
+                  <div style="font-size:40px;margin-bottom:12px;">📧</div>
+                  <h3 style="margin:0 0 8px;font-size:18px;color:#18181b;">Check Your Email</h3>
+                  <p style="margin:0;font-size:13px;color:#71717a;">Enter the 6-digit code we sent to<br><strong id="flashai-vto-reset-email-display"></strong></p>
+                </div>
+                <div style="margin-bottom:20px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Verification Code</label>
+                  <input id="flashai-vto-reset-otp" type="text" maxlength="6" placeholder="000000" style="width:100%;padding:16px;border:1px solid #e4e4e7;border-radius:10px;font-size:24px;text-align:center;letter-spacing:8px;box-sizing:border-box;font-weight:600;">
+                </div>
+                <button id="flashai-vto-verify-otp-submit" onclick="window.FlashAI_VTO.handleVerifyResetOTP()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                  Verify Code
+                </button>
+                <div id="flashai-vto-reset-otp-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
+                <div style="text-align:center;margin-top:16px;">
+                  <a href="#" onclick="window.FlashAI_VTO.handleForgotPassword();return false;" style="font-size:13px;color:#71717a;text-decoration:none;">Didn't receive code? <span style="color:#7c3aed;">Resend</span></a>
+                </div>
+              </div>
+
+              <!-- Forgot Password Form - Step 3: Set New Password -->
+              <div id="flashai-vto-new-password-form" style="display:none;">
+                <div style="text-align:center;margin-bottom:20px;">
+                  <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+                  <h3 style="margin:0 0 8px;font-size:18px;color:#18181b;">Create New Password</h3>
+                  <p style="margin:0;font-size:13px;color:#71717a;">Your new password must be at least 6 characters</p>
+                </div>
+                <div style="margin-bottom:16px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">New Password</label>
+                  <input id="flashai-vto-new-password" type="password" placeholder="At least 6 characters" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:20px;">
+                  <label style="display:block;font-size:13px;font-weight:600;color:#3f3f46;margin-bottom:6px;">Confirm Password</label>
+                  <input id="flashai-vto-confirm-password" type="password" placeholder="Re-enter password" style="width:100%;padding:12px 16px;border:1px solid #e4e4e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <button id="flashai-vto-reset-password-submit" onclick="window.FlashAI_VTO.handleResetPassword()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                  Reset Password
+                </button>
+                <div id="flashai-vto-new-password-error" style="display:none;margin-top:12px;padding:10px;background:#fef2f2;border-radius:8px;color:#b91c1c;font-size:12px;text-align:center;"></div>
+              </div>
+
+              <!-- Password Reset Success -->
+              <div id="flashai-vto-reset-success" style="display:none;">
+                <div style="text-align:center;padding:20px 0;">
+                  <div style="font-size:50px;margin-bottom:16px;">✅</div>
+                  <h3 style="margin:0 0 8px;font-size:18px;color:#18181b;">Password Reset!</h3>
+                  <p style="margin:0 0 24px;font-size:13px;color:#71717a;">Your password has been reset successfully.<br>You can now sign in with your new password.</p>
+                  <button onclick="window.FlashAI_VTO.showSignInForm()" style="width:100%;padding:14px;background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+                    Sign In Now
+                  </button>
+                </div>
+              </div>
+
+              <p id="flashai-vto-auth-terms" style="margin-top:20px;font-size:11px;color:#a1a1aa;text-align:center;line-height:1.5;">
                 By continuing, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>
@@ -1649,6 +1725,18 @@
       const signinTab = document.getElementById('flashai-vto-auth-signin-tab');
       const signupTab = document.getElementById('flashai-vto-auth-signup-tab');
 
+      // Hide all forgot password forms
+      ['forgot', 'reset-otp', 'new-password', 'reset-success'].forEach(f => {
+        const el = document.getElementById(`flashai-vto-${f}-form`);
+        if (el) el.style.display = 'none';
+      });
+
+      // Show tabs and terms again
+      const tabs = document.querySelector('#flashai-vto-auth-modal > div > div:nth-child(2)');
+      const terms = document.getElementById('flashai-vto-auth-terms');
+      if (tabs) tabs.style.display = 'flex';
+      if (terms) terms.style.display = 'block';
+
       if (signinForm) signinForm.style.display = 'block';
       if (signupForm) signupForm.style.display = 'none';
       if (signinTab) {
@@ -1796,6 +1884,274 @@
           errorEl.style.display = 'block';
         }
       }
+    }
+
+    // ========== Forgot Password Methods ==========
+
+    showForgotPasswordForm() {
+      // Hide all forms
+      const forms = ['signin', 'signup', 'forgot', 'reset-otp', 'new-password', 'reset-success'];
+      forms.forEach(f => {
+        const el = document.getElementById(`flashai-vto-${f}-form`);
+        if (el) el.style.display = 'none';
+      });
+
+      // Hide tabs and terms during forgot password flow
+      const tabs = document.querySelector('#flashai-vto-auth-modal > div > div:nth-child(2)');
+      const terms = document.getElementById('flashai-vto-auth-terms');
+      if (tabs) tabs.style.display = 'none';
+      if (terms) terms.style.display = 'none';
+
+      // Show forgot form
+      const forgotForm = document.getElementById('flashai-vto-forgot-form');
+      if (forgotForm) forgotForm.style.display = 'block';
+
+      // Clear any previous errors
+      const errorEl = document.getElementById('flashai-vto-forgot-error');
+      if (errorEl) errorEl.style.display = 'none';
+    }
+
+    async handleForgotPassword() {
+      const email = document.getElementById('flashai-vto-forgot-email')?.value;
+      const errorEl = document.getElementById('flashai-vto-forgot-error');
+      const submitBtn = document.getElementById('flashai-vto-forgot-submit');
+
+      if (!email) {
+        if (errorEl) {
+          errorEl.textContent = 'Please enter your email address';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      // Show loading state
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/forgot-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Store email for OTP verification
+          this.state.resetEmail = email;
+
+          // Show OTP form
+          this.showResetOTPForm();
+        } else {
+          if (errorEl) {
+            errorEl.textContent = data.error?.message || data.message || 'Failed to send reset code';
+            errorEl.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Forgot password error:', error);
+        if (errorEl) {
+          errorEl.textContent = 'Connection error. Please try again.';
+          errorEl.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send Reset Code';
+        }
+      }
+    }
+
+    showResetOTPForm() {
+      // Hide all forms
+      const forms = ['signin', 'signup', 'forgot', 'reset-otp', 'new-password', 'reset-success'];
+      forms.forEach(f => {
+        const el = document.getElementById(`flashai-vto-${f}-form`);
+        if (el) el.style.display = 'none';
+      });
+
+      // Show OTP form
+      const otpForm = document.getElementById('flashai-vto-reset-otp-form');
+      if (otpForm) otpForm.style.display = 'block';
+
+      // Display email
+      const emailDisplay = document.getElementById('flashai-vto-reset-email-display');
+      if (emailDisplay) emailDisplay.textContent = this.state.resetEmail || '';
+
+      // Clear OTP input and errors
+      const otpInput = document.getElementById('flashai-vto-reset-otp');
+      if (otpInput) otpInput.value = '';
+      const errorEl = document.getElementById('flashai-vto-reset-otp-error');
+      if (errorEl) errorEl.style.display = 'none';
+    }
+
+    async handleVerifyResetOTP() {
+      const otpCode = document.getElementById('flashai-vto-reset-otp')?.value?.trim();
+      const errorEl = document.getElementById('flashai-vto-reset-otp-error');
+      const submitBtn = document.getElementById('flashai-vto-verify-otp-submit');
+
+      if (!otpCode || otpCode.length !== 6) {
+        if (errorEl) {
+          errorEl.textContent = 'Please enter the 6-digit code';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      // Show loading state
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verifying...';
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/verify-reset-otp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.config.apiKey
+          },
+          body: JSON.stringify({
+            email: this.state.resetEmail,
+            otpCode
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data?.resetToken) {
+          // Store reset token
+          this.state.resetToken = data.data.resetToken;
+
+          // Show new password form
+          this.showNewPasswordForm();
+        } else {
+          if (errorEl) {
+            errorEl.textContent = data.error?.message || data.message || 'Invalid or expired code';
+            errorEl.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Verify OTP error:', error);
+        if (errorEl) {
+          errorEl.textContent = 'Connection error. Please try again.';
+          errorEl.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Verify Code';
+        }
+      }
+    }
+
+    showNewPasswordForm() {
+      // Hide all forms
+      const forms = ['signin', 'signup', 'forgot', 'reset-otp', 'new-password', 'reset-success'];
+      forms.forEach(f => {
+        const el = document.getElementById(`flashai-vto-${f}-form`);
+        if (el) el.style.display = 'none';
+      });
+
+      // Show new password form
+      const newPwForm = document.getElementById('flashai-vto-new-password-form');
+      if (newPwForm) newPwForm.style.display = 'block';
+
+      // Clear inputs and errors
+      const newPw = document.getElementById('flashai-vto-new-password');
+      const confirmPw = document.getElementById('flashai-vto-confirm-password');
+      if (newPw) newPw.value = '';
+      if (confirmPw) confirmPw.value = '';
+      const errorEl = document.getElementById('flashai-vto-new-password-error');
+      if (errorEl) errorEl.style.display = 'none';
+    }
+
+    async handleResetPassword() {
+      const newPassword = document.getElementById('flashai-vto-new-password')?.value;
+      const confirmPassword = document.getElementById('flashai-vto-confirm-password')?.value;
+      const errorEl = document.getElementById('flashai-vto-new-password-error');
+      const submitBtn = document.getElementById('flashai-vto-reset-password-submit');
+
+      if (!newPassword || newPassword.length < 6) {
+        if (errorEl) {
+          errorEl.textContent = 'Password must be at least 6 characters';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        if (errorEl) {
+          errorEl.textContent = 'Passwords do not match';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      // Show loading state
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Resetting...';
+      }
+
+      try {
+        const response = await fetch(`${this.config.apiBaseUrl.replace('/api/vto', '/api/widget/auth')}/reset-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            resetToken: this.state.resetToken,
+            newPassword
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Clear reset state
+          this.state.resetEmail = null;
+          this.state.resetToken = null;
+
+          // Show success
+          this.showResetSuccess();
+        } else {
+          if (errorEl) {
+            errorEl.textContent = data.error?.message || data.message || 'Failed to reset password';
+            errorEl.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Reset password error:', error);
+        if (errorEl) {
+          errorEl.textContent = 'Connection error. Please try again.';
+          errorEl.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Reset Password';
+        }
+      }
+    }
+
+    showResetSuccess() {
+      // Hide all forms
+      const forms = ['signin', 'signup', 'forgot', 'reset-otp', 'new-password', 'reset-success'];
+      forms.forEach(f => {
+        const el = document.getElementById(`flashai-vto-${f}-form`);
+        if (el) el.style.display = 'none';
+      });
+
+      // Show success
+      const successEl = document.getElementById('flashai-vto-reset-success');
+      if (successEl) successEl.style.display = 'block';
     }
 
     async linkVisitorScans() {

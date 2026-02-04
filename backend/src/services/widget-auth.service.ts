@@ -358,6 +358,177 @@ export class WidgetAuthService {
     }
   }
 
+  // ========== Password Reset Methods ==========
+
+  async requestPasswordReset(email: string, storeId: string): Promise<{ message: string }> {
+    // Handle demo stores
+    const isDemoStore = storeId === 'demo-store' || storeId === 'demo' || storeId === 'test';
+    const actualStoreId = isDemoStore ? DEMO_FALLBACK_STORE_UUID : storeId;
+
+    // Check if user exists
+    const userResult = await pool.query(
+      'SELECT id, email FROM widget_users WHERE store_id = $1 AND email = $2 AND is_active = true',
+      [actualStoreId, email.toLowerCase()]
+    );
+
+    if (userResult.rows.length === 0) {
+      // Don't reveal if email exists - return success message anyway
+      return { message: 'If an account exists with this email, you will receive a password reset code.' };
+    }
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Delete any existing password reset OTPs for this email
+    await pool.query(
+      'DELETE FROM otp_verifications WHERE email = $1 AND otp_type = $2',
+      [email.toLowerCase(), 'password_reset']
+    );
+
+    // Store OTP in database
+    await pool.query(
+      `INSERT INTO otp_verifications (email, otp_code, otp_type, expires_at)
+       VALUES ($1, $2, $3, $4)`,
+      [email.toLowerCase(), otpCode, 'password_reset', expiresAt]
+    );
+
+    // Send email (or log in development)
+    await this.sendPasswordResetEmail(email, otpCode);
+
+    return { message: 'If an account exists with this email, you will receive a password reset code.' };
+  }
+
+  async verifyPasswordResetOTP(email: string, otpCode: string, storeId: string): Promise<{ resetToken: string }> {
+    // Handle demo stores
+    const isDemoStore = storeId === 'demo-store' || storeId === 'demo' || storeId === 'test';
+    const actualStoreId = isDemoStore ? DEMO_FALLBACK_STORE_UUID : storeId;
+
+    // Verify OTP
+    const otpResult = await pool.query(
+      `SELECT * FROM otp_verifications
+       WHERE email = $1 AND otp_code = $2 AND otp_type = $3
+       AND expires_at > NOW() AND verified = FALSE
+       ORDER BY created_at DESC LIMIT 1`,
+      [email.toLowerCase(), otpCode, 'password_reset']
+    );
+
+    if (otpResult.rows.length === 0) {
+      throw createError('Invalid or expired verification code', 400);
+    }
+
+    // Verify user exists in this store
+    const userResult = await pool.query(
+      'SELECT id FROM widget_users WHERE store_id = $1 AND email = $2 AND is_active = true',
+      [actualStoreId, email.toLowerCase()]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw createError('User not found', 404);
+    }
+
+    // Mark OTP as verified
+    await pool.query(
+      'UPDATE otp_verifications SET verified = TRUE, updated_at = NOW() WHERE id = $1',
+      [otpResult.rows[0].id]
+    );
+
+    // Generate a short-lived reset token (15 minutes)
+    const resetToken = jwt.sign(
+      {
+        userId: userResult.rows[0].id,
+        email: email.toLowerCase(),
+        type: 'password_reset',
+      },
+      this.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    return { resetToken };
+  }
+
+  async resetPassword(resetToken: string, newPassword: string): Promise<{ message: string }> {
+    // Verify reset token
+    let decoded: { userId: string; email: string; type: string };
+    try {
+      decoded = jwt.verify(resetToken, this.JWT_SECRET) as typeof decoded;
+    } catch (error) {
+      throw createError('Invalid or expired reset token. Please request a new password reset.', 400);
+    }
+
+    if (decoded.type !== 'password_reset') {
+      throw createError('Invalid reset token', 400);
+    }
+
+    // Validate password
+    if (!newPassword || newPassword.length < 6) {
+      throw createError('Password must be at least 6 characters', 400);
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update user's password
+    const result = await pool.query(
+      'UPDATE widget_users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND is_active = true RETURNING id',
+      [passwordHash, decoded.userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw createError('User not found', 404);
+    }
+
+    // Revoke all existing refresh tokens for security
+    await pool.query(
+      'UPDATE widget_auth_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+      [decoded.userId]
+    );
+
+    return { message: 'Password reset successfully. You can now sign in with your new password.' };
+  }
+
+  private async sendPasswordResetEmail(email: string, otpCode: string): Promise<void> {
+    // Check if SMTP is configured
+    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || 'noreply@skinchecker.in',
+        to: email,
+        subject: 'Reset your password - SkinChecker',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #7c3aed; margin: 0;">Skin<span style="color: #1e293b;">Checker</span></h1>
+            </div>
+            <h2 style="color: #1e293b;">Reset Your Password</h2>
+            <p style="font-size: 16px; color: #475569;">We received a request to reset your password. Use the code below to complete the process:</p>
+            <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 25px; text-align: center; border-radius: 12px; margin: 25px 0;">
+              <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #fff;">${otpCode}</span>
+            </div>
+            <p style="font-size: 14px; color: #64748b;">This code will expire in <strong>15 minutes</strong>.</p>
+            <p style="font-size: 14px; color: #64748b;">If you didn't request a password reset, you can safely ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+            <p style="font-size: 12px; color: #94a3b8; text-align: center;">SkinChecker - AI-Powered Skin Analysis</p>
+          </div>
+        `,
+      });
+    } else {
+      // Development mode - log to console
+      console.log('🔐 PASSWORD RESET OTP for', email, ':', otpCode);
+      console.log('   Expires in 15 minutes');
+    }
+  }
+
   private async linkVisitorScans(userId: string, storeId: string, visitorId: string): Promise<number> {
     // Link face scans from visitor to user
     const scanResult = await pool.query(

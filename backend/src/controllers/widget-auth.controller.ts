@@ -36,6 +36,20 @@ export const loginValidation = [
   body('password').notEmpty().withMessage('Password is required'),
 ];
 
+export const forgotPasswordValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+];
+
+export const verifyResetOTPValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('otpCode').trim().isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+];
+
+export const resetPasswordValidation = [
+  body('resetToken').notEmpty().withMessage('Reset token is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+];
+
 class WidgetAuthController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
@@ -233,6 +247,97 @@ class WidgetAuthController {
         success: true,
         data: result,
         message: `Linked ${result.linked} previous scan(s) to your account`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ========== Password Reset Endpoints ==========
+
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array(),
+        });
+      }
+
+      // Verify API key and get store ID
+      const apiKey = req.headers['x-api-key'] as string;
+      if (!apiKey) {
+        throw createError('API key required', 401);
+      }
+
+      const { storeId, isValid } = await widgetService.verifyApiKey(apiKey);
+      if (!isValid) {
+        throw createError('Invalid API key', 401);
+      }
+
+      const { email } = req.body;
+      const result = await widgetAuthService.requestPasswordReset(email, storeId);
+
+      res.json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyResetOTP(req: Request, res: Response, next: NextFunction) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array(),
+        });
+      }
+
+      // Verify API key and get store ID
+      const apiKey = req.headers['x-api-key'] as string;
+      if (!apiKey) {
+        throw createError('API key required', 401);
+      }
+
+      const { storeId, isValid } = await widgetService.verifyApiKey(apiKey);
+      if (!isValid) {
+        throw createError('Invalid API key', 401);
+      }
+
+      const { email, otpCode } = req.body;
+      const result = await widgetAuthService.verifyPasswordResetOTP(email, otpCode, storeId);
+
+      res.json({
+        success: true,
+        data: result,
+        message: 'OTP verified successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array(),
+        });
+      }
+
+      const { resetToken, newPassword } = req.body;
+      const result = await widgetAuthService.resetPassword(resetToken, newPassword);
+
+      res.json({
+        success: true,
+        message: result.message,
       });
     } catch (error) {
       next(error);
