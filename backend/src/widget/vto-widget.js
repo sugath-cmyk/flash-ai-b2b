@@ -795,6 +795,40 @@
                   Share Results
                 </button>
               </div>
+
+              <!-- Next Steps Navigation -->
+              <div style="margin-bottom:16px;">
+                <h3 style="font-size:15px;font-weight:700;color:#18181b;margin:0 0 12px;text-align:center;">What's Next?</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <!-- Go to Goals -->
+                  <button onclick="window.FlashAI_VTO.switchTab('goals')" style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:2px solid #fbbf24;border-radius:14px;cursor:pointer;transition:all 0.2s;text-align:left;">
+                    <div style="width:48px;height:48px;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      <span style="font-size:24px;">🎯</span>
+                    </div>
+                    <div style="flex:1;">
+                      <h4 style="font-size:14px;font-weight:700;color:#92400e;margin:0 0 4px;">View Your Goals</h4>
+                      <p style="font-size:12px;color:#a16207;margin:0;line-height:1.4;">Track your skin improvement journey with personalized goals</p>
+                    </div>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+
+                  <!-- Go to Routine -->
+                  <button onclick="window.FlashAI_VTO.switchTab('routine')" style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 100%);border:2px solid #f472b6;border-radius:14px;cursor:pointer;transition:all 0.2s;text-align:left;">
+                    <div style="width:48px;height:48px;background:linear-gradient(135deg,#ec4899 0%,#db2777 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      <span style="font-size:24px;">✨</span>
+                    </div>
+                    <div style="flex:1;">
+                      <h4 style="font-size:14px;font-weight:700;color:#9d174d;margin:0 0 4px;">Get Your Routine</h4>
+                      <p style="font-size:12px;color:#be185d;margin:0;line-height:1.4;">Personalized AM/PM skincare routine based on your analysis</p>
+                    </div>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9d174d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              </div>
               </div><!-- End Tab: Analysis -->
 
               <!-- Tab Content: Progress -->
