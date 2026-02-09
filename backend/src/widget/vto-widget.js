@@ -6598,7 +6598,6 @@
         if (mlData.concerns.length > 0) {
           message += `\n\nI can see from your scan there might be some patterns around ${mlData.concerns.slice(0, 2).join(' and ')} — is that something you've noticed?`;
         }
-        message += " You can select multiple concerns.";
 
         return {
           message,
