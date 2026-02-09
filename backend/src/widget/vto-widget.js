@@ -3057,12 +3057,16 @@
       const generateBtn = document.getElementById('flashai-vto-generate-routine');
       console.log('[Routine] Elements found: loginPrompt=' + !!loginPrompt + ', routineContent=' + !!routineContent + ', questionnaire=' + !!questionnaire);
 
+      // Always hide login prompt (login removed for now)
+      if (loginPrompt) loginPrompt.style.display = 'none';
+
       // Check if authenticated
       if (!this.state.authToken) {
-        console.log('[Routine] Not authenticated, showing login prompt');
-        if (loginPrompt) loginPrompt.style.display = 'block';
+        console.log('[Routine] Not authenticated, showing questionnaire');
         if (routineContent) routineContent.style.display = 'none';
-        if (questionnaire) questionnaire.style.display = 'none';
+        if (questionnaire) questionnaire.style.display = 'block';
+        // Pre-fill concerns from scan results
+        this.prefillQuestionnaireFromScan();
         return;
       }
 
