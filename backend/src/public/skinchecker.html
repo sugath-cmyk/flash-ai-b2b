@@ -47,6 +47,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
 
+  <!-- Preload widget script for faster loading -->
+  <link rel="preload" href="https://skinchecker.in/vto/demo-store.js" as="script">
+
   <!-- Structured Data - Organization -->
   <script type="application/ld+json">
   {
@@ -1332,10 +1335,20 @@
     </div>
   </footer>
 
-  <!-- Widget Script -->
-  <script src="https://skinchecker.in/vto/demo-store.js"></script>
+  <!-- Widget Script - loaded with async for faster page load -->
+  <script src="https://skinchecker.in/vto/demo-store.js" async></script>
 
   <script>
+    // Pre-initialize widget checker - start polling immediately on page load
+    let widgetReady = false;
+    const widgetReadyCheck = setInterval(() => {
+      if (window.FlashAI_VTO) {
+        widgetReady = true;
+        clearInterval(widgetReadyCheck);
+        console.log('Widget ready!');
+      }
+    }, 50);
+
     // Navigation scroll effect
     const nav = document.getElementById('nav');
     window.addEventListener('scroll', () => {
@@ -1363,7 +1376,7 @@
         launchBtn.style.pointerEvents = 'none';
 
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 100; // 5 seconds at 50ms intervals
         const checkWidget = setInterval(() => {
           attempts++;
           if (window.FlashAI_VTO) {
@@ -1377,7 +1390,7 @@
             launchBtn.style.pointerEvents = '';
             alert('Widget is taking longer to load. Please refresh the page and try again.');
           }
-        }, 100);
+        }, 50); // Check every 50ms
       }
     });
 
@@ -1397,9 +1410,9 @@
         btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><svg width="20" height="20" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="30 70"/></svg>Loading...</span>';
         btn.style.pointerEvents = 'none';
 
-        // Poll for widget to be ready (check every 100ms, max 3 seconds)
+        // Poll for widget to be ready (check every 50ms, max 5 seconds)
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 100;
         const checkWidget = setInterval(() => {
           attempts++;
           if (window.FlashAI_VTO) {
@@ -1413,7 +1426,7 @@
             btn.style.pointerEvents = '';
             alert('Widget is taking longer to load. Please refresh the page and try again.');
           }
-        }, 100);
+        }, 50);
       });
     });
 
