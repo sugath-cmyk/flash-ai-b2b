@@ -880,23 +880,8 @@
               <!-- Tab Content: Routine (Phased System with Calendar) -->
               <div id="flashai-vto-tab-routine" class="flashai-vto-tab-content" style="display:none;">
                 <div class="flashai-vto-routine-container" style="padding:0;">
-                  <!-- Login Prompt (hidden - login removed for now) -->
-                  <div id="flashai-vto-routine-login-prompt" style="display:none;text-align:center;padding:40px 20px;">
-                    <div style="width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                      </svg>
-                    </div>
-                    <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Your Personalized Routine</h3>
-                    <p style="font-size:14px;color:#71717a;margin:0 0 20px;line-height:1.5;">Sign in to get a custom AM/PM skincare routine based on your goals</p>
-                    <button id="flashai-vto-routine-signin" onclick="window.FlashAI_VTO.showAuthModal()" style="padding:12px 32px;background:linear-gradient(135deg,#db2777 0%,#be185d 100%);color:#fff;border:none;border-radius:25px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(219,39,119,0.3);transition:all 0.2s;">
-                      Sign In for Routine
-                    </button>
-                  </div>
-
-                  <!-- Skincare Experience Questionnaire -->
-                  <div id="flashai-vto-routine-questionnaire" style="display:none;">
+                  <!-- Skincare Experience Questionnaire (shown by default - login removed) -->
+                  <div id="flashai-vto-routine-questionnaire" style="display:block;">
                     <div style="text-align:center;margin-bottom:20px;">
                       <h3 style="font-size:18px;font-weight:700;color:#18181b;margin:0 0 8px;">Personalize Your Routine</h3>
                       <p style="font-size:13px;color:#71717a;margin:0;">Help us create the perfect routine for you (30 seconds)</p>
